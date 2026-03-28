@@ -1,0 +1,6 @@
+TTS>=0.22.0
+flask>=3.0.0
+flask-cors>=4.0.0
+numpy
+torch
+torchaudio
