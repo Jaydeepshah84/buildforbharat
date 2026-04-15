@@ -82,13 +82,30 @@ const COLORS = {
   violet: { bg: 'rgba(167, 139, 250, 0.15)', border: 'rgb(167, 139, 250)', solid: '#A78BFA' },
 };
 
-const EMOTION_COLORS = {
-  happy: { bg: 'rgba(16, 185, 129, 0.7)', border: '#10B981' },
-  focused: { bg: 'rgba(59, 130, 246, 0.7)', border: '#3B82F6' },
-  confused: { bg: 'rgba(245, 158, 11, 0.7)', border: '#F59E0B' },
-  bored: { bg: 'rgba(139, 92, 246, 0.7)', border: '#8B5CF6' },
-  frustrated: { bg: 'rgba(239, 68, 68, 0.7)', border: '#EF4444' },
-  neutral: { bg: 'rgba(156, 163, 175, 0.7)', border: '#9CA3AF' },
+const EMOTION_COLORS: Record<string, { bg: string; border: string }> = {
+  happy:      { bg: 'rgba(16, 185, 129, 0.7)',  border: '#10B981' },
+  focused:    { bg: 'rgba(59, 130, 246, 0.7)',   border: '#3B82F6' },
+  neutral:    { bg: 'rgba(59, 130, 246, 0.5)',   border: '#60A5FA' },
+  confused:   { bg: 'rgba(245, 158, 11, 0.7)',   border: '#F59E0B' },
+  sad:        { bg: 'rgba(245, 158, 11, 0.7)',   border: '#F59E0B' },
+  bored:      { bg: 'rgba(139, 92, 246, 0.7)',   border: '#8B5CF6' },
+  disgusted:  { bg: 'rgba(139, 92, 246, 0.5)',   border: '#A78BFA' },
+  frustrated: { bg: 'rgba(239, 68, 68, 0.7)',    border: '#EF4444' },
+  angry:      { bg: 'rgba(239, 68, 68, 0.7)',    border: '#EF4444' },
+  surprised:  { bg: 'rgba(168, 85, 247, 0.7)',   border: '#A855F7' },
+  fearful:    { bg: 'rgba(249, 115, 22, 0.7)',   border: '#F97316' },
+  anxious:    { bg: 'rgba(249, 115, 22, 0.5)',   border: '#FB923C' },
+};
+
+// Map DB emotion values to user-friendly learning-state labels
+// DB stores: happy, confused, bored, focused, frustrated, neutral
+const EMOTION_LABEL_MAP: Record<string, string> = {
+  happy:      'Engaged',
+  focused:    'Focused',
+  neutral:    'Neutral',
+  confused:   'Confused',
+  bored:      'Bored',
+  frustrated: 'Frustrated',
 };
 
 // --------------- shared chart options ---------------
@@ -340,16 +357,26 @@ export default function AnalyticsPage() {
     : [];
 
   // Emotion distribution — from real emotion logs
+  // Group by mapped label so raw face-api keys (happy, sad, etc.) become learning labels (Engaged, Confused, etc.)
   const emotionCounts: Record<string, number> = {};
+  const emotionKeyMap: Record<string, string> = {}; // label -> raw key (for color lookup)
   emotionLogs.forEach((e: any) => {
-    const em = e.emotion || 'neutral';
-    emotionCounts[em] = (emotionCounts[em] || 0) + 1;
+    const raw = e.emotion || 'neutral';
+    const label = EMOTION_LABEL_MAP[raw] || raw.charAt(0).toUpperCase() + raw.slice(1);
+    emotionCounts[label] = (emotionCounts[label] || 0) + 1;
+    if (!emotionKeyMap[label]) emotionKeyMap[label] = raw;
   });
-  const emotions = Object.keys(emotionCounts).length > 0 ? emotionCounts : { neutral: 1 };
-  const emotionLabels = Object.keys(emotions).map(e => e.charAt(0).toUpperCase() + e.slice(1));
+  const emotions = Object.keys(emotionCounts).length > 0 ? emotionCounts : { Focused: 1 };
+  const emotionLabels = Object.keys(emotions);
   const emotionValues = Object.values(emotions);
-  const emotionBgColors = Object.keys(emotions).map(e => EMOTION_COLORS[e]?.bg || 'rgba(156,163,175,0.7)');
-  const emotionBorderColors = Object.keys(emotions).map(e => EMOTION_COLORS[e]?.border || '#9CA3AF');
+  const emotionBgColors = emotionLabels.map(label => {
+    const raw = emotionKeyMap[label] || label.toLowerCase();
+    return EMOTION_COLORS[raw]?.bg || EMOTION_COLORS[label.toLowerCase()]?.bg || 'rgba(156,163,175,0.7)';
+  });
+  const emotionBorderColors = emotionLabels.map(label => {
+    const raw = emotionKeyMap[label] || label.toLowerCase();
+    return EMOTION_COLORS[raw]?.border || EMOTION_COLORS[label.toLowerCase()]?.border || '#9CA3AF';
+  });
 
   // Attention metrics — from real data
   const avgAttention = emotionLogs.length > 0

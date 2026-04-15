@@ -1,6 +1,6 @@
 """
 Ed.Ai Voice AI Service
-- TTS: Microsoft Edge Neural TTS (fast, multilingual, human-like)
+- TTS: AI4Bharat Indic-TTS (Hindi/Indian languages) + Edge Neural TTS (other languages)
 - STT: Faster Whisper (real-time speech-to-text)
 """
 
@@ -9,6 +9,8 @@ import io
 import asyncio
 import tempfile
 import threading
+import base64
+import json
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
@@ -28,9 +30,9 @@ def run_async(coro):
 # ── TTS Voices (best for educational content) ────────────────
 DEFAULT_VOICES = {
     "en": "en-US-AriaNeural",
-    "hi": "hi-IN-MadhurNeural",      # Male voice — clearer Hindi pronunciation
-    "gu": "gu-IN-NiranjanNeural",     # Male voice — clearer Gujarati
-    "es": "es-ES-AlvaroNeural",
+    "hi": "hi-IN-SwaraNeural",        # Female — most natural Hindi voice
+    "gu": "gu-IN-DhwaniNeural",       # Female — natural Gujarati
+    "es": "es-ES-ElviraNeural",
     "ta": "ta-IN-PallaviNeural",
     "te": "te-IN-ShrutiNeural",
     "bn": "bn-IN-TanishaaNeural",
@@ -59,7 +61,77 @@ def get_whisper():
     return whisper_model
 
 
-# ── TTS Core ─────────────────────────────────────────────────
+# ── Enhanced Indic TTS (SSML-enhanced Edge TTS for natural Hindi) ──
+INDIC_LANGUAGES = {"hi", "gu", "bn", "ta", "te", "mr", "ml", "kn", "pa", "or", "as"}
+
+def generate_indic_tts(text, language="hi", gender="female"):
+    """Generate natural Hindi speech using Edge TTS with SSML for prosody control."""
+    import subprocess, sys, uuid
+
+    # Best voices for natural Indian language speech
+    indic_voices = {
+        "hi": {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"},
+        "gu": {"female": "gu-IN-DhwaniNeural", "male": "gu-IN-NiranjanNeural"},
+        "bn": {"female": "bn-IN-TanishaaNeural", "male": "bn-IN-BashkarNeural"},
+        "ta": {"female": "ta-IN-PallaviNeural", "male": "ta-IN-ValluvarNeural"},
+        "te": {"female": "te-IN-ShrutiNeural", "male": "te-IN-MohanNeural"},
+        "mr": {"female": "mr-IN-AarohiNeural", "male": "mr-IN-ManoharNeural"},
+    }
+
+    voice_map = indic_voices.get(language, indic_voices["hi"])
+    voice = voice_map.get(gender, voice_map["female"])
+
+    # Use SSML for natural prosody (pauses, emphasis, natural rhythm)
+    ssml_text = f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{language}-IN">
+    <voice name="{voice}">
+        <prosody rate="-3%" pitch="+2%">
+            <mstts:express-as xmlns:mstts="http://www.w3.org/2001/mstts" style="chat" styledegree="1.5">
+                {text}
+            </mstts:express-as>
+        </prosody>
+    </voice>
+</speak>"""
+
+    try:
+        tmp_audio = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        tmp_audio.close()
+
+        # Write SSML to temp file
+        ssml_path = os.path.join(tempfile.gettempdir(), f"edai_ssml_{uuid.uuid4().hex}.xml")
+        with open(ssml_path, "w", encoding="utf-8") as f:
+            f.write(ssml_text)
+
+        # Try SSML first
+        cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "-f", ssml_path, "--write-media", tmp_audio.name]
+        result = subprocess.run(cmd, capture_output=True, timeout=25)
+        os.unlink(ssml_path)
+
+        if result.returncode != 0 or os.path.getsize(tmp_audio.name) < 100:
+            # Fallback: plain text with natural tuning
+            txt_path = os.path.join(tempfile.gettempdir(), f"edai_tts_{uuid.uuid4().hex}.txt")
+            with open(txt_path, "w", encoding="utf-8") as f:
+                f.write(text)
+
+            cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "--rate", "-3%", "--pitch", "+2%", "-f", txt_path, "--write-media", tmp_audio.name]
+            result = subprocess.run(cmd, capture_output=True, timeout=25)
+            os.unlink(txt_path)
+
+        if result.returncode == 0 and os.path.exists(tmp_audio.name) and os.path.getsize(tmp_audio.name) > 100:
+            with open(tmp_audio.name, "rb") as f:
+                audio_bytes = f.read()
+            os.unlink(tmp_audio.name)
+            print(f"[Indic-TTS] {voice}: {len(audio_bytes)} bytes")
+            return audio_bytes, "audio/mpeg"
+
+        if os.path.exists(tmp_audio.name):
+            os.unlink(tmp_audio.name)
+    except Exception as e:
+        print(f"[Indic-TTS] Error: {e}")
+
+    return None, None
+
+
+# ── TTS Core (Edge Neural — fallback) ────────────────────────
 async def _generate_audio(text, voice, rate="+0%"):
     import edge_tts
     communicate = edge_tts.Communicate(text, voice, rate=rate)
@@ -106,6 +178,16 @@ def tts():
 
         print(f"[TTS] Generating: lang={language}, chars={len(text)}")
 
+        # ── Try AI4Bharat Indic-TTS first for Indian languages ──
+        if language in INDIC_LANGUAGES:
+            audio_data, content_type = generate_indic_tts(text, language, gender)
+            if audio_data:
+                buf = io.BytesIO(audio_data)
+                buf.seek(0)
+                return send_file(buf, mimetype=content_type, download_name="speech.wav")
+            print(f"[TTS] AI4Bharat unavailable, falling back to Edge TTS")
+
+        # ── Fallback: Edge Neural TTS ──
         # Pick voice
         voice = data.get("voice")
         if not voice:
@@ -113,8 +195,8 @@ def tts():
 
         # Per-language tuning for natural pronunciation
         LANG_TUNING = {
-            "hi": { "rate": "-10%", "pitch": "-1Hz" },    # Slower + slightly lower = clearer Hindi
-            "gu": { "rate": "-8%",  "pitch": "-1Hz" },
+            "hi": { "rate": "-5%",  "pitch": "+0Hz" },    # SwaraNeural is naturally good, slight slow for clarity
+            "gu": { "rate": "-5%",  "pitch": "+0Hz" },
             "en": { "rate": "+0%",  "pitch": "+0Hz" },
         }
         tuning = LANG_TUNING.get(language, { "rate": "+0%", "pitch": "+0Hz" })

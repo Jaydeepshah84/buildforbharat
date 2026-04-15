@@ -44,21 +44,22 @@ const messageVariants = {
 
 function LevelBadge({ level }) {
   const colorMap = {
-    weak: 'bg-red-100 text-red-700 border-red-200',
-    beginner: 'bg-orange-100 text-orange-700 border-orange-200',
-    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    intermediate: 'bg-blue-100 text-blue-700 border-blue-200',
-    strong: 'bg-green-100 text-green-700 border-green-200',
-    advanced: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    weak: 'bg-red-50 text-red-600 border-red-100 shadow-red-100/50',
+    beginner: 'bg-orange-50 text-orange-600 border-orange-100 shadow-orange-100/50',
+    medium: 'bg-amber-50 text-amber-600 border-amber-100 shadow-amber-100/50',
+    intermediate: 'bg-blue-50 text-blue-600 border-blue-100 shadow-blue-100/50',
+    strong: 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-emerald-100/50',
+    advanced: 'bg-purple-50 text-purple-600 border-purple-100 shadow-purple-100/50',
   };
 
   const colors =
-    colorMap[(level || '').toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    colorMap[(level || '').toLowerCase()] || 'bg-gray-50 text-gray-600 border-gray-100';
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${colors}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-sm capitalize ${colors}`}
     >
+      <Sparkles className="w-3 h-3" />
       {level || 'N/A'}
     </span>
   );
@@ -68,14 +69,14 @@ function LevelBadge({ level }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 px-4 py-3">
+    <div className="flex items-center gap-1.5 px-4 py-3">
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="w-2 h-2 rounded-full bg-gray-400"
-          animate={{ y: [0, -6, 0] }}
+          className="w-2 h-2 rounded-full bg-indigo-400"
+          animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
           transition={{
-            duration: 0.6,
+            duration: 0.7,
             repeat: Infinity,
             delay: i * 0.15,
             ease: 'easeInOut',
@@ -101,10 +102,10 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
     >
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+        className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-sm ${
           isUser
-            ? 'bg-indigo-600 text-white'
-            : 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white'
+            ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-indigo-200'
+            : 'bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-purple-200'
         }`}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -113,16 +114,16 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
       {/* Bubble */}
       <div className={`max-w-[75%] ${isUser ? 'items-end' : 'items-start'}`}>
         <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+          className={`px-4 py-3 text-sm leading-relaxed ${
             isUser
-              ? 'bg-indigo-600 text-white rounded-tr-md'
-              : 'bg-white border border-gray-100 text-gray-800 rounded-tl-md shadow-sm'
+              ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-2xl rounded-tr-md shadow-md shadow-indigo-200/50'
+              : 'bg-white border border-gray-100/80 text-gray-700 rounded-2xl rounded-tl-md shadow-sm hover:shadow-md transition-shadow duration-300'
           }`}
         >
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
-            <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5">
+            <div className="prose-chat">
               <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
           )}
@@ -133,18 +134,18 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
           <button
             onClick={() => onReadAloud(message)}
             disabled={ttsLoading}
-            className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+            className={`mt-1.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
               isReading
-                ? 'text-red-500 hover:bg-red-50'
+                ? 'text-red-500 bg-red-50 hover:bg-red-100'
                 : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
             }`}
           >
             {ttsLoading && readingId === message.id ? (
               <Loader2 className="w-3 h-3 animate-spin" />
             ) : isReading ? (
-              <VolumeX className="w-3 h-3" />
+              <VolumeX className="w-3.5 h-3.5" />
             ) : (
-              <Volume2 className="w-3 h-3" />
+              <Volume2 className="w-3.5 h-3.5" />
             )}
             {isReading ? 'Stop' : 'Read Aloud'}
           </button>
@@ -485,27 +486,29 @@ export default function TutorPage() {
   // --------------- Render ---------------
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50/30">
       {/* Top bar */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-shrink-0 px-6 py-3 border-b border-gray-100 bg-white flex items-center justify-between gap-4"
+        className="flex-shrink-0 px-5 lg:px-6 py-3.5 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl flex items-center justify-between gap-4"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
-            <Bot className="w-5 h-5" />
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-purple-200/50">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base font-semibold text-gray-900 truncate">
+            <h1 className="text-base font-bold text-gray-900 truncate">
               {t('tutor.title', 'AI Tutor')}
             </h1>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-gray-400">{t('tutor.online', 'Online')}</span>
+              <span className="text-xs text-emerald-500 font-medium">{t('tutor.online', 'Online')}</span>
               {studentLevel && (
                 <>
-                  <span className="text-xs text-gray-300">|</span>
+                  <span className="text-gray-200">·</span>
                   <LevelBadge level={studentLevel} />
                 </>
               )}
@@ -518,15 +521,15 @@ export default function TutorPage() {
           <div className="relative">
             <button
               onClick={() => setTopicDropdownOpen(!topicDropdownOpen)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors max-w-[200px]"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm border border-gray-200/80 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all max-w-[200px] shadow-sm"
             >
-              <BookOpen className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">
+              <BookOpen className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+              <span className="truncate text-[13px]">
                 {selectedTopic
                   ? topicOptions.find((t) => t.id === selectedTopic)?.title || 'Topic'
                   : t('tutor.selectTopic', 'Select Topic')}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
+              <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${topicDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -536,7 +539,7 @@ export default function TutorPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -5, scale: 0.97 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-1 z-30 w-72 max-h-60 overflow-y-auto bg-white border border-gray-100 rounded-xl shadow-xl"
+                  className="absolute right-0 top-full mt-1.5 z-30 w-72 max-h-60 overflow-y-auto bg-white border border-gray-100 rounded-xl shadow-xl shadow-gray-200/50"
                 >
                   <button
                     onClick={() => {
@@ -575,7 +578,7 @@ export default function TutorPage() {
           {/* Clear chat */}
           <button
             onClick={clearChat}
-            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="p-2.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-transparent hover:border-red-100"
             title={t('tutor.clearChat', 'Clear chat')}
           >
             <Trash2 className="w-4 h-4" />
@@ -594,7 +597,11 @@ export default function TutorPage() {
       {/* Messages area */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-6 py-6 space-y-4 bg-gray-50/50"
+        className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-5"
+        style={{
+          backgroundImage: `radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+                            radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.03) 0%, transparent 50%)`,
+        }}
       >
         {messages.map((msg) => (
           <MessageBubble
@@ -607,14 +614,18 @@ export default function TutorPage() {
         ))}
 
         {isTyping && (
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-3"
+          >
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-sm shadow-purple-200">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-md shadow-sm">
+            <div className="bg-white border border-gray-100/80 rounded-2xl rounded-tl-md shadow-sm">
               <TypingIndicator />
             </div>
-          </div>
+          </motion.div>
         )}
 
         <div ref={messagesEndRef} />
@@ -624,52 +635,27 @@ export default function TutorPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-white"
+        className="flex-shrink-0 px-4 lg:px-6 py-4 border-t border-gray-100/80 bg-white/80 backdrop-blur-xl"
       >
-        {/* Recording indicator */}
-        <AnimatePresence>
-          {isRecording && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-3"
-            >
-              <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-50 border border-red-100">
-                <motion.div
-                  className="w-3 h-3 rounded-full bg-red-500"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                />
-                <span className="text-sm text-red-600 font-medium">
-                  {t('tutor.recording', 'Recording... Click mic to stop')}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {sttLoading && (
-          <div className="mb-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-100">
-            <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-            <span className="text-sm text-indigo-600">
-              {t('tutor.transcribing', 'Transcribing your speech...')}
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-end gap-2">
-          {/* Voice input button */}
+        <div className="flex items-end gap-2.5">
+          {/* Mic button */}
           <button
             onClick={toggleRecording}
-            disabled={sttLoading || isTyping}
-            className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
+            disabled={isTyping || sttLoading}
+            className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 shadow-sm ${
               isRecording
-                ? 'bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-200'
+                ? 'bg-red-500 text-white shadow-red-200 animate-pulse-soft hover:bg-red-600'
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title={isRecording ? 'Stop recording' : 'Voice input'}
           >
-            {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {sttLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
           </button>
 
           {/* Text input */}
@@ -681,7 +667,10 @@ export default function TutorPage() {
               placeholder={t('tutor.placeholder', 'Ask me anything...')}
               disabled={isTyping || isRecording || sttLoading}
               rows={1}
-              className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 pr-4 rounded-xl border border-gray-200/80 bg-gray-50/50 text-sm resize-none
+                focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white
+                disabled:bg-gray-100 disabled:cursor-not-allowed placeholder-gray-400
+                transition-all duration-200 shadow-sm"
               style={{ maxHeight: 120 }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
@@ -694,7 +683,10 @@ export default function TutorPage() {
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isTyping || isRecording || sttLoading}
-            className="flex-shrink-0 p-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-200"
+            className="flex-shrink-0 p-3 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white
+              hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200
+              disabled:opacity-40 disabled:cursor-not-allowed
+              shadow-lg shadow-indigo-200/50 active:scale-95"
           >
             {isTyping ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -704,7 +696,7 @@ export default function TutorPage() {
           </button>
         </div>
 
-        <p className="text-xs text-gray-400 mt-2 text-center">
+        <p className="text-[11px] text-gray-400 mt-2.5 text-center">
           {t(
             'tutor.disclaimer',
             'AI responses may not always be accurate. Verify important information.',

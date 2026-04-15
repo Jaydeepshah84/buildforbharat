@@ -6,12 +6,13 @@ import {
   Users, Copy, Link2, LogOut, Send, Mic, MicOff, Video, VideoOff,
   Monitor, MonitorOff, Bot, User, X, Loader2, Sparkles, PenTool,
   MessageSquare, Brain, CheckCircle2, XCircle, Eraser, StickyNote,
-  Play, Pause, FileText, Beaker, Plus, ChevronRight, Hash, Zap,
+  Play, Pause, FileText, Beaker, Plus, ChevronRight, Hash, Zap, BookOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import { io as ioConnect, Socket } from "socket.io-client";
 import AnimationPlayer from "@/components/animation/AnimationPlayer";
+import AdaptiveLesson from "@/components/course/AdaptiveLesson";
 import { useAuth } from "@/components/AuthProvider";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -20,12 +21,11 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000"
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  // Free TURN server for NAT traversal (needed for LAN/different networks)
+  // Free TURN servers
   { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:relay1.expressturn.com:3478", username: "efQKGMJJKFN5ZTADBU", credential: "N8WIBnKgPlFkXnAi" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -127,7 +127,7 @@ function SharedNotes({
   if (!visible) return null;
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="h-full flex flex-col bg-white overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50 shrink-0">
         <StickyNote className="w-4 h-4 text-amber-500" />
         <span className="text-sm font-semibold text-gray-700">Shared Notes</span>
@@ -162,7 +162,7 @@ function QuizTogether({
   const bothAnswered = myAnswer !== undefined && pAnswer !== undefined;
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="h-full flex flex-col bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 shrink-0">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-indigo-600" />
@@ -278,8 +278,8 @@ function VideoTile({ name, isSelf, stream, muted }: { name: string; isSelf?: boo
           </div>
         </div>
       )}
-      <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-lg font-medium">
-        {name}{isSelf ? " (You)" : ""}
+      <div className="absolute bottom-1 left-1 bg-black/60 backdrop-blur-sm text-white text-[8px] px-1.5 py-0.5 rounded font-medium truncate max-w-[90%]">
+        {name?.split(" ")[0]}{isSelf ? " (You)" : ""}
       </div>
       {isSelf && stream && (
         <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -292,180 +292,174 @@ function VideoTile({ name, isSelf, stream, muted }: { name: string; isSelf?: boo
    Learn Together — AI Lesson + Animation (synced)
    ═══════════════════════════════════════════════════════════ */
 function LearnTogether({
-  visible, lessonTopic, isPlaying, onLoadTopic, onTogglePlay, socketRef, roomCode, showAnimation, animTopic,
+  visible, onLoadTopic, socketRef, roomCode, showAnimation, animTopic,
 }: {
-  visible: boolean; lessonTopic: string; isPlaying: boolean;
-  onLoadTopic: (topic: string) => void; onTogglePlay: () => void;
+  visible: boolean;
+  onLoadTopic: (topic: string) => void;
   socketRef: React.MutableRefObject<Socket | null>; roomCode: string;
   showAnimation: boolean; animTopic: string;
 }) {
-  const [topicInput, setTopicInput] = useState("");
-  const [lessonContent, setLessonContent] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [contentReady, setContentReady] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const contentRef = useRef("");
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [selectedTopicForLearn, setSelectedTopicForLearn] = useState<any>(null);
+  const [learnMode, setLearnMode] = useState<"text" | "visual" | null>(null);
 
-  // Load lesson content when topic changes
+  // Fetch enrolled courses on mount
   useEffect(() => {
-    if (!lessonTopic) return;
-    let cancelled = false;
-    setLoading(true);
-    setContentReady(false);
-    setLessonContent("");
-    contentRef.current = "";
-    window.speechSynthesis?.cancel();
-    setIsSpeaking(false);
-
     const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
-    fetch(`${API}/voice/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        message: `Explain "${lessonTopic}" clearly for students. Use examples. Write 4-5 short paragraphs.`,
-        topic: lessonTopic, history: [],
-      }),
-    }).then(async resp => {
-      const reader = resp.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder();
-      let full = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        for (const line of decoder.decode(value, { stream: true }).split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          try { const d = JSON.parse(line.slice(6)); if (d.text) { full += d.text; if (!cancelled) setLessonContent(full); } } catch {}
-        }
-      }
-      if (!cancelled) { contentRef.current = full; setContentReady(true); }
-    }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
+    fetch(`${API}/courses/enrollments`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(async (res) => {
+        const enrollments = res.enrollments || [];
+        // Fetch full course data for each enrollment
+        const coursesWithData = await Promise.all(
+          enrollments.slice(0, 10).map(async (e: any) => {
+            try {
+              const r = await fetch(`${API}/courses/${e.course_id}`, { headers: { Authorization: `Bearer ${token}` } });
+              const d = await r.json();
+              return d.course || null;
+            } catch { return null; }
+          })
+        );
+        setEnrolledCourses(coursesWithData.filter(Boolean));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCourses(false));
+  }, []);
 
-    return () => { cancelled = true; window.speechSynthesis?.cancel(); };
-  }, [lessonTopic]);
-
-  // TTS — only speaks ONCE when content is fully loaded (not during streaming)
+  // Listen for partner's topic selection
   useEffect(() => {
-    if (!contentReady || !isPlaying) return;
-    const text = contentRef.current;
-    if (!text) return;
+    const socket = socketRef.current;
+    if (!socket) return;
 
-    const clean = text.replace(/[#*_`\[\]()>|]/g, "").replace(/\n+/g, ". ").trim().slice(0, 1500);
-    if (!clean) return;
-
-    // Try TTS service first (better quality)
-    const speakWithService = async () => {
-      try {
-        const resp = await fetch("http://localhost:5001/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: clean, language: "en", speed: 1.0 }),
-          signal: AbortSignal.timeout(15000),
-        });
-        if (resp.ok) {
-          const blob = await resp.blob();
-          if (blob.size > 200) {
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            setIsSpeaking(true);
-            audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); };
-            audio.onerror = () => { setIsSpeaking(false); URL.revokeObjectURL(url); };
-            await audio.play();
-            return;
-          }
-        }
-      } catch {}
-
-      // Fallback: browser SpeechSynthesis
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(clean);
-      utt.rate = 0.95; utt.lang = "en-US";
-      const voices = window.speechSynthesis.getVoices();
-      const v = voices.find((x: any) => x.name.includes("Google") && x.lang.startsWith("en")) || voices.find((x: any) => x.lang.startsWith("en"));
-      if (v) utt.voice = v;
-      setIsSpeaking(true);
-      utt.onend = () => setIsSpeaking(false);
-      utt.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utt);
+    const onLessonLoad = ({ topic, type }: any) => {
+      setSelectedTopicForLearn({ title: topic });
+      setLearnMode(type === "animation" ? "visual" : "text");
     };
 
-    speakWithService();
-    return () => { window.speechSynthesis?.cancel(); setIsSpeaking(false); };
-  }, [contentReady, isPlaying]);
+    socket.on("lesson:load", onLessonLoad);
+    return () => { socket.off("lesson:load", onLessonLoad); };
+  }, [socketRef.current]);
 
-  const handleLoad = () => {
-    if (!topicInput.trim()) return;
-    onLoadTopic(topicInput.trim());
-    setTopicInput("");
+  const startTopic = (topic: any, mode: "text" | "visual") => {
+    const topicTitle = topic.title || topic.name || "Topic";
+    setSelectedTopicForLearn(topic);
+    setLearnMode(mode);
+    // Sync with partner via socket
+    socketRef.current?.emit("lesson:load", { code: roomCode, topic: topicTitle, type: mode === "visual" ? "animation" : "text" });
   };
 
   if (!visible) return null;
 
+  // If a topic is selected for learning — show the content
+  if (selectedTopicForLearn && learnMode) {
+    const topicTitle = selectedTopicForLearn.title || selectedTopicForLearn.name;
+    return (
+      <div className="h-full flex flex-col bg-white overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-1 bg-gray-50/80 shrink-0">
+          <button onClick={() => { setSelectedTopicForLearn(null); setLearnMode(null); }}
+            className="text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-medium">
+            <ChevronRight className="w-3 h-3 rotate-180" /> Courses
+          </button>
+          <span className="text-[11px] text-gray-400 truncate max-w-[50%]">{topicTitle}</span>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {learnMode === "visual" ? (
+            <AnimationPlayer topic={topicTitle} classLevel="10" language={typeof window !== "undefined" ? localStorage.getItem("app_language") || "en" : "en"} />
+          ) : (
+            <AdaptiveLesson topic={selectedTopicForLearn} language={typeof window !== "undefined" ? localStorage.getItem("app_language") || "en" : "en"} onNext={null} onPrev={null} lowBandwidth={false} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Show animation if loaded via sync
+  if (showAnimation && animTopic) {
+    return (
+      <div className="h-full flex flex-col bg-white overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50 shrink-0">
+          <button onClick={() => { setSelectedTopicForLearn(null); setLearnMode(null); }}
+            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+            <ChevronRight className="w-3 h-3 rotate-180" /> Back to courses
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <AnimationPlayer topic={animTopic} classLevel="10" language="en" />
+        </div>
+      </div>
+    );
+  }
+
+  // Course browser — show enrolled courses
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Topic input */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 bg-gray-50 shrink-0">
-        <Beaker className="w-4 h-4 text-indigo-500" />
-        <input type="text" value={topicInput} onChange={e => setTopicInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleLoad()}
-          placeholder="Enter topic to learn together..."
-          className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <button onClick={handleLoad} disabled={!topicInput.trim()}
-          className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-indigo-700 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5" /> Learn
-        </button>
+    <div className="h-full flex flex-col bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 shrink-0">
+        <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
+          <BookOpen className="w-4 h-4 text-indigo-500" /> {selectedCourse ? selectedCourse.title : "Your Courses"}
+        </h3>
+        {selectedCourse && (
+          <button onClick={() => setSelectedCourse(null)} className="text-xs text-indigo-600 hover:text-indigo-800 mt-1">
+            ← Back to all courses
+          </button>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {!lessonTopic && !showAnimation && (
-          <div className="h-full flex items-center justify-center text-center p-6">
-            <div>
-              <Brain className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-700 mb-2">Learn Together</h3>
-              <p className="text-sm text-gray-400 max-w-sm">Enter a topic above and both of you will see the AI explanation and animation in sync.</p>
-            </div>
-          </div>
+      <div className="flex-1 overflow-y-auto p-3">
+        {loadingCourses && (
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-indigo-400" /></div>
         )}
 
-        {lessonTopic && !showAnimation && (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-500" /> {lessonTopic}
-              </h3>
-              <button onClick={onTogglePlay}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold ${isPlaying ? "bg-amber-50 text-amber-600" : "bg-indigo-50 text-indigo-600"}`}>
-                {isPlaying ? <><Pause className="w-3 h-3" /> Pause Voice</> : <><Play className="w-3 h-3" /> Play Voice</>}
+        {!loadingCourses && !selectedCourse && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {enrolledCourses.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <BookOpen className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No courses enrolled yet.</p>
+                <p className="text-xs text-gray-400 mt-1">Generate a course first, then come back here to learn together!</p>
+              </div>
+            )}
+            {enrolledCourses.map((course, i) => (
+              <button key={course.id || i} onClick={() => setSelectedCourse(course)}
+                className="text-left p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all bg-white group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm mb-3 group-hover:scale-110 transition-transform">
+                  {(course.title || "C").charAt(0)}
+                </div>
+                <h4 className="font-semibold text-gray-900 text-sm truncate">{course.title}</h4>
+                <p className="text-xs text-gray-400 mt-0.5">{course.subject || "Course"} · {course.modules?.length || 0} modules</p>
               </button>
-            </div>
-            {loading ? (
-              <div className="flex items-center gap-3 py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                <span className="text-sm text-gray-500">AI is preparing the lesson...</span>
-              </div>
-            ) : (
-              <div className="prose prose-sm max-w-none text-gray-700">
-                <ReactMarkdown components={{
-                  p: ({ children }: any) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
-                  strong: ({ children }: any) => <strong className="text-indigo-700 font-semibold">{children}</strong>,
-                  li: ({ children }: any) => <li className="mb-1">{children}</li>,
-                }}>{lessonContent}</ReactMarkdown>
-              </div>
-            )}
-            {isSpeaking && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-indigo-500">
-                <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className="w-1 bg-indigo-400 rounded-full animate-pulse" style={{ height: 8 + Math.random() * 10, animationDelay: `${i * 100}ms` }} />)}</div>
-                AI is speaking...
-              </div>
-            )}
+            ))}
           </div>
         )}
 
-        {showAnimation && animTopic && (
-          <div className="p-2">
-            <AnimationPlayer topic={animTopic} classLevel="10" language="en" />
+        {!loadingCourses && selectedCourse && (
+          <div className="space-y-3">
+            {(selectedCourse.modules || []).map((mod: any, mi: number) => (
+              <div key={mod.id || mi} className="border border-gray-100 rounded-lg overflow-hidden">
+                <div className="px-3 py-2 bg-gray-50 font-semibold text-xs text-gray-700">{mod.title}</div>
+                {(mod.lessons || []).map((les: any, li: number) => (
+                  <div key={les.id || li}>
+                    <div className="px-3 py-1.5 text-xs text-gray-500 font-medium border-t border-gray-50">{les.title}</div>
+                    {(les.topics || []).map((topic: any, ti: number) => (
+                      <div key={topic.id || ti} className="flex items-center justify-between px-3 py-2 hover:bg-indigo-50 transition-colors border-t border-gray-50">
+                        <span className="text-sm text-gray-800 flex-1 truncate">{topic.title}</span>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button onClick={() => startTopic(topic, "text")}
+                            className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-semibold hover:bg-indigo-100">
+                            Text + Voice
+                          </button>
+                          <button onClick={() => startTopic(topic, "visual")}
+                            className="px-2.5 py-1 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-semibold hover:bg-purple-100">
+                            Visual
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -498,6 +492,8 @@ export default function ClassroomPage() {
   const [camOn, setCamOn] = useState(false);
   const [screenOn, setScreenOn] = useState(false);
   const [peerStatus, setPeerStatus] = useState<string>("");
+  const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
+  const remoteStreamRef = useRef<MediaStream>(new MediaStream());
 
   // ── UI state ──
   const [tab, setTab] = useState<"learn" | "whiteboard" | "notes" | "quiz">("learn");
@@ -523,11 +519,19 @@ export default function ClassroomPage() {
 
   // ── AI state ──
   const [aiLoading, setAiLoading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const unreadRef = useRef(0);
+  const [unread, setUnread] = useState(0);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Student";
   const guestIdRef = useRef(`guest-${Date.now()}`);
   const userId = user?.id || guestIdRef.current;
   const partner = members.find(m => m.userId !== userId);
+
+  // Track unread messages when chat is closed
+  useEffect(() => {
+    if (!chatOpen && messages.length > 0) { unreadRef.current++; setUnread(unreadRef.current); }
+  }, [messages.length]);
 
   // Keep roomCode ref in sync for use in closures
   useEffect(() => { roomCodeRef.current = roomCode; }, [roomCode]);
@@ -559,27 +563,38 @@ export default function ClassroomPage() {
       // Initiate WebRTC as the first member (offerer)
       setTimeout(async () => {
         if (pcRef.current) pcRef.current.close();
+        iceCandidateQueue.current = [];
+        remoteStreamRef.current = new MediaStream();
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
         pcRef.current = pc;
 
         pc.onicecandidate = (e) => {
           if (e.candidate) socket.emit("webrtc:ice", { code: roomCodeRef.current, candidate: e.candidate });
         };
-        const remoteRef = { stream: new MediaStream() };
         pc.ontrack = (e) => {
-          console.log("[WebRTC offerer] Got remote track:", e.track.kind);
-          if (!remoteRef.stream.getTracks().find(t => t.id === e.track.id)) {
-            remoteRef.stream.addTrack(e.track);
+          console.log("[WebRTC offerer] Got remote track:", e.track.kind, e.track.readyState);
+          e.streams[0]?.getTracks().forEach(t => {
+            if (!remoteStreamRef.current.getTracks().find(rt => rt.id === t.id)) {
+              remoteStreamRef.current.addTrack(t);
+            }
+          });
+          // Fallback if no streams array
+          if (!e.streams[0]) {
+            if (!remoteStreamRef.current.getTracks().find(t => t.id === e.track.id)) {
+              remoteStreamRef.current.addTrack(e.track);
+            }
           }
-          setRemoteStream(new MediaStream(remoteRef.stream.getTracks()));
+          setRemoteStream(new MediaStream(remoteStreamRef.current.getTracks()));
         };
         pc.oniceconnectionstatechange = () => {
           const state = pc.iceConnectionState;
-          console.log("[WebRTC] ICE state:", state);
+          console.log("[WebRTC offerer] ICE state:", state);
           setPeerStatus(state);
           if (state === "failed") { pc.restartIce(); toast.error("Connection failed. Retrying..."); }
-          if (state === "connected") toast.success("Video connected!");
+          if (state === "connected" || state === "completed") toast.success("Video connected!");
         };
+        // Disable auto-renegotiation to prevent m-line order mismatch
+        // Renegotiation is handled manually when tracks are added
 
         // Auto-get camera+mic — try video+audio, then audio-only, then proceed without
         let gotMedia = false;
@@ -661,42 +676,63 @@ export default function ClassroomPage() {
     // WebRTC signaling
     socket.on("webrtc:offer", async ({ offer }) => {
       if (pcRef.current) pcRef.current.close();
+      iceCandidateQueue.current = [];
+      remoteStreamRef.current = new MediaStream();
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       pcRef.current = pc;
 
       pc.onicecandidate = (e) => {
         if (e.candidate) socket.emit("webrtc:ice", { code: roomCodeRef.current, candidate: e.candidate });
       };
-      const remoteRef2 = { stream: new MediaStream() };
       pc.ontrack = (e) => {
-        console.log("[WebRTC answerer] Got remote track:", e.track.kind);
-        if (!remoteRef2.stream.getTracks().find(t => t.id === e.track.id)) {
-          remoteRef2.stream.addTrack(e.track);
+        console.log("[WebRTC answerer] Got remote track:", e.track.kind, e.track.readyState);
+        e.streams[0]?.getTracks().forEach(t => {
+          if (!remoteStreamRef.current.getTracks().find(rt => rt.id === t.id)) {
+            remoteStreamRef.current.addTrack(t);
+          }
+        });
+        if (!e.streams[0]) {
+          if (!remoteStreamRef.current.getTracks().find(t => t.id === e.track.id)) {
+            remoteStreamRef.current.addTrack(e.track);
+          }
         }
-        setRemoteStream(new MediaStream(remoteRef2.stream.getTracks()));
+        setRemoteStream(new MediaStream(remoteStreamRef.current.getTracks()));
       };
       pc.oniceconnectionstatechange = () => {
-        console.log("[WebRTC] ICE state:", pc.iceConnectionState);
-        if (pc.iceConnectionState === "failed") pc.restartIce();
+        const state = pc.iceConnectionState;
+        console.log("[WebRTC answerer] ICE state:", state);
+        setPeerStatus(state);
+        if (state === "failed") { pc.restartIce(); toast.error("Connection failed. Retrying..."); }
+        if (state === "connected" || state === "completed") toast.success("Video connected!");
       };
-
-      // Auto-get camera+mic — try video+audio, then audio-only, then proceed without
-      let gotMedia = false;
-      for (const constraints of [{ video: true, audio: true }, { video: true }, { audio: true }]) {
-        if (gotMedia) break;
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          stream.getTracks().forEach(track => pc.addTrack(track, stream));
-          setLocalStream(stream);
-          setCamOn(stream.getVideoTracks().length > 0);
-          setMicOn(stream.getAudioTracks().length > 0);
-          gotMedia = true;
-          console.log("[WebRTC] Answerer media:", stream.getTracks().map(t => t.kind));
-        } catch (e) { console.warn("[WebRTC] getUserMedia failed for", constraints, e); }
-      }
+      // Disable auto-renegotiation to prevent m-line order mismatch
 
       try {
+        // CRITICAL: Set remote description FIRST so ICE candidates can be applied
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        console.log("[WebRTC] Remote description set on answerer");
+
+        // Flush any ICE candidates that arrived before remote description was set
+        for (const candidate of iceCandidateQueue.current) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) { console.warn("Queued ICE error:", e); }
+        }
+        iceCandidateQueue.current = [];
+
+        // Now get camera+mic — try video+audio, then audio-only, then proceed without
+        let gotMedia = false;
+        for (const constraints of [{ video: true, audio: true }, { video: true }, { audio: true }]) {
+          if (gotMedia) break;
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            setLocalStream(stream);
+            setCamOn(stream.getVideoTracks().length > 0);
+            setMicOn(stream.getAudioTracks().length > 0);
+            gotMedia = true;
+            console.log("[WebRTC] Answerer media:", stream.getTracks().map(t => t.kind));
+          } catch (e) { console.warn("[WebRTC] getUserMedia failed for", constraints, e); }
+        }
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit("webrtc:answer", { code: roomCodeRef.current, answer });
@@ -705,10 +741,26 @@ export default function ClassroomPage() {
     });
 
     socket.on("webrtc:answer", async ({ answer }) => {
-      try { await pcRef.current?.setRemoteDescription(new RTCSessionDescription(answer)); } catch (e) { console.error("Set answer error:", e); }
+      try {
+        await pcRef.current?.setRemoteDescription(new RTCSessionDescription(answer));
+        console.log("[WebRTC] Remote description set on offerer");
+        // Flush any queued ICE candidates
+        for (const c of iceCandidateQueue.current) {
+          try { await pcRef.current?.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { console.warn("Queued ICE error:", e); }
+        }
+        iceCandidateQueue.current = [];
+      } catch (e) { console.error("Set answer error:", e); }
     });
     socket.on("webrtc:ice", async ({ candidate }) => {
-      try { if (pcRef.current) await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) { console.error("ICE error:", e); }
+      const pc = pcRef.current;
+      if (!pc) return;
+      // Queue ICE candidates if remote description not yet set
+      if (!pc.remoteDescription || !pc.remoteDescription.type) {
+        console.log("[WebRTC] Queuing ICE candidate (no remote desc yet)");
+        iceCandidateQueue.current.push(candidate);
+        return;
+      }
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) { console.error("ICE error:", e); }
     });
     socket.on("webrtc:renegotiate", async ({ offer }) => {
       const pc = pcRef.current;
@@ -727,81 +779,14 @@ export default function ClassroomPage() {
     return () => { socket.disconnect(); cleanupWebRTC(); };
   }, []);
 
-  // ── WebRTC: Create peer connection ──
-  const createPC = (socket: Socket) => {
-    if (pcRef.current) { pcRef.current.close(); }
-
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    pcRef.current = pc;
-
-    pc.onicecandidate = (e) => {
-      if (e.candidate) socket.emit("webrtc:ice", { code: roomCodeRef.current, candidate: e.candidate });
-    };
-
-    pc.ontrack = (e) => {
-      console.log("[WebRTC createPC] Got remote track:", e.track.kind);
-      setRemoteStream(prev => {
-        const s = prev || new MediaStream();
-        if (!s.getTracks().find(t => t.id === e.track.id)) s.addTrack(e.track);
-        return new MediaStream(s.getTracks());
-      });
-    };
-
-    // Auto-renegotiate when tracks change (camera/mic toggled after connection)
-    pc.onnegotiationneeded = async () => {
-      try {
-        console.log("Renegotiation needed");
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit("webrtc:renegotiate", { code: roomCodeRef.current, offer });
-      } catch (e) { console.error("Renegotiation error:", e); }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      console.log("ICE state:", pc.iceConnectionState);
-      if (pc.iceConnectionState === "failed") {
-        console.log("ICE failed, restarting...");
-        pc.restartIce();
-      }
-    };
-
-    return pc;
-  };
-
-  // ── WebRTC: Initiate (offerer) ──
-  const initiateWebRTC = async (socket: Socket) => {
-    const pc = createPC(socket);
-    // Add existing local tracks if any
-    if (localStream) {
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    }
-    try {
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
-      await pc.setLocalDescription(offer);
-      socket.emit("webrtc:offer", { code: roomCodeRef.current, offer });
-    } catch (e) { console.error("Create offer error:", e); }
-  };
-
-  // ── WebRTC: Handle offer (answerer) ──
-  const handleOffer = async (socket: Socket, offer: RTCSessionDescriptionInit) => {
-    const pc = createPC(socket);
-    // Add existing local tracks if any
-    if (localStream) {
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    }
-    try {
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.emit("webrtc:answer", { code: roomCodeRef.current, answer });
-    } catch (e) { console.error("Handle offer error:", e); }
-  };
-
   // ── Cleanup WebRTC ──
   const cleanupWebRTC = () => {
     pcRef.current?.close();
     pcRef.current = null;
+    iceCandidateQueue.current = [];
+    remoteStreamRef.current = new MediaStream();
     setRemoteStream(null);
+    setPeerStatus("");
   };
 
   // ── Room actions ──
@@ -1091,265 +1076,177 @@ export default function ClassroomPage() {
     );
   }
 
+  /* chatOpen/unread moved to top of component */
+
   /* ═══════════════════════════════════════════════════════
-     ACTIVE ROOM VIEW
+     ACTIVE ROOM VIEW — Full-width with floating video + chat modal
      ═══════════════════════════════════════════════════════ */
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
-      {/* ── Top Bar ──────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-200 shrink-0">
+    <div className="h-[calc(100vh-64px)] flex flex-col relative">
+      {/* ── Top Bar (compact) ────────────────────────────── */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg px-3 py-1.5">
             <Hash className="w-3.5 h-3.5 text-gray-400" />
             <span className="font-mono font-bold text-sm tracking-wider text-gray-800">{roomCode}</span>
           </div>
-          <button onClick={copyCode} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400" title="Copy code">
-            <Copy className="w-4 h-4" />
-          </button>
-          <button onClick={copyLink} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400" title="Copy invite link">
-            <Link2 className="w-4 h-4" />
-          </button>
+          <button onClick={copyCode} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400" title="Copy code"><Copy className="w-4 h-4" /></button>
+          <button onClick={copyLink} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400" title="Copy invite link"><Link2 className="w-4 h-4" /></button>
           <div className="w-px h-5 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              {members.map((m, i) => (
-                <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">
-                  {m.userName.charAt(0).toUpperCase()}
-                </div>
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">
-              {members.length}/2 {!partner && <span className="text-amber-500 animate-pulse">Waiting for partner...</span>}
-            </span>
-          </div>
-        </div>
-        <button onClick={leaveRoom}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors">
-          <LogOut className="w-3.5 h-3.5" /> Leave
-        </button>
-      </div>
-
-      {/* ── Main Content ─────────────────────────────────── */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Video + Controls */}
-        <div className="w-64 lg:w-72 bg-gray-50 border-r border-gray-200 flex flex-col shrink-0">
-          <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-            {/* Your video */}
-            <VideoTile name={userName} isSelf stream={localStream} muted />
-            {/* Partner video */}
-            {partner ? (
-              <div className="relative">
-                <VideoTile name={partner.userName} stream={remoteStream} />
-                {peerStatus && peerStatus !== "connected" && peerStatus !== "completed" && (
-                  <div className="absolute top-1 right-1 bg-black/70 text-[9px] text-yellow-400 px-1.5 py-0.5 rounded">
-                    {peerStatus === "checking" ? "Connecting..." : peerStatus === "failed" ? "Failed" : peerStatus}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="aspect-video bg-gray-200 rounded-xl flex items-center justify-center">
-                <div className="text-center">
-                  <Users className="w-8 h-8 text-gray-300 mx-auto mb-1" />
-                  <p className="text-[10px] text-gray-400">Waiting for partner</p>
-                </div>
-              </div>
-            )}
-            {/* Screen share preview */}
-            {screenOn && screenStream && (
-              <div className="rounded-xl overflow-hidden border-2 border-blue-400">
-                <VideoTile name="Your Screen" stream={screenStream} muted />
-              </div>
-            )}
-          </div>
-
-          {/* Media Controls */}
-          <div className="flex items-center justify-center gap-2 px-3 py-3 border-t border-gray-200 bg-white shrink-0">
-            <button onClick={toggleMic} title={micOn ? "Mute" : "Unmute"}
-              className={`p-2.5 rounded-xl transition-colors ${micOn ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-              {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-            </button>
-            <button onClick={toggleCam} title={camOn ? "Camera off" : "Camera on"}
-              className={`p-2.5 rounded-xl transition-colors ${camOn ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-              {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-            </button>
-            <button onClick={toggleScreen} title={screenOn ? "Stop sharing" : "Share screen"}
-              className={`p-2.5 rounded-xl transition-colors ${screenOn ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-              {screenOn ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Center: Tabbed Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 bg-white shrink-0">
-            {[
-              { key: "learn" as const, label: "Learn Together", icon: Brain },
-              { key: "whiteboard" as const, label: "Whiteboard", icon: PenTool },
-              { key: "notes" as const, label: "Notes", icon: StickyNote },
-              { key: "quiz" as const, label: "Quiz", icon: Sparkles },
-            ].map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => setTab(key)}
-                className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold transition-colors ${
-                  tab === key ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-gray-400 hover:text-gray-600"
-                }`}>
-                <Icon className="w-3.5 h-3.5" /> {label}
-                {key === "quiz" && quizQuestions.length > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center">{quizQuestions.length}</span>
-                )}
-              </button>
+          <div className="flex -space-x-2">
+            {members.map((m, i) => (
+              <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">{m.userName.charAt(0).toUpperCase()}</div>
             ))}
           </div>
-
-          {/* Tab Content */}
-          <div className="flex-1 overflow-hidden p-3">
-            <LearnTogether
-              visible={tab === "learn"}
-              lessonTopic={lessonTopic}
-              isPlaying={lessonPlaying}
-              onLoadTopic={loadLessonTopic}
-              onTogglePlay={toggleLessonPlay}
-              socketRef={socketRef}
-              roomCode={roomCode}
-              showAnimation={showAnimation}
-              animTopic={animTopic}
-            />
-            <SharedWhiteboard visible={tab === "whiteboard"} socketRef={socketRef} roomCode={roomCode} />
-            <SharedNotes visible={tab === "notes"} notes={notes} setNotes={setNotes} socketRef={socketRef} roomCode={roomCode} />
-
-            {tab === "quiz" && quizQuestions.length === 0 && !quizLoading && (
-              <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200">
-                <div className="text-center">
-                  <Sparkles className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                  <h3 className="font-bold text-gray-700 mb-1">Quiz Together</h3>
-                  <p className="text-sm text-gray-400 mb-4">Start a quiz and compete with your partner!</p>
-                  <button onClick={startQuiz}
-                    className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition-all">
-                    Generate Quiz
-                  </button>
-                </div>
-              </div>
-            )}
-            {tab === "quiz" && quizLoading && (
-              <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200">
-                <div className="text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-indigo-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">Generating quiz questions...</p>
-                </div>
-              </div>
-            )}
-            <QuizTogether
-              visible={tab === "quiz" && quizQuestions.length > 0}
-              questions={quizQuestions}
-              currentQ={quizCurrentQ}
-              setCurrentQ={(n) => { setQuizCurrentQ(n); socketRef.current?.emit("quiz:next", { code: roomCode, questionIndex: n }); }}
-              answers={quizAnswers}
-              onAnswer={handleQuizAnswer}
-              partnerAnswers={quizPartnerAnswers}
-              userName={userName}
-              partnerName={partner?.userName || "Partner"}
-            />
-          </div>
+          <span className="text-xs text-gray-500">{members.length}/2 {!partner && <span className="text-amber-500 animate-pulse">Waiting...</span>}</span>
         </div>
-
-        {/* Right: Chat Panel */}
-        <div className="w-80 border-l border-gray-200 flex flex-col bg-white shrink-0">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 shrink-0">
-            <MessageSquare className="w-4 h-4 text-indigo-600" />
-            <span className="font-bold text-sm text-gray-900">Chat</span>
-            <span className="text-[10px] text-gray-400 ml-auto">{messages.length} messages</span>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-            {messages.length === 0 && (
-              <div className="text-center py-8 text-gray-300">
-                <MessageSquare className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-xs">Chat with your study partner</p>
-              </div>
-            )}
-            {messages.map((m, i) => {
-              const isMe = m.userName === userName;
-              const isAI = m.isAI || m.userName === "AI Teacher";
-              const isSys = m.userName === "System";
-
-              if (isSys) return (
-                <div key={i} className="text-center text-[10px] text-gray-400 py-1">{m.message}</div>
-              );
-
-              return (
-                <div key={i} className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold ${
-                    isAI ? "bg-gradient-to-br from-indigo-500 to-purple-500 text-white" : isMe ? "bg-indigo-500 text-white" : "bg-emerald-500 text-white"
-                  }`}>
-                    {isAI ? <Bot className="w-3 h-3" /> : m.userName?.charAt(0)?.toUpperCase()}
-                  </div>
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    isMe ? "bg-indigo-600 text-white rounded-tr-sm" :
-                    isAI ? "bg-indigo-50 text-gray-800 rounded-tl-sm" :
-                    "bg-gray-100 text-gray-800 rounded-tl-sm"
-                  }`}>
-                    {!isMe && <p className="text-[10px] font-semibold mb-0.5 opacity-60">{m.userName}</p>}
-                    {isAI ? (
-                      <ReactMarkdown components={{
-                        p: ({ children }: any) => <p className="mb-1 last:mb-0 text-[13px] leading-relaxed">{children}</p>,
-                        strong: ({ children }: any) => <strong className="text-indigo-700 font-semibold">{children}</strong>,
-                      }}>{m.message}</ReactMarkdown>
-                    ) : (
-                      <span className="text-[13px]">{m.message}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {aiLoading && (
-              <div className="flex gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                  <Bot className="w-3 h-3 text-white" />
-                </div>
-                <div className="bg-indigo-50 rounded-2xl px-3 py-2 rounded-tl-sm">
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Chat Input + AI Buttons */}
-          <div className="border-t border-gray-100 shrink-0">
-            {/* AI Action buttons */}
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-gray-50 overflow-x-auto">
-              <button onClick={askAI} disabled={!chatInput.trim() || aiLoading}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-semibold hover:bg-indigo-100 disabled:opacity-40 shrink-0">
-                <Bot className="w-3 h-3" /> Ask AI
-              </button>
-              <button onClick={genVisual} disabled={aiLoading}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-semibold hover:bg-purple-100 disabled:opacity-40 shrink-0">
-                <Beaker className="w-3 h-3" /> Visual
-              </button>
-              <button onClick={genNotes} disabled={aiLoading}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-semibold hover:bg-amber-100 disabled:opacity-40 shrink-0">
-                <FileText className="w-3 h-3" /> Notes
-              </button>
-              <button onClick={startQuiz} disabled={quizLoading}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-semibold hover:bg-emerald-100 disabled:opacity-40 shrink-0">
-                <Sparkles className="w-3 h-3" /> Quiz
-              </button>
-            </div>
-
-            {/* Input */}
-            <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="flex gap-2 p-3">
-              <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <button type="submit" disabled={!chatInput.trim()}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-xl disabled:opacity-50 hover:bg-indigo-700 transition-colors">
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Chat toggle */}
+          <button onClick={() => { setChatOpen(!chatOpen); unreadRef.current = 0; setUnread(0); }}
+            className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="Chat">
+            <MessageSquare className="w-4 h-4" />
+            {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{unread}</span>}
+          </button>
+          {/* Media controls in top bar */}
+          <button onClick={toggleMic} className={`p-2 rounded-lg ${micOn ? "bg-indigo-100 text-indigo-600" : "text-gray-400 hover:bg-gray-100"}`}>
+            {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+          </button>
+          <button onClick={toggleCam} className={`p-2 rounded-lg ${camOn ? "bg-indigo-100 text-indigo-600" : "text-gray-400 hover:bg-gray-100"}`}>
+            {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+          </button>
+          <button onClick={toggleScreen} className={`p-2 rounded-lg ${screenOn ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:bg-gray-100"}`}>
+            {screenOn ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+          </button>
+          <button onClick={leaveRoom} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">
+            <LogOut className="w-3.5 h-3.5" /> Leave
+          </button>
         </div>
       </div>
+
+      {/* ── Full-width Main Content ──────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 bg-white shrink-0">
+          {[
+            { key: "learn" as const, label: "Learn Together", icon: Brain },
+            { key: "whiteboard" as const, label: "Whiteboard", icon: PenTool },
+            { key: "notes" as const, label: "Notes", icon: StickyNote },
+            { key: "quiz" as const, label: "Quiz", icon: Sparkles },
+          ].map(({ key, label, icon: Icon }) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors ${
+                tab === key ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-gray-400 hover:text-gray-600"
+              }`}>
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+          {/* AI actions removed */}
+        </div>
+
+        {/* Tab Content — full width, no padding */}
+        <div className="flex-1 overflow-hidden">
+          <LearnTogether visible={tab === "learn"}
+            onLoadTopic={loadLessonTopic}
+            socketRef={socketRef} roomCode={roomCode} showAnimation={showAnimation} animTopic={animTopic} />
+          <SharedWhiteboard visible={tab === "whiteboard"} socketRef={socketRef} roomCode={roomCode} />
+          <SharedNotes visible={tab === "notes"} notes={notes} setNotes={setNotes} socketRef={socketRef} roomCode={roomCode} />
+
+          {tab === "quiz" && quizQuestions.length === 0 && !quizLoading && (
+            <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200">
+              <div className="text-center">
+                <Sparkles className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                <h3 className="font-bold text-gray-700 mb-1">Quiz Together</h3>
+                <p className="text-sm text-gray-400 mb-4">Start a quiz and compete with your partner!</p>
+                <button onClick={startQuiz} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg">Generate Quiz</button>
+              </div>
+            </div>
+          )}
+          {tab === "quiz" && quizLoading && (
+            <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+            </div>
+          )}
+          <QuizTogether visible={tab === "quiz" && quizQuestions.length > 0} questions={quizQuestions}
+            currentQ={quizCurrentQ} setCurrentQ={(n) => { setQuizCurrentQ(n); socketRef.current?.emit("quiz:next", { code: roomCode, questionIndex: n }); }}
+            answers={quizAnswers} onAnswer={handleQuizAnswer} partnerAnswers={quizPartnerAnswers}
+            userName={userName} partnerName={partner?.userName || "Partner"} />
+        </div>
+      </div>
+
+      {/* ── Floating Video Tiles (PIP style, draggable area) ── */}
+      <div className="absolute bottom-3 left-3 flex gap-2 z-20">
+        {/* Your video — small PIP */}
+        <div className="w-28 rounded-lg overflow-hidden shadow-lg border border-white/30">
+          <VideoTile name={userName} isSelf stream={localStream} muted />
+        </div>
+        {/* Partner — show avatar if no video */}
+        {partner && (
+          <div className="w-28 rounded-lg overflow-hidden shadow-lg border border-white/30 relative">
+            {remoteStream && remoteStream.getVideoTracks().length > 0 ? (
+              <VideoTile name={partner.userName} stream={remoteStream} />
+            ) : (
+              <div className="aspect-video bg-gray-800 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm mx-auto">
+                    {partner.userName.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="text-[8px] text-gray-400 mt-1">{partner.userName}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Chat Modal (floating) ───────────────────────── */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            className="absolute top-12 right-4 bottom-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-30 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-indigo-600" />
+                <span className="font-bold text-sm text-gray-900">Chat</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"><X className="w-4 h-4" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+              {messages.length === 0 && (
+                <div className="text-center py-8 text-gray-300">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-xs">Chat with your study partner</p>
+                </div>
+              )}
+              {messages.map((m, i) => {
+                const isMe = m.userName === userName;
+                const isAI = m.isAI || m.userName === "AI Teacher";
+                const isSys = m.userName === "System";
+                if (isSys) return <div key={i} className="text-center text-[10px] text-gray-400 py-1">{m.message}</div>;
+                return (
+                  <div key={i} className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
+                    <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold ${isAI ? "bg-gradient-to-br from-indigo-500 to-purple-500 text-white" : isMe ? "bg-indigo-500 text-white" : "bg-emerald-500 text-white"}`}>
+                      {isAI ? <Bot className="w-3 h-3" /> : m.userName?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe ? "bg-indigo-600 text-white rounded-tr-sm" : isAI ? "bg-indigo-50 text-gray-800 rounded-tl-sm" : "bg-gray-100 text-gray-800 rounded-tl-sm"}`}>
+                      {!isMe && <p className="text-[10px] font-semibold mb-0.5 opacity-60">{m.userName}</p>}
+                      {isAI ? <ReactMarkdown components={{ p: ({ children }: any) => <p className="mb-1 last:mb-0 text-[13px]">{children}</p> }}>{m.message}</ReactMarkdown> : <span className="text-[13px]">{m.message}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              {aiLoading && <div className="flex gap-2"><div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center"><Bot className="w-3 h-3 text-white" /></div><div className="bg-indigo-50 rounded-2xl px-3 py-2 rounded-tl-sm"><Loader2 className="w-4 h-4 animate-spin text-indigo-400" /></div></div>}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="flex gap-2 p-3 border-t border-gray-100 shrink-0">
+              <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Type a message..."
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <button type="submit" disabled={!chatInput.trim()} className="px-3 py-2 bg-indigo-600 text-white rounded-xl disabled:opacity-50"><Send className="w-4 h-4" /></button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

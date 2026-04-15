@@ -8,7 +8,7 @@ import {
   Maximize2, Minimize2, ChevronRight, ChevronLeft,
   RotateCcw, Loader2,
 } from 'lucide-react';
-import AITeacherAvatar from '@/components/avatar/AITeacherAvatar';
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -59,40 +59,58 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
     window.speechSynthesis?.addEventListener?.('voiceschanged', () => window.speechSynthesis.getVoices());
   }, []);
 
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  function stopCurrentAudio() {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.onended = null;
+      currentAudioRef.current.onerror = null;
+      currentAudioRef.current = null;
+    }
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+  }
+
   // ── Speak one slide ───────────────────────────────────
   function speakText(text: string): Promise<void> {
     return new Promise(async (resolve) => {
-      if (!text || mutedRef.current) { resolve(); return; }
+      if (!text || mutedRef.current || stopRef.current) { resolve(); return; }
       const clean = text.replace(/[#*_`\[\]()>|]/g, '').replace(/\n+/g, '. ').trim();
       if (!clean) { resolve(); return; }
 
+      // Stop any previous audio first
+      stopCurrentAudio();
       setIsSpeaking(true);
 
-      // Try TTS service first (works for ALL languages — Hindi, English, etc.)
       const isHindi = language === 'hi' || language === 'hindi';
       const langCode = isHindi ? 'hi' : 'en';
+      const ttsHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      const ttsUrl = `http://${ttsHost}:5001/tts`;
       try {
-        const resp = await fetch('http://localhost:5001/tts', {
+        const resp = await fetch(ttsUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: clean, language: langCode, speed: 1.0 }),
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(20000),
         });
         if (resp.ok) {
           const blob = await resp.blob();
-          if (blob.size > 200) {
+          if (blob.size > 200 && !stopRef.current) {
             const url = URL.createObjectURL(blob);
             const audio = new Audio(url);
-            audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); resolve(); };
-            audio.onerror = () => { setIsSpeaking(false); URL.revokeObjectURL(url); resolve(); };
-            await audio.play();
+            currentAudioRef.current = audio;
+            audio.onended = () => { currentAudioRef.current = null; setIsSpeaking(false); URL.revokeObjectURL(url); resolve(); };
+            audio.onerror = () => { currentAudioRef.current = null; setIsSpeaking(false); URL.revokeObjectURL(url); resolve(); };
+            if (!stopRef.current) await audio.play();
+            else { URL.revokeObjectURL(url); resolve(); }
             return;
           }
         }
       } catch {}
 
       // Fallback: browser SpeechSynthesis
-      if (!window.speechSynthesis) { setIsSpeaking(false); resolve(); return; }
+      if (!window.speechSynthesis || stopRef.current) { setIsSpeaking(false); resolve(); return; }
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(clean);
       utt.rate = 0.95;
@@ -141,7 +159,18 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
           try { const d = JSON.parse(line.slice(6)); if (d.text) full += d.text; } catch {}
         }
       }
-      if (!cancelled && full) { setSlides(splitIntoSlides(full)); setLoading(false); }
+      if (!cancelled && full) {
+        setSlides(splitIntoSlides(full));
+        setLoading(false);
+        // Auto-play voice when content loads
+        setTimeout(() => {
+          if (!mutedRef.current) {
+            setIsPlaying(true);
+            slidesRef.current = splitIntoSlides(full);
+            playFrom(0);
+          }
+        }, 500);
+      }
     }).catch(() => {
       if (!cancelled) { setSlides([{ content: 'Unable to load content.' }]); setLoading(false); }
     });
@@ -167,9 +196,8 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
   function handlePlay() {
     if (isPlaying) {
       stopRef.current = true;
-      window.speechSynthesis?.cancel();
+      stopCurrentAudio();
       setIsPlaying(false);
-      setIsSpeaking(false);
     } else {
       setIsPlaying(true);
       playFrom(currentSlide);
@@ -178,18 +206,16 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
 
   function goTo(idx: number) {
     stopRef.current = true;
-    window.speechSynthesis?.cancel();
-    setIsSpeaking(false);
+    stopCurrentAudio();
     const c = Math.max(0, Math.min(idx, slides.length - 1));
     setCurrentSlide(c);
-    if (isPlaying) setTimeout(() => playFrom(c), 100);
+    if (isPlaying) setTimeout(() => playFrom(c), 200);
   }
 
   function handleRestart() {
     stopRef.current = true;
-    window.speechSynthesis?.cancel();
+    stopCurrentAudio();
     setIsPlaying(false);
-    setIsSpeaking(false);
     setCurrentSlide(0);
   }
 
@@ -198,7 +224,7 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
     else { document.exitFullscreen(); setIsFullscreen(false); }
   }
 
-  useEffect(() => () => { stopRef.current = true; window.speechSynthesis?.cancel(); }, []);
+  useEffect(() => () => { stopRef.current = true; stopCurrentAudio(); }, []);
 
   const progress = slides.length > 0 ? ((currentSlide + 1) / slides.length) * 100 : 0;
   const slide = slides[currentSlide] || { content: '' };
@@ -240,9 +266,6 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
               </motion.div>
             </div>
             <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-4 right-4 z-20">
-              <AITeacherAvatar isSpeaking={isSpeaking} text={slide.content} visible size="sm" inline />
-            </div>
           </motion.div>
         </AnimatePresence>
 
@@ -279,9 +302,7 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => { setIsMuted(!isMuted); if (!isMuted) window.speechSynthesis?.cancel(); }} className="p-2 rounded-lg hover:bg-white/10 text-gray-400">
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
+          {/* Volume button removed */}
           <button onClick={toggleFS} className="p-2 rounded-lg hover:bg-white/10 text-gray-400">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>

@@ -7,18 +7,19 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 // --------------- helpers ---------------
 
 function getAuthHeaders() {
-  // Try multiple token sources
   let token = localStorage.getItem('token');
 
-  // If no explicit token, get from Supabase session storage
+  // Fallback: get from Supabase session storage
   if (!token) {
     try {
-      // Supabase stores session in localStorage with a key like sb-{ref}-auth-token
       const keys = Object.keys(localStorage);
       const sbKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       if (sbKey) {
-        const session = JSON.parse(localStorage.getItem(sbKey) || '{}');
+        const raw = localStorage.getItem(sbKey) || '{}';
+        const session = JSON.parse(raw);
         token = session?.access_token || session?.currentSession?.access_token || null;
+        // Also save it for next time
+        if (token) localStorage.setItem('token', token);
       }
     } catch {}
   }

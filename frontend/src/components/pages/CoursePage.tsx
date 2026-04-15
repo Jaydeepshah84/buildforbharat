@@ -112,10 +112,11 @@ function TopicRow({ topic, courseId, onNavigate }) {
       )}
       <span
         className={`text-sm flex-1 ${
-          isCompleted ? 'text-gray-500 line-through' : 'text-gray-700 group-hover:text-indigo-700'
-        } transition-colors`}
+          isCompleted ? 'text-gray-500 line-through' : 'text-gray-800 group-hover:text-indigo-700'
+        }`}
+        style={{ color: isCompleted ? '#6b7280' : '#1f2937' }}
       >
-        {topic.title || topic.name}
+        {topic.title || topic.name || `Topic ${topic.order_index ?? ''}`}
       </span>
       <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
     </button>

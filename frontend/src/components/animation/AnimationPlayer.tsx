@@ -11,7 +11,10 @@ interface Props {
 }
 
 const BACKEND = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api") : "";
-const TTS_URL = "http://localhost:5001/tts";
+const getTtsUrl = () => {
+  const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+  return `http://${host}:5001/tts`;
+};
 
 export default function AnimationPlayer({ topic, classLevel = "10", language = "en", onNext }: Props) {
   const [phase, setPhase] = useState<1 | 2>(1);
@@ -127,7 +130,7 @@ export default function AnimationPlayer({ topic, classLevel = "10", language = "
 
     Promise.all(sentences.map(async (s, idx) => {
       try {
-        const resp = await fetch(TTS_URL, {
+        const resp = await fetch(getTtsUrl(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: s, language: langCode, speed: 1.0 }),
@@ -376,58 +379,60 @@ export default function AnimationPlayer({ topic, classLevel = "10", language = "
     <div ref={containerRef} className={`bg-gray-900 rounded-2xl overflow-hidden flex flex-col ${isFullscreen ? "fixed inset-0 z-50 rounded-none" : ""}`}
       style={{ minHeight: isFullscreen ? "100vh" : 500 }}>
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black/50 z-20">
-        <span className="text-xs text-gray-300 truncate max-w-[300px]">{title || topicTitle}</span>
-        <div className="flex items-center gap-2">
-          {phase === 1 && <span className="text-xs text-purple-400 animate-pulse">Generating animation...</span>}
-          {phase === 2 && !isMuted && speakingText && (
-            <span className="text-xs text-green-400 flex items-center gap-1">
-              <span className="flex gap-0.5">{[1,2,3].map(i => <span key={i} className="w-0.5 bg-green-400 rounded-full animate-pulse" style={{ height: 6 + Math.random() * 6, animationDelay: `${i * 150}ms` }} />)}</span>
-              Speaking {sentenceIdx + 1}/{totalSentences}
-            </span>
-          )}
-          {phase === 2 && preloadingRef.current && <span className="text-xs text-yellow-400 animate-pulse">Loading voice...</span>}
-          {phase === 2 && !preloadingRef.current && (isMuted || !speakingText) && <span className="text-xs text-green-400">Animation ready</span>}
-        </div>
-      </div>
-
-      {/* Animation iframe */}
+      {/* Animation iframe with overlay subtitle */}
       <div className="flex-1 relative bg-[#0f172a]">
         {htmlCode && (
           <iframe key={iframeKey} ref={iframeRef} srcDoc={htmlCode} className="w-full h-full border-0"
-            style={{ minHeight: isFullscreen ? "calc(100vh - 140px)" : 400 }}
+            style={{ minHeight: isFullscreen ? "calc(100vh - 80px)" : 420 }}
             sandbox="allow-scripts allow-same-origin" title="Animation" />
+        )}
+
+        {/* Title overlay — top left */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10">
+          <span className="text-xs text-white/80 font-medium truncate max-w-[60%]">{title || topicTitle}</span>
+          <div className="flex items-center gap-2">
+            {phase === 1 && <span className="text-xs text-purple-300 animate-pulse">Generating...</span>}
+            {phase === 2 && speakingText && (
+              <span className="text-xs text-green-300 flex items-center gap-1">
+                <span className="flex gap-0.5">{[1,2,3].map(i => <span key={i} className="w-0.5 bg-green-400 rounded-full animate-pulse" style={{ height: 4 + Math.random() * 5, animationDelay: `${i * 150}ms` }} />)}</span>
+                {sentenceIdx + 1}/{totalSentences}
+              </span>
+            )}
+            {phase === 2 && preloadingRef.current && <span className="text-xs text-yellow-300 animate-pulse">Loading voice...</span>}
+          </div>
+        </div>
+
+        {/* Subtitle overlay — bottom, inside animation */}
+        {speakingText && (
+          <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
+            <div className="mx-auto max-w-2xl px-4 pb-3">
+              <p className="text-sm text-white text-center leading-relaxed bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2.5 shadow-lg">
+                {speakingText}
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Narration subtitle */}
-      {speakingText && !isMuted && (
-        <div className="px-6 py-2.5 bg-black/80 text-center">
-          <p className="text-sm text-gray-200 leading-relaxed max-w-2xl mx-auto">{speakingText}</p>
-        </div>
-      )}
-
-      {/* Controls */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/60">
+      {/* Controls — compact bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#0a0f1a]">
         <div className="flex items-center gap-2">
-          <button onClick={handleRestart} className="p-2 rounded-lg hover:bg-white/10 text-gray-400 transition-colors" title="Restart">
-            <RotateCcw className="w-4 h-4" />
+          <button onClick={handleRestart} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-500 transition-colors" title="Restart">
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button onClick={handlePlayPause}
-            className={`w-11 h-11 rounded-full text-white flex items-center justify-center shadow-lg transition-shadow ${
-              isPlaying ? "bg-gradient-to-r from-purple-500 to-pink-600 hover:shadow-purple-500/25" : "bg-gradient-to-r from-green-500 to-emerald-600 hover:shadow-green-500/25"
+            className={`w-9 h-9 rounded-full text-white flex items-center justify-center shadow-md transition-all ${
+              isPlaying ? "bg-gradient-to-r from-purple-500 to-pink-600" : "bg-gradient-to-r from-green-500 to-emerald-600"
             }`}
             title={isPlaying ? "Pause" : "Play"}>
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Volume button removed */}
-          <button onClick={toggleFS} className="p-2 rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+          <button onClick={toggleFS} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-500 transition-colors"
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
           {onNext && (
             <button onClick={() => { stopAll(); onNext(); }} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium flex items-center gap-1 transition-colors">
@@ -437,12 +442,12 @@ export default function AnimationPlayer({ topic, classLevel = "10", language = "
         </div>
       </div>
 
-      {/* Definitions */}
+      {/* Definitions — inline chips */}
       {definitions.length > 0 && (
-        <div className="px-4 py-3 bg-black/40 border-t border-white/5">
-          <div className="flex flex-wrap gap-2">
+        <div className="px-4 py-2 bg-[#0a0f1a] border-t border-white/5">
+          <div className="flex flex-wrap gap-1.5">
             {definitions.map((d, i) => (
-              <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+              <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
                 <strong>{d.term}:</strong> {d.meaning}
               </span>
             ))}

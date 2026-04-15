@@ -82,26 +82,26 @@ const navLinks = [
 const featureCards = [
   {
     Icon: UserCheck,
-    title: "Best Mentors",
-    desc: "Our top mentors bring valuable knowledge and experience to guide you through your learning journey.",
+    title: "AI Tutor 24/7",
+    desc: "Your personal AI tutor adapts to your learning style, answers doubts instantly, and is always available — even at 2 AM.",
     highlighted: false,
   },
   {
     Icon: Award,
-    title: "Best Price",
-    desc: "We offer competitive pricing on all our courses, ensuring you receive quality education at affordable rates.",
+    title: "Free for Students",
+    desc: "World-class AI education at zero cost. No credit card needed — just sign up and start learning immediately.",
     highlighted: true,
   },
   {
     Icon: Monitor,
-    title: "Easy to Learn",
-    desc: "With user-friendly navigation and engaging materials, you can dive into your studies effortlessly.",
+    title: "Visual & Interactive",
+    desc: "3D models, animated diagrams, and interactive simulations make complex Physics, Chemistry & Biology concepts click.",
     highlighted: false,
   },
   {
     Icon: MessageCircle,
-    title: "1 to 1 Discussion",
-    desc: "Our 1-to-1 mentoring connects you with dedicated professionals for personalized guidance.",
+    title: "Multilingual Voice",
+    desc: "Ask questions in Hindi, Gujarati, or English and get clear spoken explanations — like a tutor in your pocket.",
     highlighted: false,
   },
 ];
@@ -171,20 +171,20 @@ const testimonials = [
 
 const footerColumns = [
   {
-    title: "Product",
-    links: ["Features", "Pricing", "Integrations", "Changelog"],
-  },
-  {
-    title: "Company",
-    links: ["About", "Blog", "Careers", "Contact"],
+    title: "Platform",
+    links: ["AI Tutor", "Visual Lab", "Voice Assistant", "Smart Assessments", "Study Planner"],
   },
   {
     title: "Resources",
-    links: ["Community", "Help Center", "Tutorials", "API"],
+    links: ["CBSE Courses", "ICSE Courses", "JEE Prep", "NEET Prep", "Career Guidance"],
+  },
+  {
+    title: "Company",
+    links: ["About Us", "Blog", "Careers", "Contact"],
   },
   {
     title: "Legal",
-    links: ["Privacy", "Terms", "Security", "GDPR"],
+    links: ["Privacy Policy", "Terms of Service", "Data Protection", "Cookie Policy"],
   },
 ];
 
@@ -243,7 +243,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-white/20"
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-white/20 hover:shadow-lg hover:shadow-black/5 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Users size={16} />
               Log In
@@ -302,8 +302,8 @@ export default function LandingPage() {
           ============================================================ */}
       <section className="relative bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 pt-28 pb-0 overflow-hidden">
         {/* Background decorative circles */}
-        <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-teal-500/20 blur-3xl" />
-        <div className="absolute bottom-0 left-10 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl" />
+        <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-teal-500/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-10 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl animate-pulse [animation-delay:1.5s]" />
 
         {/* Background grid lines */}
         <div
@@ -322,21 +322,21 @@ export default function LandingPage() {
             {/* Left column — text */}
             <div className="max-w-xl pb-16 lg:pb-24">
               <FadeUp>
-                <p className="text-sm font-medium text-teal-200/80 tracking-wide">
-                  Your Online Learning Partner
+                <p className="text-sm font-medium text-teal-200/80 tracking-wide uppercase">
+                  AI-Powered Education for Every Indian Student
                 </p>
               </FadeUp>
 
               <FadeUp delay={0.1}>
                 <h1 className="mt-4 text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  Learn, Grow, and Achieve with{" "}
-                  <span className="text-[#c3f53c]">Expert</span> Guidance
+                  Learn Smarter with{" "}
+                  <span className="text-[#c3f53c]">AI-Powered</span> Education
                 </h1>
               </FadeUp>
 
               <FadeUp delay={0.2}>
                 <p className="mt-6 text-base leading-relaxed text-white/70 max-w-md">
-                  Access high-quality courses anytime, anywhere, and take control of your learning journey with ease.
+                  9 specialized AI agents adapt to your pace, detect your emotions, speak your language, and build personalized learning paths — making world-class education accessible to every student in India.
                 </p>
               </FadeUp>
 
@@ -344,10 +344,10 @@ export default function LandingPage() {
                 <div className="mt-8">
                   <Link
                     href="/signup"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#c3f53c] px-8 py-4 text-sm font-bold text-gray-900 transition-all hover:bg-[#d4ff5c] hover:shadow-xl hover:shadow-[#c3f53c]/20"
+                    className="group inline-flex items-center gap-2 rounded-full bg-[#c3f53c] px-8 py-4 text-sm font-bold text-gray-900 transition-all hover:bg-[#d4ff5c] hover:shadow-xl hover:shadow-[#c3f53c]/20 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Get Started Now
-                    <ArrowRight size={16} />
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </div>
               </FadeUp>
@@ -392,7 +392,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
-                  className="absolute top-8 -right-4 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg"
+                  className="absolute top-8 -right-4 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg hover:bg-white/15 hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-teal-500/30 flex items-center justify-center">
@@ -410,7 +410,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8, duration: 0.5 }}
-                  className="absolute bottom-32 left-0 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg"
+                  className="absolute bottom-32 left-0 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg hover:bg-white/15 hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#c3f53c]/30 flex items-center justify-center">
@@ -428,7 +428,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.0, duration: 0.5 }}
-                  className="absolute top-1/2 -right-8 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg"
+                  className="absolute top-1/2 -right-8 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-3 shadow-lg hover:bg-white/15 hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-teal-500/30 flex items-center justify-center">
@@ -455,14 +455,14 @@ export default function LandingPage() {
             {featureCards.map((f, i) => (
               <ScaleIn key={f.title} delay={i * 0.08}>
                 <div
-                  className={`p-8 h-full border-r last:border-r-0 border-gray-100 transition-all ${
+                  className={`group/card p-8 h-full border-r last:border-r-0 border-gray-100 transition-all duration-300 ${
                     f.highlighted
                       ? "bg-[#c3f53c] text-gray-900"
-                      : "bg-white text-gray-900 hover:bg-gray-50"
+                      : "bg-white text-gray-900 hover:bg-gray-50/80"
                   }`}
                 >
                   <div
-                    className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl ${
+                    className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300 group-hover/card:scale-110 ${
                       f.highlighted
                         ? "bg-gray-900/10"
                         : "bg-teal-50"
@@ -495,15 +495,15 @@ export default function LandingPage() {
               Explore Our <span className="text-teal-600">Programs</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-gray-500">
-              Six powerful AI modules working together to create the most adaptive and engaging learning experience.
+              Six specialized AI agents — from course generation to emotion detection — working together to create the most adaptive learning experience.
             </p>
           </FadeUp>
 
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {programs.map((p, i) => (
               <ScaleIn key={p.title} delay={i * 0.08}>
-                <div className="group bg-white rounded-2xl p-7 shadow-sm border border-gray-100 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
-                  <div className="text-4xl mb-4">{p.icon}</div>
+                <div className="group bg-white rounded-2xl p-7 shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-teal-600/5 hover:border-teal-200 hover:-translate-y-1 transition-all duration-300">
+                  <div className="text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">{p.icon}</div>
                   <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
                     {p.title}
                   </h3>
@@ -512,7 +512,7 @@ export default function LandingPage() {
                     <span className="text-xs font-medium text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
                       {p.students} students
                     </span>
-                    <ChevronRight size={18} className="text-gray-300 group-hover:text-teal-500 transition-colors" />
+                    <ChevronRight size={18} className="text-gray-300 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
               </ScaleIn>
@@ -539,13 +539,13 @@ export default function LandingPage() {
 
             <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
               {[
-                { num: "01", title: "Create Your Profile", desc: "Sign up and tell us your grade, subjects, and goals. Our AI builds a baseline map of your knowledge." },
-                { num: "02", title: "Learn Interactively", desc: "Dive into voice-guided lessons, visual simulations, quizzes, and group challenges tailored just for you." },
-                { num: "03", title: "Track & Grow", desc: "Watch your skills bloom on real-time dashboards. Get weekly insight reports and celebrate every milestone." },
+                { num: "01", title: "Create Your Profile", desc: "Sign up, choose your board (CBSE/ICSE/State), select subjects, and set your language. Our AI maps your starting knowledge level." },
+                { num: "02", title: "Learn Your Way", desc: "Dive into voice-guided lessons, 3D visual labs, adaptive quizzes, and AI-moderated group classrooms — all personalized for you." },
+                { num: "03", title: "Track & Achieve", desc: "Monitor progress on real-time analytics dashboards. Emotion detection adjusts difficulty. AI study planner keeps you on track." },
               ].map((s, i) => (
                 <FadeUp key={s.num} delay={i * 0.15}>
-                  <div className="relative text-center">
-                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-600 text-xl font-extrabold text-white shadow-lg shadow-teal-600/20">
+                  <div className="relative text-center group">
+                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-600 text-xl font-extrabold text-white shadow-lg shadow-teal-600/20 transition-transform duration-300 group-hover:scale-110">
                       {s.num}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">{s.title}</h3>
@@ -575,7 +575,7 @@ export default function LandingPage() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {testimonials.map((t, i) => (
               <ScaleIn key={t.name} delay={i * 0.1}>
-                <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100 hover:shadow-lg transition-all h-full flex flex-col">
+                <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-teal-600/5 hover:border-teal-100 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
                   <Quote size={28} className="mb-4 text-teal-400/40" />
                   <div className="mb-4 flex gap-1">
                     {[...Array(t.rating)].map((_, j) => (
@@ -586,7 +586,7 @@ export default function LandingPage() {
                     &ldquo;{t.text}&rdquo;
                   </p>
                   <div className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 text-xs font-bold text-white shadow-sm">
                       {t.avatar}
                     </div>
                     <div>
@@ -608,7 +608,7 @@ export default function LandingPage() {
               { value: "400+", label: "Expert Instructors" },
             ].map((s, i) => (
               <FadeUp key={s.label} delay={i * 0.08}>
-                <div className="bg-white rounded-2xl py-8 text-center shadow-sm border border-gray-100">
+                <div className="bg-white rounded-2xl py-8 text-center shadow-sm border border-gray-100 hover:shadow-lg hover:border-teal-100 hover:-translate-y-0.5 transition-all duration-300">
                   <p className="text-3xl font-extrabold text-teal-600">{s.value}</p>
                   <p className="mt-1 text-xs text-gray-500">{s.label}</p>
                 </div>
@@ -633,12 +633,12 @@ export default function LandingPage() {
                   Ready to transform your learning?
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-lg text-white/70">
-                  Join 20,000+ students already learning smarter with AI. Free forever for students — no credit card needed.
+                  Join 20,000+ students already learning smarter with 9 AI agents. Free forever for students — no credit card needed.
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-4">
                   <Link
                     href="/signup"
-                    className="group inline-flex items-center gap-2 rounded-full bg-[#c3f53c] px-8 py-4 text-sm font-bold text-gray-900 transition-all hover:bg-[#d4ff5c] hover:shadow-xl"
+                    className="group inline-flex items-center gap-2 rounded-full bg-[#c3f53c] px-8 py-4 text-sm font-bold text-gray-900 transition-all hover:bg-[#d4ff5c] hover:shadow-xl hover:shadow-[#c3f53c]/20 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Get Started Free
                     <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
@@ -680,7 +680,7 @@ export default function LandingPage() {
                   <a
                     key={i}
                     href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-gray-400 transition-all hover:bg-white/10 hover:text-white"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-gray-400 transition-all duration-300 hover:bg-white/10 hover:text-white hover:scale-110 hover:border-white/20"
                   >
                     <SocialIcon size={16} />
                   </a>

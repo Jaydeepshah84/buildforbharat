@@ -47,12 +47,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800">
+    <div className="min-h-screen flex bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800">
       {/* LEFT — branding */}
       <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden flex-col justify-between py-14 pl-14 pr-6">
         {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-teal-500/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-emerald-400/10 blur-[120px] translate-x-1/4 translate-y-1/4" />
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-indigo-500/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-purple-400/10 blur-[120px] translate-x-1/4 translate-y-1/4" />
         <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full bg-[#c3f53c]/5 blur-[100px] -translate-x-1/2 -translate-y-1/2" />
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
@@ -101,7 +101,7 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
           >
-            Pick up right where you left off. Your personalized courses and AI tutor are waiting.
+            Pick up right where you left off. Your personalized AI tutor, adaptive courses, and real-time analytics are waiting.
           </motion.p>
 
           {/* Feature highlights */}
@@ -112,9 +112,9 @@ export default function LoginPage() {
             transition={{ delay: 0.5, duration: 0.5 }}
           >
             {[
-              "Access 1,200+ courses across all subjects",
-              "AI-powered personalized learning paths",
-              "Track progress with real-time analytics",
+              "9 AI agents personalize your learning path",
+              "Voice tutor in Hindi, Gujarati & English",
+              "3D visual lab, quizzes & emotion detection",
             ].map((text, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#c3f53c]/20 flex items-center justify-center flex-shrink-0">
@@ -138,7 +138,7 @@ export default function LoginPage() {
             { value: "1,200+", label: "Total Courses", icon: BookOpen },
             { value: "4.8/5", label: "User Rating", icon: Star },
           ].map((s) => (
-            <div key={s.label} className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] rounded-2xl px-4 py-3">
+            <div key={s.label} className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] rounded-2xl px-4 py-3 hover:bg-white/[0.10] hover:border-white/[0.12] transition-all duration-300">
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
                 <s.icon size={16} className="text-[#c3f53c]" />
               </div>
@@ -154,8 +154,8 @@ export default function LoginPage() {
       {/* RIGHT — form */}
       <div className="flex-1 flex items-center justify-center bg-white lg:rounded-[36px] lg:my-3 lg:mr-3 relative overflow-hidden">
         <div className="absolute inset-0 lg:rounded-[36px] overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-teal-50/60 rounded-full blur-[80px]" />
-          <div className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-emerald-50/40 rounded-full blur-[80px]" />
+          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-indigo-50/60 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-purple-50/40 rounded-full blur-[80px]" />
         </div>
 
         <motion.div
@@ -168,7 +168,7 @@ export default function LoginPage() {
           <div className="text-center mb-10 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
               <img src="/logo-brain.png" alt="Ed.Ai" className="h-10 w-10 rounded-xl" />
-              <span className="text-2xl font-extrabold text-gray-900">Ed<span className="text-teal-600">.Ai</span></span>
+              <span className="text-2xl font-extrabold text-gray-900">Ed<span className="text-indigo-600">.Ai</span></span>
             </Link>
           </div>
 
@@ -176,7 +176,7 @@ export default function LoginPage() {
             <h1 className="text-[28px] font-bold text-gray-900 mb-2">Sign in</h1>
             <p className="text-[14px] text-gray-400">
               New to Ed.Ai?{" "}
-              <Link href="/signup" className="text-teal-600 font-semibold hover:underline">Create an account</Link>
+              <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">Create an account</Link>
             </p>
           </div>
 
@@ -184,15 +184,15 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Email address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300" />
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-teal-400 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                 />
               </div>
             </div>
@@ -200,10 +200,10 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between mb-2">
                 <label className="text-[13px] font-semibold text-gray-700">Password</label>
-                <button type="button" className="text-[12px] text-teal-600 hover:underline font-medium">Forgot password?</button>
+                <button type="button" className="text-[12px] text-indigo-600 hover:text-indigo-700 font-medium transition-colors">Forgot password?</button>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300" />
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -211,7 +211,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-teal-400 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                 />
                 <button
                   type="button"
@@ -227,7 +227,7 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white font-semibold text-sm rounded-2xl disabled:opacity-50 transition-all shadow-lg shadow-teal-600/20"
+              className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-sm rounded-2xl disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/25"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
