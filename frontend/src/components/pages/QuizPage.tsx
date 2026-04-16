@@ -83,26 +83,10 @@ function CircularScore({ score, total }) {
 
   return (
     <div className="relative inline-flex items-center justify-center">
-        <PageHero title="Quiz" subtitle="Test your knowledge with AI-generated quizzes." />
-
       <svg className="w-40 h-40 -rotate-90" viewBox="0 0 140 140">
-        {/* Background circle */}
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          strokeWidth="10"
-          className={`stroke-current ${bgColor}`}
-        />
-        {/* Score arc */}
+        <circle cx="70" cy="70" r={radius} fill="none" strokeWidth="10" className={`stroke-current ${bgColor}`} />
         <motion.circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          strokeWidth="10"
-          strokeLinecap="round"
+          cx="70" cy="70" r={radius} fill="none" strokeWidth="10" strokeLinecap="round"
           className={`stroke-current ${color}`}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
@@ -111,17 +95,12 @@ function CircularScore({ score, total }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <motion.span
-          className={`text-3xl font-bold ${color}`}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-        >
+        <motion.span className={`text-3xl font-bold ${color}`}
+          initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}>
           {pct}%
         </motion.span>
-        <span className="text-sm text-gray-400">
-          {score}/{total}
-        </span>
+        <span className="text-sm text-gray-400">{score}/{total}</span>
       </div>
     </div>
   );
@@ -147,26 +126,20 @@ function GenerateForm({ onGenerate, loading }) {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto">
+      <PageHero title="Quiz" subtitle="Test your knowledge with AI-generated quizzes.">
+        <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+          <Brain className="w-4 h-4 text-white/80" />
+          <span className="text-xs text-white/80 font-medium">AI-Powered</span>
+        </div>
+      </PageHero>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="space-y-6"
       >
-        {/* Header */}
-        <motion.div variants={fadeIn} className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
-            <Brain className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('quiz.generateTitle', 'Generate a Quiz')}
-          </h1>
-          <p className="text-gray-500 mt-2">
-            {t('quiz.generateSubtitle', 'Test your knowledge with an AI-generated quiz on any topic.')}
-          </p>
-        </motion.div>
-
         {/* Form */}
         <motion.form variants={fadeIn} onSubmit={handleSubmit} className="card space-y-6">
           {/* Topic input */}

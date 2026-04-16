@@ -66,17 +66,9 @@ function CircularScore({ score, total }) {
 
   return (
     <div className="relative inline-flex items-center justify-center">
-        <PageHero title="Homework" subtitle="Practice with AI-generated homework problems." />
-
       <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
-        <circle
-          cx="60" cy="60" r={radius}
-          fill="none" strokeWidth="8"
-          className={`stroke-current ${bgColor}`}
-        />
-        <motion.circle
-          cx="60" cy="60" r={radius}
-          fill="none" strokeWidth="8" strokeLinecap="round"
+        <circle cx="60" cy="60" r={radius} fill="none" strokeWidth="8" className={`stroke-current ${bgColor}`} />
+        <motion.circle cx="60" cy="60" r={radius} fill="none" strokeWidth="8" strokeLinecap="round"
           className={`stroke-current ${color}`}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
@@ -85,12 +77,9 @@ function CircularScore({ score, total }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <motion.span
-          className={`text-2xl font-bold ${color}`}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-        >
+        <motion.span className={`text-2xl font-bold ${color}`}
+          initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}>
           {pct}%
         </motion.span>
         <span className="text-xs text-gray-400">{score}/{total}</span>
@@ -750,24 +739,19 @@ export default function HomeworkPage() {
   // --------------- Render ---------------
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-8">
-      {/* Page header */}
+    <div className="max-w-3xl mx-auto space-y-8">
+      <PageHero title="Homework" subtitle="Practice with AI-generated homework and get instant feedback.">
+        <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+          <BookOpen className="w-4 h-4 text-white/80" />
+          <span className="text-xs text-white/80 font-medium">AI Grading</span>
+        </div>
+      </PageHero>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={fadeIn} className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('homework.pageTitle', 'Homework')}
-          </h1>
-          <p className="text-gray-500 mt-2">
-            {t('homework.pageSubtitle', 'Practice with AI-generated homework and get instant feedback')}
-          </p>
-        </motion.div>
 
         {/* Stage: Idle -- show generate form + past homework */}
         {stage === 'idle' && (

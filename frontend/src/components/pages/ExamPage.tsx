@@ -86,13 +86,9 @@ function CircularScore({ score, total }) {
 
   return (
     <div className="relative inline-flex items-center justify-center">
-        <PageHero title="Exam" subtitle="Take timed exams and track your performance." />
-
       <svg className="w-36 h-36 -rotate-90" viewBox="0 0 130 130">
         <circle cx="65" cy="65" r={radius} fill="none" strokeWidth="9" className={`stroke-current ${bgColor}`} />
-        <motion.circle
-          cx="65" cy="65" r={radius}
-          fill="none" strokeWidth="9" strokeLinecap="round"
+        <motion.circle cx="65" cy="65" r={radius} fill="none" strokeWidth="9" strokeLinecap="round"
           className={`stroke-current ${color}`}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
@@ -101,12 +97,9 @@ function CircularScore({ score, total }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <motion.span
-          className={`text-2xl font-bold ${color}`}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-        >
+        <motion.span className={`text-2xl font-bold ${color}`}
+          initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}>
           {pct}%
         </motion.span>
         <span className="text-xs text-gray-400">{score}/{total}</span>
@@ -160,21 +153,15 @@ function GenerateExamForm({ onGenerate, loading }) {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-        {/* Header */}
-        <motion.div variants={fadeIn} className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
-            <FileText className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('exam.generateTitle', 'Generate an Exam')}
-          </h1>
-          <p className="text-gray-500 mt-2">
-            {t('exam.generateSubtitle', 'Create a comprehensive MCQ exam. Questions are auto-scored instantly.')}
-          </p>
-        </motion.div>
+    <div className="max-w-2xl mx-auto">
+      <PageHero title="Exam" subtitle="Take timed exams with AI-generated MCQs and instant scoring.">
+        <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+          <Timer className="w-4 h-4 text-white/80" />
+          <span className="text-xs text-white/80 font-medium">Timed</span>
+        </div>
+      </PageHero>
 
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Form */}
         <motion.form variants={fadeIn} onSubmit={handleSubmit} className="card space-y-6">
           {/* Topics multi-input */}
@@ -370,27 +357,49 @@ function ExamTaker({ exam, onSubmit }) {
   const currentType = currentQuestion ? classifyQuestion(currentQuestion) : 'short';
   const isTimeLow = timeLeft < 300; // less than 5 min
 
+  const timeProgress = timeLimitSecs > 0 ? ((timeLimitSecs - timeLeft) / timeLimitSecs) * 100 : 0;
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6 max-w-6xl mx-auto">
+    <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
       {/* Main question area */}
       <div className="flex-1 space-y-4">
-        {/* Timer bar */}
+        {/* Timer bar — prominent */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center justify-between px-4 py-3 rounded-xl border ${
+          className={`rounded-xl border overflow-hidden ${
             isTimeLow ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <Timer className={`w-5 h-5 ${isTimeLow ? 'text-red-500' : 'text-[#284ce3]'}`} />
-            <span className={`text-lg font-mono font-bold ${isTimeLow ? 'text-red-600' : 'text-gray-800'}`}>
-              {formatTime(timeLeft)}
-            </span>
+          {/* Time progress bar */}
+          <div className="h-1.5 bg-gray-100">
+            <motion.div
+              className={`h-full transition-all ${isTimeLow ? 'bg-red-500' : 'bg-[#284ce3]'}`}
+              animate={{ width: `${timeProgress}%` }}
+              transition={{ duration: 0.5 }}
+            />
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            {answeredCount}/{questions.length}
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isTimeLow ? 'bg-red-100' : 'bg-blue-50'}`}>
+                <Timer className={`w-5 h-5 ${isTimeLow ? 'text-red-500 animate-pulse' : 'text-[#284ce3]'}`} />
+              </div>
+              <div>
+                <span className={`text-lg font-mono font-bold ${isTimeLow ? 'text-red-600' : 'text-gray-800'}`}>
+                  {formatTime(timeLeft)}
+                </span>
+                <p className="text-[10px] text-gray-400">Time remaining</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  {answeredCount}/{questions.length}
+                </div>
+                <p className="text-[10px] text-gray-400">Answered</p>
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -654,7 +663,9 @@ function ExamResults({ result, exam, onNewExam, onDashboard }) {
   const sectionBreakdown = result.sectionBreakdown || result.sections || result.breakdown || [];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto">
+      <PageHero title="Exam Results" subtitle={`You scored ${pct}% on your exam.`} />
+
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Score card */}
         <motion.div variants={fadeIn} className="card text-center py-8">

@@ -132,7 +132,7 @@ export default function VisualLabPage() {
                       onChange={e => setTopic(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handleGenerate()}
                       placeholder="What do you want to visualize?"
-                      className="w-full px-6 py-4.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-lg font-medium placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-white/30 transition pr-32"
+                      className="w-full px-6 py-[18px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-lg font-medium placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-white/30 transition pr-36"
                     />
                     <button
                       onClick={() => handleGenerate()}

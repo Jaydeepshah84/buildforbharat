@@ -13,4 +13,11 @@ export const config = {
     apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview",
   },
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+  email: {
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.EMAIL_PORT || "587"),
+    user: process.env.EMAIL_USER || "",
+    pass: process.env.EMAIL_PASS || "",
+    from: process.env.EMAIL_FROM || "Learnify <noreply@learnify.app>",
+  },
 };
