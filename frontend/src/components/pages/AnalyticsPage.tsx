@@ -40,6 +40,7 @@ import {
 import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import { student, courses } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
+import PageHero from "@/components/common/PageHero";
 
 // Register Chart.js components
 ChartJS.register(
@@ -195,6 +196,8 @@ function ChartCard({ title, icon: Icon, children, className = '' }) {
       variants={itemVariants}
       className={`bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden ${className}`}
     >
+        <PageHero title="Analytics" subtitle="Track your learning progress with detailed insights." />
+
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100">
         {Icon && <Icon className="w-5 h-5 text-blue-600" />}
         <h3 className="text-base font-semibold text-gray-800">{title}</h3>

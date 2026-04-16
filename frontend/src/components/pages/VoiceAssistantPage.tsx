@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import AITeacherAvatar from '@/components/avatar/AITeacherAvatar';
+import PageHero from "@/components/common/PageHero";
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -23,6 +24,8 @@ function Orb({ state, level = 0 }) {
 
   return (
     <div className="relative w-52 h-52 flex items-center justify-center">
+        <PageHero title="Voice Assistant" subtitle="Talk to your AI tutor using voice commands." />
+
       {[0,1,2].map(i => (
         <motion.div key={i} className="absolute rounded-full"
           style={{ width:208+i*44, height:208+i*44, background:c.g }}
@@ -325,7 +328,7 @@ export default function VoiceAssistantPage() {
       {/* top bar */}
       <div className="flex items-center justify-between px-5 py-3 bg-black/30 z-20 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center">
             <Bot className="w-5 h-5" />
           </div>
           <div>
@@ -347,7 +350,7 @@ export default function VoiceAssistantPage() {
             {muted?<VolumeX className="w-4 h-4"/>:<Volume2 className="w-4 h-4"/>}
           </button>
           <button onClick={()=>setShowChat(!showChat)}
-            className={`p-2 rounded-lg transition ${showChat?'bg-indigo-500/20 text-indigo-400':'bg-white/5 text-gray-400 hover:text-white'}`}>
+            className={`p-2 rounded-lg transition ${showChat?'bg-[#284ce3]/20 text-blue-400':'bg-white/5 text-gray-400 hover:text-white'}`}>
             <MessageSquare className="w-4 h-4" />
           </button>
         </div>
@@ -363,7 +366,7 @@ export default function VoiceAssistantPage() {
             {caption && (
               <motion.p key={caption.slice(0,20)} initial={{opacity:0,y:5}} animate={{opacity:1,y:0}} exit={{opacity:0}}
                 className={`max-w-lg text-center text-sm px-4 leading-relaxed ${
-                  state==='listening'?'text-orange-300/80':state==='speaking'?'text-cyan-300/80':'text-purple-300/80'}`}>
+                  state==='listening'?'text-orange-300/80':state==='speaking'?'text-cyan-300/80':'text-blue-300/80'}`}>
                 {caption}
               </motion.p>
             )}
@@ -403,10 +406,10 @@ export default function VoiceAssistantPage() {
                 {messages.map((m,i)=>(
                   <motion.div key={i} initial={{opacity:0,y:6}} animate={{opacity:1,y:0}}
                     className={`flex gap-2 ${m.role==='user'?'flex-row-reverse':''}`}>
-                    <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${m.role==='user'?'bg-indigo-500':'bg-cyan-500'}`}>
+                    <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${m.role==='user'?'bg-[#284ce3]':'bg-cyan-500'}`}>
                       {m.role==='user'?<User className="w-3 h-3 text-white"/>:<Bot className="w-3 h-3 text-white"/>}
                     </div>
-                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.role==='user'?'bg-indigo-600 text-white rounded-tr-sm':'bg-gray-800 text-gray-200 rounded-tl-sm'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.role==='user'?'bg-[#284ce3] text-white rounded-tr-sm':'bg-gray-800 text-gray-200 rounded-tl-sm'}`}>
                       <ReactMarkdown components={{
                         p:({children})=><p className="mb-1 last:mb-0">{children}</p>,
                         strong:({children})=><strong className="text-yellow-300">{children}</strong>,
@@ -420,8 +423,8 @@ export default function VoiceAssistantPage() {
                 <form onSubmit={e=>{e.preventDefault();const v=e.target.elements.m;if(v.value.trim()){processRef.current(v.value.trim());v.value='';}}}
                   className="p-3 border-t border-white/10">
                   <div className="flex gap-2">
-                    <input name="m" placeholder="Type instead..." className="flex-1 px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-lg outline-none text-gray-200 placeholder-gray-500 focus:border-indigo-500"/>
-                    <button type="submit" className="px-3 py-2 bg-indigo-600 rounded-lg text-white text-sm">Send</button>
+                    <input name="m" placeholder="Type instead..." className="flex-1 px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-lg outline-none text-gray-200 placeholder-gray-500 focus:border-[#284ce3]"/>
+                    <button type="submit" className="px-3 py-2 bg-[#284ce3] rounded-lg text-white text-sm">Send</button>
                   </div>
                 </form>
               )}

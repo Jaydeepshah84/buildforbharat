@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ai, student } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
+import PageHero from "@/components/common/PageHero";
 
 // --------------- animation helpers ---------------
 
@@ -55,7 +56,7 @@ function getTypeIcon(type) {
 function getTypeColor(type) {
   const t = (type || '').toLowerCase();
   if (t.includes('quiz') || t.includes('test') || t.includes('practice'))
-    return 'bg-purple-100 text-purple-700 border-purple-200';
+    return 'bg-blue-100 text-[#284ce3] border-blue-200';
   if (t.includes('revision') || t.includes('review'))
     return 'bg-blue-100 text-blue-700 border-blue-200';
   if (t.includes('exercise') || t.includes('problem'))
@@ -96,8 +97,10 @@ function GenerateForm({ onGenerate, loading }) {
 
   return (
     <motion.form variants={fadeIn} onSubmit={handleSubmit} className="card space-y-6">
+        <PageHero title="Study Planner" subtitle="Plan your learning journey with AI assistance." />
+
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
@@ -122,12 +125,12 @@ function GenerateForm({ onGenerate, loading }) {
             step={0.5}
             value={availableHours}
             onChange={(e) => setAvailableHours(parseFloat(e.target.value))}
-            className="flex-1 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-600"
+            className="flex-1 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#284ce3]"
             disabled={loading}
           />
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100 min-w-[80px] justify-center">
-            <Clock className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm font-bold text-indigo-700">{availableHours}h</span>
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100 min-w-[80px] justify-center">
+            <Clock className="w-4 h-4 text-[#284ce3]" />
+            <span className="text-sm font-bold text-[#284ce3]">{availableHours}h</span>
           </div>
         </div>
         <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
@@ -155,7 +158,7 @@ function GenerateForm({ onGenerate, loading }) {
               onClick={() => setAvailableHours(p.value)}
               className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${
                 availableHours === p.value
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                  ? 'border-[#284ce3] bg-blue-50 text-[#284ce3]'
                   : 'border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
@@ -168,7 +171,7 @@ function GenerateForm({ onGenerate, loading }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
@@ -200,7 +203,7 @@ function TaskCard({ task, index, checked, onToggle, isFocus }) {
       variants={fadeIn}
       className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 ${
         isFocus
-          ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-sm'
+          ? 'bg-gradient-to-r from-blue-50 to-blue-50 border-blue-200 shadow-sm'
           : checked
           ? 'bg-gray-50 border-gray-100 opacity-75'
           : 'bg-white border-gray-100 hover:border-gray-200'
@@ -214,7 +217,7 @@ function TaskCard({ task, index, checked, onToggle, isFocus }) {
         {checked ? (
           <CheckCircle2 className="w-5 h-5 text-green-500" />
         ) : (
-          <Circle className="w-5 h-5 text-gray-300 hover:text-indigo-400 transition-colors" />
+          <Circle className="w-5 h-5 text-gray-300 hover:text-blue-400 transition-colors" />
         )}
       </button>
 
@@ -225,7 +228,7 @@ function TaskCard({ task, index, checked, onToggle, isFocus }) {
             {task.topic || task.title || task.name || 'Study Task'}
           </span>
           {isFocus && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-[#284ce3] text-xs font-semibold">
               <Star className="w-3 h-3" />
               {t('studyPlan.focus', 'Focus')}
             </span>
@@ -280,7 +283,7 @@ function DaySchedule({ day, dayIndex, checkedTasks, onToggleTask }) {
             progress === 100
               ? 'bg-green-100 text-green-600'
               : progress > 0
-              ? 'bg-indigo-100 text-indigo-600'
+              ? 'bg-blue-100 text-[#284ce3]'
               : 'bg-gray-100 text-gray-500'
           }`}>
             <CalendarDays className="w-5 h-5" />
@@ -297,7 +300,7 @@ function DaySchedule({ day, dayIndex, checkedTasks, onToggleTask }) {
               {focusTopic && (
                 <>
                   <span className="text-gray-300">|</span>
-                  <span className="flex items-center gap-1 text-indigo-500">
+                  <span className="flex items-center gap-1 text-[#284ce3]">
                     <Star className="w-3 h-3" />
                     {focusTopic}
                   </span>
@@ -312,7 +315,7 @@ function DaySchedule({ day, dayIndex, checkedTasks, onToggleTask }) {
           <div className="hidden sm:block w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
             <motion.div
               className={`h-full rounded-full ${
-                progress === 100 ? 'bg-green-500' : 'bg-indigo-500'
+                progress === 100 ? 'bg-green-500' : 'bg-[#284ce3]'
               }`}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}
@@ -405,7 +408,7 @@ function PreviousPlansList({ plans }) {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#284ce3] flex items-center justify-center flex-shrink-0">
                   <CalendarDays className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -451,7 +454,7 @@ function PreviousPlansList({ plans }) {
                           <ul className="space-y-1">
                             {tasks.map((task, ti) => (
                               <li key={ti} className="text-xs text-gray-600 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#284ce3] flex-shrink-0" />
                                 <span className="truncate">{task.topic || task.title || task.name || 'Task'}</span>
                                 {task.duration && (
                                   <span className="text-gray-400 ml-auto flex-shrink-0">{task.duration}</span>
@@ -565,7 +568,7 @@ export default function StudyPlannerPage() {
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
         {/* Page header */}
         <motion.div variants={fadeIn} className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
             <GraduationCap className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -585,7 +588,7 @@ export default function StudyPlannerPage() {
             {/* Plan header with progress */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-indigo-600" />
+                <CalendarDays className="w-5 h-5 text-[#284ce3]" />
                 {t('studyPlan.yourPlan', 'Your Study Plan')}
               </h2>
               <div className="flex items-center gap-3">
@@ -595,32 +598,32 @@ export default function StudyPlannerPage() {
                 <div className="w-24 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
                     className={`h-full rounded-full ${
-                      overallProgress === 100 ? 'bg-green-500' : 'bg-indigo-500'
+                      overallProgress === 100 ? 'bg-green-500' : 'bg-[#284ce3]'
                     }`}
                     animate={{ width: `${overallProgress}%` }}
                     transition={{ duration: 0.3 }}
                   />
                 </div>
-                <span className="text-sm font-bold text-indigo-600">{overallProgress}%</span>
+                <span className="text-sm font-bold text-[#284ce3]">{overallProgress}%</span>
               </div>
             </div>
 
             {/* Plan overview card */}
-            <motion.div variants={fadeIn} className="card bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
+            <motion.div variants={fadeIn} className="card bg-gradient-to-r from-blue-50 to-blue-50 border-blue-100">
               <div className="flex items-center justify-around text-center">
                 <div>
-                  <p className="text-2xl font-bold text-indigo-700">{days.length}</p>
-                  <p className="text-xs text-indigo-500">{t('studyPlan.days', 'Days')}</p>
+                  <p className="text-2xl font-bold text-[#284ce3]">{days.length}</p>
+                  <p className="text-xs text-[#284ce3]">{t('studyPlan.days', 'Days')}</p>
                 </div>
                 <div className="w-px h-10 bg-indigo-200" />
                 <div>
-                  <p className="text-2xl font-bold text-indigo-700">{totalTasks}</p>
-                  <p className="text-xs text-indigo-500">{t('studyPlan.totalTasks', 'Total Tasks')}</p>
+                  <p className="text-2xl font-bold text-[#284ce3]">{totalTasks}</p>
+                  <p className="text-xs text-[#284ce3]">{t('studyPlan.totalTasks', 'Total Tasks')}</p>
                 </div>
                 <div className="w-px h-10 bg-indigo-200" />
                 <div>
-                  <p className="text-2xl font-bold text-indigo-700">{currentPlan.availableHours || '?'}h</p>
-                  <p className="text-xs text-indigo-500">{t('studyPlan.perDay', 'Per Day')}</p>
+                  <p className="text-2xl font-bold text-[#284ce3]">{currentPlan.availableHours || '?'}h</p>
+                  <p className="text-xs text-[#284ce3]">{t('studyPlan.perDay', 'Per Day')}</p>
                 </div>
               </div>
             </motion.div>
@@ -641,13 +644,13 @@ export default function StudyPlannerPage() {
         {/* Previous plans */}
         <motion.div variants={fadeIn} className="mt-8">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <LayoutList className="w-5 h-5 text-indigo-600" />
+            <LayoutList className="w-5 h-5 text-[#284ce3]" />
             {t('studyPlan.previousPlans', 'Previous Plans')}
           </h2>
 
           {loadingPlans ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#284ce3]" />
             </div>
           ) : (
             <PreviousPlansList plans={previousPlans} />

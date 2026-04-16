@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { ai } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
+import PageHero from "@/components/common/PageHero";
 
 // --------------- constants ---------------
 
@@ -85,6 +86,8 @@ function CircularScore({ score, total }) {
 
   return (
     <div className="relative inline-flex items-center justify-center">
+        <PageHero title="Exam" subtitle="Take timed exams and track your performance." />
+
       <svg className="w-36 h-36 -rotate-90" viewBox="0 0 130 130">
         <circle cx="65" cy="65" r={radius} fill="none" strokeWidth="9" className={`stroke-current ${bgColor}`} />
         <motion.circle
@@ -161,7 +164,7 @@ function GenerateExamForm({ onGenerate, loading }) {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <motion.div variants={fadeIn} className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
             <FileText className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -186,14 +189,14 @@ function GenerateExamForm({ onGenerate, loading }) {
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t('exam.topicPlaceholder', 'e.g. Photosynthesis')}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={addTopic}
                 disabled={!topicInput.trim() || loading}
-                className="px-4 py-3 rounded-xl bg-indigo-100 text-indigo-700 text-sm font-medium hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-3 rounded-xl bg-blue-100 text-[#284ce3] text-sm font-medium hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('exam.add', 'Add')}
               </button>
@@ -205,13 +208,13 @@ function GenerateExamForm({ onGenerate, loading }) {
                 {topics.map((topic) => (
                   <span
                     key={topic}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-[#284ce3] text-sm font-medium"
                   >
                     {topic}
                     <button
                       type="button"
                       onClick={() => removeTopic(topic)}
-                      className="text-indigo-400 hover:text-red-500 transition-colors"
+                      className="text-blue-400 hover:text-red-500 transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -233,7 +236,7 @@ function GenerateExamForm({ onGenerate, loading }) {
                   onClick={() => setQuestionCount(n)}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
                     questionCount === n
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      ? 'border-[#284ce3] bg-blue-50 text-[#284ce3]'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
@@ -254,7 +257,7 @@ function GenerateExamForm({ onGenerate, loading }) {
               onChange={(e) => setTimeLimit(Math.max(5, parseInt(e.target.value) || DEFAULT_TIME_LIMIT))}
               min={5}
               max={180}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -263,7 +266,7 @@ function GenerateExamForm({ onGenerate, loading }) {
           <button
             type="submit"
             disabled={loading || (topics.length === 0 && !topicInput.trim())}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -380,7 +383,7 @@ function ExamTaker({ exam, onSubmit }) {
           }`}
         >
           <div className="flex items-center gap-3">
-            <Timer className={`w-5 h-5 ${isTimeLow ? 'text-red-500' : 'text-indigo-500'}`} />
+            <Timer className={`w-5 h-5 ${isTimeLow ? 'text-red-500' : 'text-[#284ce3]'}`} />
             <span className={`text-lg font-mono font-bold ${isTimeLow ? 'text-red-600' : 'text-gray-800'}`}>
               {formatTime(timeLeft)}
             </span>
@@ -401,7 +404,7 @@ function ExamTaker({ exam, onSubmit }) {
                   ? 'bg-blue-100 text-blue-700'
                   : sec.key === 'short'
                   ? 'bg-green-100 text-green-700'
-                  : 'bg-purple-100 text-purple-700'
+                  : 'bg-blue-100 text-[#284ce3]'
               }`}
             >
               {sec.label}: {sec.items.length}
@@ -421,7 +424,7 @@ function ExamTaker({ exam, onSubmit }) {
               className="card"
             >
               <div className="flex items-center gap-2 mb-4">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-semibold">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-[#284ce3] text-xs font-semibold">
                   Q{currentIndex + 1}
                 </span>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">MCQ</span>
@@ -450,16 +453,16 @@ function ExamTaker({ exam, onSubmit }) {
                         type="button"
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-200 ${
                           isSelected
-                            ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
-                            : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                            ? 'border-[#284ce3] bg-blue-50 ring-2 ring-indigo-200'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                         }`}
                       >
                         <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                          isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+                          isSelected ? 'bg-[#284ce3] text-white' : 'bg-gray-100 text-gray-500'
                         }`}>
                           {OPTION_LETTERS[oi]}
                         </span>
-                        <span className={`text-sm ${isSelected ? 'text-indigo-700 font-medium' : 'text-gray-700'}`}>
+                        <span className={`text-sm ${isSelected ? 'text-[#284ce3] font-medium' : 'text-gray-700'}`}>
                           {optText}
                         </span>
                       </motion.button>
@@ -487,7 +490,7 @@ function ExamTaker({ exam, onSubmit }) {
           {currentIndex < questions.length - 1 ? (
             <button
               onClick={() => setCurrentIndex((prev) => prev + 1)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
             >
               {t('exam.next', 'Next')}
               <ChevronRight className="w-4 h-4" />
@@ -522,14 +525,14 @@ function ExamTaker({ exam, onSubmit }) {
       >
         <div className="card sticky top-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <Hash className="w-4 h-4 text-indigo-500" />
+            <Hash className="w-4 h-4 text-[#284ce3]" />
             {t('exam.questionNav', 'Questions')}
           </h3>
 
           {sectionOrder.map((sec) => (
             <div key={sec.key} className="mb-4">
               <p className={`text-xs font-semibold mb-2 ${
-                sec.key === 'mcq' ? 'text-blue-600' : sec.key === 'short' ? 'text-green-600' : 'text-purple-600'
+                sec.key === 'mcq' ? 'text-blue-600' : sec.key === 'short' ? 'text-green-600' : 'text-[#284ce3]'
               }`}>
                 {sec.label}
               </p>
@@ -547,7 +550,7 @@ function ExamTaker({ exam, onSubmit }) {
                       onClick={() => setCurrentIndex(gi)}
                       className={`w-9 h-9 rounded-lg text-xs font-semibold transition-all duration-200 ${
                         isActive
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                          ? 'bg-[#284ce3] text-white shadow-md shadow-blue-200'
                           : isAnswered
                           ? 'bg-green-100 text-green-700 border border-green-200'
                           : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -699,7 +702,7 @@ function ExamResults({ result, exam, onNewExam, onDashboard }) {
         {sectionBreakdown.length > 0 && (
           <motion.div variants={fadeIn} className="card">
             <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-indigo-600" />
+              <BarChart3 className="w-4 h-4 text-[#284ce3]" />
               {t('exam.sectionBreakdown', 'Section-wise Breakdown')}
             </h3>
             <div className="space-y-3">
@@ -737,7 +740,7 @@ function ExamResults({ result, exam, onNewExam, onDashboard }) {
         {feedbackText && (
           <motion.div variants={fadeIn} className="card">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-indigo-600" />
+              <BookOpen className="w-4 h-4 text-[#284ce3]" />
               {t('exam.aiFeedback', 'AI Feedback')}
             </h3>
             <div className="prose prose-sm max-w-none text-gray-700">
@@ -792,7 +795,7 @@ function ExamResults({ result, exam, onNewExam, onDashboard }) {
           </button>
           <button
             onClick={onDashboard}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
           >
             {t('exam.backToDashboard', 'Back to Dashboard')}
           </button>

@@ -28,6 +28,7 @@ import {
 import { ai } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/context/LanguageContext';
+import PageHero from "@/components/common/PageHero";
 
 // --------------- constants ---------------
 
@@ -41,8 +42,8 @@ const DIFFICULTIES = [
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
 const OPTION_COLORS = {
-  default: 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50',
-  selected: 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200',
+  default: 'border-gray-200 hover:border-blue-300 hover:bg-blue-50',
+  selected: 'border-[#284ce3] bg-blue-50 ring-2 ring-indigo-200',
   correct: 'border-green-500 bg-green-50 ring-2 ring-green-200',
   incorrect: 'border-red-500 bg-red-50 ring-2 ring-red-200',
 };
@@ -82,6 +83,8 @@ function CircularScore({ score, total }) {
 
   return (
     <div className="relative inline-flex items-center justify-center">
+        <PageHero title="Quiz" subtitle="Test your knowledge with AI-generated quizzes." />
+
       <svg className="w-40 h-40 -rotate-90" viewBox="0 0 140 140">
         {/* Background circle */}
         <circle
@@ -153,7 +156,7 @@ function GenerateForm({ onGenerate, loading }) {
       >
         {/* Header */}
         <motion.div variants={fadeIn} className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white mb-4">
             <Brain className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -176,7 +179,7 @@ function GenerateForm({ onGenerate, loading }) {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder={t('quiz.topicPlaceholder', 'e.g. Photosynthesis, Quadratic Equations, WW2')}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -194,7 +197,7 @@ function GenerateForm({ onGenerate, loading }) {
                   onClick={() => setCount(n)}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
                     count === n
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      ? 'border-[#284ce3] bg-blue-50 text-[#284ce3]'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
@@ -231,7 +234,7 @@ function GenerateForm({ onGenerate, loading }) {
           <button
             type="submit"
             disabled={loading || !topic.trim()}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -355,7 +358,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
             </div>
             <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                className="h-full rounded-full bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]"
                 animate={{ width: `${progressPct}%` }}
                 transition={{ duration: 0.3 }}
               />
@@ -381,7 +384,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           >
             {/* Question text */}
             <div className="mb-6">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-semibold mb-3">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-[#284ce3] text-xs font-semibold mb-3">
                 Q{currentIndex + 1}
               </span>
               <h2 className="text-lg font-semibold text-gray-900 leading-relaxed">
@@ -408,7 +411,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                     <span
                       className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
                         isSelected
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-[#284ce3] text-white'
                           : 'bg-gray-100 text-gray-500'
                       }`}
                     >
@@ -416,7 +419,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                     </span>
                     <span
                       className={`text-sm ${
-                        isSelected ? 'text-indigo-700 font-medium' : 'text-gray-700'
+                        isSelected ? 'text-[#284ce3] font-medium' : 'text-gray-700'
                       }`}
                     >
                       {optionText}
@@ -447,9 +450,9 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                 onClick={() => setCurrentIndex(i)}
                 className={`w-3 h-3 rounded-full transition-all duration-200 ${
                   i === currentIndex
-                    ? 'bg-indigo-600 scale-125'
+                    ? 'bg-[#284ce3] scale-125'
                     : answers[i] !== undefined
-                    ? 'bg-indigo-300'
+                    ? 'bg-blue-300'
                     : 'bg-gray-200'
                 }`}
               />
@@ -459,7 +462,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           {currentIndex < totalQuestions - 1 ? (
             <button
               onClick={goNext}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
             >
               {t('quiz.next', 'Next')}
               <ChevronRight className="w-4 h-4" />
@@ -585,7 +588,7 @@ function QuizResults({ quiz, answers, timeTaken, onRetry, onDashboard }) {
             </button>
             <button
               onClick={onDashboard}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
             >
               <Home className="w-4 h-4" />
               {t('quiz.backToDashboard', 'Back to Dashboard')}

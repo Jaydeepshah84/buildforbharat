@@ -27,6 +27,7 @@ import {
 import { ai, courses } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/context/LanguageContext';
+import PageHero from "@/components/common/PageHero";
 
 // --------------- animation helpers ---------------
 
@@ -49,7 +50,7 @@ function LevelBadge({ level }) {
     medium: 'bg-amber-50 text-amber-600 border-amber-100 shadow-amber-100/50',
     intermediate: 'bg-blue-50 text-blue-600 border-blue-100 shadow-blue-100/50',
     strong: 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-emerald-100/50',
-    advanced: 'bg-purple-50 text-purple-600 border-purple-100 shadow-purple-100/50',
+    advanced: 'bg-blue-50 text-[#284ce3] border-blue-100 shadow-purple-100/50',
   };
 
   const colors =
@@ -59,6 +60,8 @@ function LevelBadge({ level }) {
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-sm capitalize ${colors}`}
     >
+        <PageHero title="AI Tutor" subtitle="Get personalized help from your AI learning assistant." />
+
       <Sparkles className="w-3 h-3" />
       {level || 'N/A'}
     </span>
@@ -73,7 +76,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="w-2 h-2 rounded-full bg-indigo-400"
+          className="w-2 h-2 rounded-full bg-[#284ce3]"
           animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
           transition={{
             duration: 0.7,
@@ -104,8 +107,8 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
       <div
         className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-sm ${
           isUser
-            ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-indigo-200'
-            : 'bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-purple-200'
+            ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-blue-200'
+            : 'bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white shadow-blue-200'
         }`}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -116,7 +119,7 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
         <div
           className={`px-4 py-3 text-sm leading-relaxed ${
             isUser
-              ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-2xl rounded-tr-md shadow-md shadow-indigo-200/50'
+              ? 'bg-gradient-to-br from-[#284ce3] to-blue-700 text-white rounded-2xl rounded-tr-md shadow-md shadow-blue-200/50'
               : 'bg-white border border-gray-100/80 text-gray-700 rounded-2xl rounded-tl-md shadow-sm hover:shadow-md transition-shadow duration-300'
           }`}
         >
@@ -137,7 +140,7 @@ function MessageBubble({ message, onReadAloud, readingId, ttsLoading }) {
             className={`mt-1.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
               isReading
                 ? 'text-red-500 bg-red-50 hover:bg-red-100'
-                : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
+                : 'text-gray-400 hover:text-[#284ce3] hover:bg-blue-50'
             }`}
           >
             {ttsLoading && readingId === message.id ? (
@@ -495,7 +498,7 @@ export default function TutorPage() {
       >
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-purple-200/50">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-blue-200/50">
               <Bot className="w-5 h-5" />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white" />
@@ -523,7 +526,7 @@ export default function TutorPage() {
               onClick={() => setTopicDropdownOpen(!topicDropdownOpen)}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm border border-gray-200/80 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all max-w-[200px] shadow-sm"
             >
-              <BookOpen className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+              <BookOpen className="w-4 h-4 flex-shrink-0 text-blue-400" />
               <span className="truncate text-[13px]">
                 {selectedTopic
                   ? topicOptions.find((t) => t.id === selectedTopic)?.title || 'Topic'
@@ -562,8 +565,8 @@ export default function TutorPage() {
                         setSelectedTopic(topic.id);
                         setTopicDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-2.5 text-left hover:bg-indigo-50 transition-colors ${
-                        selectedTopic === topic.id ? 'bg-indigo-50' : ''
+                      className={`w-full px-4 py-2.5 text-left hover:bg-blue-50 transition-colors ${
+                        selectedTopic === topic.id ? 'bg-blue-50' : ''
                       }`}
                     >
                       <p className="text-sm font-medium text-gray-800 truncate">{topic.title}</p>
@@ -619,7 +622,7 @@ export default function TutorPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3"
           >
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-sm shadow-purple-200">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white flex items-center justify-center shadow-sm shadow-blue-200">
               <Bot className="w-4 h-4" />
             </div>
             <div className="bg-white border border-gray-100/80 rounded-2xl rounded-tl-md shadow-sm">
@@ -668,7 +671,7 @@ export default function TutorPage() {
               disabled={isTyping || isRecording || sttLoading}
               rows={1}
               className="w-full px-4 py-3 pr-4 rounded-xl border border-gray-200/80 bg-gray-50/50 text-sm resize-none
-                focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white
+                focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-blue-300 focus:bg-white
                 disabled:bg-gray-100 disabled:cursor-not-allowed placeholder-gray-400
                 transition-all duration-200 shadow-sm"
               style={{ maxHeight: 120 }}
@@ -683,10 +686,10 @@ export default function TutorPage() {
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isTyping || isRecording || sttLoading}
-            className="flex-shrink-0 p-3 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white
-              hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200
+            className="flex-shrink-0 p-3 rounded-xl bg-gradient-to-br from-[#284ce3] to-blue-700 text-white
+              hover:from-blue-700 hover:to-indigo-800 transition-all duration-200
               disabled:opacity-40 disabled:cursor-not-allowed
-              shadow-lg shadow-indigo-200/50 active:scale-95"
+              shadow-lg shadow-blue-200/50 active:scale-95"
           >
             {isTyping ? (
               <Loader2 className="w-5 h-5 animate-spin" />

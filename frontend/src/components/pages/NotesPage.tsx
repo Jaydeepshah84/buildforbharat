@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { ai, uploadService } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
+import PageHero from "@/components/common/PageHero";
 
 // -------------------- animation presets --------------------
 
@@ -45,7 +46,7 @@ const cardPop = {
 // -------------------- source badge colors --------------------
 
 const SOURCE_STYLES = {
-  topic: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Topic' },
+  topic: { bg: 'bg-blue-100', text: 'text-[#284ce3]', label: 'Topic' },
   voice: { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Voice' },
   pdf: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'PDF' },
   questions: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Questions' },
@@ -55,6 +56,8 @@ function SourceBadge({ source }) {
   const s = SOURCE_STYLES[source] || SOURCE_STYLES.topic;
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.bg} ${s.text}`}>
+        <PageHero title="Notes" subtitle="Generate and manage your study notes." />
+
       {s.label}
     </span>
   );
@@ -66,14 +69,14 @@ function RenderedNotes({ markdown }) {
   return (
     <div className="rendered-notes prose prose-sm sm:prose max-w-none
       prose-headings:text-gray-900 prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4
-      prose-h2:text-xl prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-3 prose-h2:text-indigo-700
+      prose-h2:text-xl prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-3 prose-h2:text-[#284ce3]
       prose-h3:text-lg prose-h3:font-semibold prose-h3:text-gray-800
       prose-p:text-gray-700 prose-p:leading-relaxed
       prose-li:text-gray-700
-      prose-strong:text-indigo-600
-      prose-blockquote:border-l-indigo-400 prose-blockquote:bg-indigo-50/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:px-4
-      prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-indigo-600
-      prose-a:text-indigo-600"
+      prose-strong:text-[#284ce3]
+      prose-blockquote:border-l-[#284ce3] prose-blockquote:bg-blue-50/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:px-4
+      prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-[#284ce3]
+      prose-a:text-[#284ce3]"
     >
       <ReactMarkdown>{markdown}</ReactMarkdown>
     </div>
@@ -484,7 +487,7 @@ export default function NotesPage() {
         {/* ---------- Page Header ---------- */}
         <motion.div variants={fadeIn} initial="hidden" animate="visible">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white shadow-lg shadow-blue-200">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
@@ -505,7 +508,7 @@ export default function NotesPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  ? 'bg-[#284ce3] text-white shadow-md shadow-blue-200'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -537,7 +540,7 @@ export default function NotesPage() {
                       onClick={() => setMethod(m.id)}
                       className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                         method === m.id
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+                          ? 'bg-blue-50 text-[#284ce3] border border-blue-200 shadow-sm'
                           : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border border-transparent'
                       }`}
                     >
@@ -559,7 +562,7 @@ export default function NotesPage() {
                 >
                   <div className="px-6 py-4 border-b border-gray-100">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-indigo-500" />
+                      <BookOpen className="w-5 h-5 text-[#284ce3]" />
                       Generate Notes from Topic
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">Enter any topic and AI will create comprehensive study notes</p>
@@ -573,13 +576,13 @@ export default function NotesPage() {
                         onChange={(e) => setTopicName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleGenerateFromTopic()}
                         placeholder="e.g., Photosynthesis, Newton's Laws, French Revolution..."
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent transition-shadow"
                       />
                     </div>
                     <button
                       onClick={handleGenerateFromTopic}
                       disabled={generating || !topicName.trim()}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-200"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-200"
                     >
                       {generating && generationSource === 'topic' ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
@@ -616,10 +619,10 @@ export default function NotesPage() {
                       onClick={() => !audioFile && audioInputRef.current?.click()}
                       className={`relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200 ${
                         audioDragActive
-                          ? 'border-indigo-400 bg-indigo-50'
+                          ? 'border-[#284ce3] bg-blue-50'
                           : audioFile
                           ? 'border-green-300 bg-green-50/50'
-                          : 'border-gray-300 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30'
+                          : 'border-gray-300 bg-gray-50/50 hover:border-blue-300 hover:bg-blue-50/30'
                       }`}
                     >
                       <input
@@ -661,7 +664,7 @@ export default function NotesPage() {
                     {audioURL && (
                       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                         <div className="flex items-center gap-3 mb-2">
-                          <Volume2 className="w-4 h-4 text-indigo-500" />
+                          <Volume2 className="w-4 h-4 text-[#284ce3]" />
                           <span className="text-sm font-medium text-gray-700">Audio Preview</span>
                         </div>
                         <audio controls src={audioURL} className="w-full h-10" />
@@ -670,8 +673,8 @@ export default function NotesPage() {
 
                     {/* Transcribed text */}
                     {transcribedText && (
-                      <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                        <h4 className="text-sm font-semibold text-indigo-700 mb-2">Transcribed Text</h4>
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                        <h4 className="text-sm font-semibold text-[#284ce3] mb-2">Transcribed Text</h4>
                         <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{transcribedText}</p>
                       </div>
                     )}
@@ -680,7 +683,7 @@ export default function NotesPage() {
                     <button
                       onClick={handleTranscribeAndGenerate}
                       disabled={!audioFile || isTranscribing || generating}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-200"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-200"
                     >
                       {isTranscribing ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Transcribing...</>
@@ -719,10 +722,10 @@ export default function NotesPage() {
                       onClick={() => !pdfFile && fileInputRef.current?.click()}
                       className={`relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200 ${
                         dragActive
-                          ? 'border-indigo-400 bg-indigo-50'
+                          ? 'border-[#284ce3] bg-blue-50'
                           : pdfFile
                           ? 'border-green-300 bg-green-50/50'
-                          : 'border-gray-300 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30'
+                          : 'border-gray-300 bg-gray-50/50 hover:border-blue-300 hover:bg-blue-50/30'
                       }`}
                     >
                       <input
@@ -763,7 +766,7 @@ export default function NotesPage() {
                     <button
                       onClick={handleGenerateFromPdf}
                       disabled={!pdfFile || generating}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-200"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-200"
                     >
                       {generating && generationSource === 'pdf' ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Processing PDF...</>
@@ -798,13 +801,13 @@ export default function NotesPage() {
                         onChange={(e) => setQuestionsText(e.target.value)}
                         placeholder={"Paste your questions here, one per line...\n\nExample:\n1. What is photosynthesis?\n2. Explain the water cycle.\n3. What are Newton's three laws of motion?"}
                         rows={8}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition-shadow"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent resize-none transition-shadow"
                       />
                     </div>
                     <button
                       onClick={handleGenerateFromQuestions}
                       disabled={generating || !questionsText.trim()}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-200"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-200"
                     >
                       {generating && generationSource === 'questions' ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Generating Answers...</>
@@ -826,11 +829,11 @@ export default function NotesPage() {
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative">
                       <motion.div
-                        className="w-16 h-16 rounded-full bg-indigo-100"
+                        className="w-16 h-16 rounded-full bg-blue-100"
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                       />
-                      <Sparkles className="w-7 h-7 text-indigo-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      <Sparkles className="w-7 h-7 text-[#284ce3] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-semibold text-gray-900">AI is generating your notes...</p>
@@ -856,13 +859,13 @@ export default function NotesPage() {
                         onClick={handleDownloadPDF}
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
                       >
-                        <Download className="w-4 h-4 text-indigo-500" />
+                        <Download className="w-4 h-4 text-[#284ce3]" />
                         Download as PDF
                       </button>
                       <button
                         onClick={handleSaveNotes}
                         disabled={savingNote}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-200 disabled:opacity-50"
                       >
                         {savingNote ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
@@ -883,7 +886,7 @@ export default function NotesPage() {
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-5 h-5 text-purple-500" />
+                          <Sparkles className="w-5 h-5 text-[#284ce3]" />
                           <h3 className="text-lg font-semibold text-gray-900">Generated Notes</h3>
                         </div>
                         <SourceBadge source={generationSource} />
@@ -918,7 +921,7 @@ export default function NotesPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search your notes..."
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm transition-shadow"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent shadow-sm transition-shadow"
                 />
               </div>
 
@@ -932,7 +935,7 @@ export default function NotesPage() {
               {/* Notes loading */}
               {notesLoading ? (
                 <div className="flex items-center justify-center py-20">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#284ce3]" />
                   <span className="ml-3 text-sm text-gray-500">Loading your notes...</span>
                 </div>
               ) : filteredNotes.length === 0 ? (
@@ -952,7 +955,7 @@ export default function NotesPage() {
                   {!searchQuery && (
                     <button
                       onClick={() => setActiveTab('create')}
-                      className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
+                      className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-200"
                     >
                       <Plus className="w-4 h-4" />
                       Create Notes
@@ -979,14 +982,14 @@ export default function NotesPage() {
                           onClick={() => setExpandedNoteId(isExpanded ? null : noteId)}
                           className={`rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-md ${
                             isExpanded
-                              ? 'border-indigo-200 bg-indigo-50/30 shadow-md col-span-1 md:col-span-2'
-                              : 'border-gray-200 bg-white hover:border-indigo-200'
+                              ? 'border-blue-200 bg-blue-50/30 shadow-md col-span-1 md:col-span-2'
+                              : 'border-gray-200 bg-white hover:border-blue-200'
                           }`}
                         >
                           {/* Card header */}
                           <div className="p-4 flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3 min-w-0">
-                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 text-[#284ce3] flex items-center justify-center">
                                 <FileText className="w-5 h-5" />
                               </div>
                               <div className="min-w-0">
