@@ -70,8 +70,8 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
         >
           <Link href="/" className="inline-flex items-center gap-3">
-            <img src="/logo-brain.png" alt="Ed.Ai" className="h-11 w-11 rounded-xl" />
-            <span className="text-2xl font-extrabold text-white">Ed<span className="text-[#c3f53c]">.Ai</span></span>
+            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">L</span>
+            <span className="text-2xl font-extrabold text-white">Learnify</span>
           </Link>
         </motion.div>
 
@@ -167,15 +167,15 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="text-center mb-10 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <img src="/logo-brain.png" alt="Ed.Ai" className="h-10 w-10 rounded-xl" />
-              <span className="text-2xl font-extrabold text-gray-900">Ed<span className="text-indigo-600">.Ai</span></span>
+              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-lg font-bold">L</span>
+              <span className="text-2xl font-extrabold text-gray-900">Learnify</span>
             </Link>
           </div>
 
           <div className="mb-8">
             <h1 className="text-[28px] font-bold text-gray-900 mb-2">Sign in</h1>
             <p className="text-[14px] text-gray-400">
-              New to Ed.Ai?{" "}
+              New to Learnify?{" "}
               <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">Create an account</Link>
             </p>
           </div>

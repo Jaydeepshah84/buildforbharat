@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         const response = await llm.invoke([
           {
             role: "system",
-            content: `You are a friendly AI teacher for Ed.Ai. Keep responses concise (2-4 sentences). Topic: "${topic}".`,
+            content: `You are a friendly AI teacher for Learnify. Keep responses concise (2-4 sentences). Topic: "${topic}".`,
           },
           ...history.slice(-6).map((m: any) => ({ role: m.role, content: m.content })),
           { role: "user", content: message },

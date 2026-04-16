@@ -1,4 +1,4 @@
-// ── Ed.Ai Type Definitions ──────────────────────────────────
+// ── Learnify Type Definitions ──────────────────────────────────
 
 export interface User {
   id: string;

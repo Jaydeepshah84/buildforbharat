@@ -1,5 +1,5 @@
 """
-Ed.Ai Voice AI Service
+Learnify Voice AI Service
 - TTS: AI4Bharat Indic-TTS (Hindi/Indian languages) + Edge Neural TTS (other languages)
 - STT: Faster Whisper (real-time speech-to-text)
 """
@@ -97,7 +97,7 @@ def generate_indic_tts(text, language="hi", gender="female"):
         tmp_audio.close()
 
         # Write SSML to temp file
-        ssml_path = os.path.join(tempfile.gettempdir(), f"edai_ssml_{uuid.uuid4().hex}.xml")
+        ssml_path = os.path.join(tempfile.gettempdir(), f"learnify_ssml_{uuid.uuid4().hex}.xml")
         with open(ssml_path, "w", encoding="utf-8") as f:
             f.write(ssml_text)
 
@@ -108,7 +108,7 @@ def generate_indic_tts(text, language="hi", gender="female"):
 
         if result.returncode != 0 or os.path.getsize(tmp_audio.name) < 100:
             # Fallback: plain text with natural tuning
-            txt_path = os.path.join(tempfile.gettempdir(), f"edai_tts_{uuid.uuid4().hex}.txt")
+            txt_path = os.path.join(tempfile.gettempdir(), f"learnify_tts_{uuid.uuid4().hex}.txt")
             with open(txt_path, "w", encoding="utf-8") as f:
                 f.write(text)
 
@@ -212,7 +212,7 @@ def tts():
         import subprocess, sys, uuid
         tmp_audio = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tmp_audio.close()
-        txt_path = os.path.join(tempfile.gettempdir(), f"edai_tts_{uuid.uuid4().hex}.txt")
+        txt_path = os.path.join(tempfile.gettempdir(), f"learnify_tts_{uuid.uuid4().hex}.txt")
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(text)
         tmp_text = type("obj", (object,), {"name": txt_path})()
@@ -279,7 +279,7 @@ def stt():
 
 if __name__ == "__main__":
     port = int(os.environ.get("TTS_PORT", 5001))
-    print(f"\nEd.Ai Voice AI Service")
+    print(f"\nLearnify Voice AI Service")
     print(f"  Server: http://localhost:{port}")
     print(f"  TTS: Edge Neural TTS ({len(DEFAULT_VOICES)} languages)")
     print(f"  STT: Faster Whisper\n")

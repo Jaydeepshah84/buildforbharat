@@ -1,4 +1,4 @@
-# Ed.Ai - AI-Powered Education Platform
+# Learnify - AI-Powered Education Platform
 
 An intelligent, full-stack education platform that uses AI to generate courses, teach with voice + visual animations, track progress with lesson tests, and enable collaborative learning between students.
 

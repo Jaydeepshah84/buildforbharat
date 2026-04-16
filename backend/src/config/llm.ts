@@ -20,8 +20,8 @@ export function createLLM(temperature = 0.7, maxTokens = 2000): AzureChatOpenAI 
 
 // Raw OpenAI client (for streaming, TTS, STT)
 export const openai = new AzureOpenAI({
-  apiKey: config.azure.apiKey,
-  endpoint: config.azure.endpoint,
+  apiKey: config.azure.apiKey || "dummy-key-for-local-dev",
+  endpoint: config.azure.endpoint || "https://dummy.openai.azure.com/",
   deployment: config.azure.deployment,
   apiVersion: config.azure.apiVersion,
 });

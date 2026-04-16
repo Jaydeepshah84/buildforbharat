@@ -265,7 +265,7 @@ function openCertificate(courseTitle, studentName) {
 </head>
 <body>
   <div class="cert">
-    <div class="brand">Ed.Ai</div>
+    <div class="brand">Learnify</div>
     <div class="trophy">🏆</div>
     <div class="title">Certificate of Completion</div>
     <div class="subtitle">This is to certify that</div>
@@ -274,7 +274,7 @@ function openCertificate(courseTitle, studentName) {
     <div class="label">Has successfully completed</div>
     <div class="course-name">${courseTitle}</div>
     <div class="date">Awarded on ${today}</div>
-    <div class="footer">Powered by Ed.Ai &mdash; AI-Powered Learning Platform</div>
+    <div class="footer">Powered by Learnify &mdash; AI-Powered Learning Platform</div>
   </div>
   <script>
     window.onload = function() { setTimeout(function(){ window.print(); }, 400); };

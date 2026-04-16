@@ -45,7 +45,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
         req.user = {
           id: payload.sub || "unknown",
-          email: payload.email || "user@edai.local",
+          email: payload.email || "user@learnify.local",
           profile: { id: payload.sub, name: payload.email?.split("@")[0] || "User", email: payload.email, role: "student", language: "en" },
         };
         return next();
@@ -63,7 +63,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 function guestUser() {
   return {
     id: "guest-" + Date.now(),
-    email: "guest@edai.local",
-    profile: { id: "guest", name: "Student", email: "guest@edai.local", role: "student", language: "en" },
+    email: "guest@learnify.local",
+    profile: { id: "guest", name: "Student", email: "guest@learnify.local", role: "student", language: "en" },
   };
 }

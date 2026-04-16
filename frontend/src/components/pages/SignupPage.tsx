@@ -101,8 +101,8 @@ export default function SignupPage() {
           transition={{ duration: 0.5 }}
         >
           <Link href="/" className="inline-flex items-center gap-3">
-            <img src="/logo-brain.png" alt="Ed.Ai" className="h-11 w-11 rounded-xl" />
-            <span className="text-2xl font-extrabold text-white">Ed<span className="text-[#c3f53c]">.Ai</span></span>
+            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">L</span>
+            <span className="text-2xl font-extrabold text-white">Learnify</span>
           </Link>
         </motion.div>
 
@@ -198,8 +198,8 @@ export default function SignupPage() {
           {/* Mobile logo */}
           <div className="text-center mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <img src="/logo-brain.png" alt="Ed.Ai" className="h-10 w-10 rounded-xl" />
-              <span className="text-2xl font-extrabold text-gray-900">Ed<span className="text-indigo-600">.Ai</span></span>
+              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-lg font-bold">L</span>
+              <span className="text-2xl font-extrabold text-gray-900">Learnify</span>
             </Link>
           </div>
 

@@ -26,12 +26,22 @@ import {
   Lock,
   Brain,
   Trophy,
+  Hand,
 } from 'lucide-react';
 import { courses } from '@/services/api';
 import AdaptiveLesson from '@/components/course/AdaptiveLesson';
 import AnimationPlayer from '@/components/animation/AnimationPlayer';
+import SignLanguagePlayer from '@/components/course/SignLanguagePlayer';
 import CourseBadges from '@/components/course/CourseBadges';
 import LessonTestPlayer from '@/components/course/LessonTestPlayer';
+
+// --------------- playlist thumbnail colors ---------------
+
+const COLORS = [
+  'from-indigo-600 to-purple-700', 'from-blue-600 to-cyan-600',
+  'from-purple-600 to-pink-600', 'from-teal-600 to-emerald-600',
+  'from-orange-500 to-red-500', 'from-violet-600 to-indigo-600',
+];
 
 // --------------- animation helpers ---------------
 
@@ -530,7 +540,12 @@ export default function CoursePage() {
   }, [id]);
 
   const [showModeModal, setShowModeModal] = useState(null); // topic object or null
-  const [lessonMode, setLessonMode] = useState('text'); // 'text' or 'visual'
+  const [lessonMode, setLessonMode] = useState('text'); // 'text', 'visual', or 'sign'
+
+  // Auto-select sign language mode if course was generated with sign language preference
+  useEffect(() => {
+    if (course?.signLanguage) setLessonMode('sign');
+  }, [course?.signLanguage]);
 
   const handleNavigateTopic = (topicId) => {
     const topic = allTopicsList.find(t => (t._id || t.id) === topicId);
@@ -545,6 +560,13 @@ export default function CoursePage() {
         toast.error("Pass the previous lesson's test to unlock this content");
         return;
       }
+    }
+
+    // If course was generated with sign language preference, skip mode modal and go directly
+    if (course?.signLanguage) {
+      setLessonMode('sign');
+      setSelectedTopic(topic);
+      return;
     }
 
     setShowModeModal(topic);
@@ -733,18 +755,18 @@ export default function CoursePage() {
           <p className="text-gray-500">"{topicName}"</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Option 1: Text + Voice */}
           <button
             onClick={() => { setLessonMode('text'); setSelectedTopic(showModeModal); setShowModeModal(null); }}
-            className="group card hover:shadow-xl hover:border-indigo-300 transition-all p-8 text-left border-2 border-transparent hover:border-indigo-200"
+            className="group card hover:shadow-xl hover:border-indigo-300 transition-all p-6 text-left border-2 border-transparent hover:border-indigo-200"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Volume2 className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Volume2 className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Text + Voice</h3>
+            <h3 className="text-base font-bold text-gray-900 mb-1.5">Text + Voice</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              AI explains the topic with text slides and voice narration. Includes subtitles and AI teacher avatar.
+              AI explains with text slides and voice narration. Includes subtitles.
             </p>
             <div className="mt-4 flex items-center gap-2 text-indigo-600 text-sm font-medium">
               <Play className="w-4 h-4" /> Start Learning
@@ -754,17 +776,38 @@ export default function CoursePage() {
           {/* Option 2: Visual Explanation */}
           <button
             onClick={() => { setLessonMode('visual'); setSelectedTopic(showModeModal); setShowModeModal(null); }}
-            className="group card hover:shadow-xl hover:border-emerald-300 transition-all p-8 text-left border-2 border-transparent hover:border-emerald-200"
+            className="group card hover:shadow-xl hover:border-emerald-300 transition-all p-6 text-left border-2 border-transparent hover:border-emerald-200"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Layers className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Layers className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Visual Explanation</h3>
+            <h3 className="text-base font-bold text-gray-900 mb-1.5">Visual Explanation</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              AI creates step-by-step visual animations with diagrams, flowcharts, and interactive elements.
+              Step-by-step visual animations with diagrams and interactive elements.
             </p>
             <div className="mt-4 flex items-center gap-2 text-emerald-600 text-sm font-medium">
               <Play className="w-4 h-4" /> Start Visual
+            </div>
+          </button>
+
+          {/* Option 3: Sign Language */}
+          <button
+            onClick={() => { setLessonMode('sign'); setSelectedTopic(showModeModal); setShowModeModal(null); }}
+            className="group card hover:shadow-xl hover:border-purple-300 transition-all p-6 text-left border-2 border-transparent hover:border-purple-200 relative overflow-hidden"
+          >
+            {/* Accessibility badge */}
+            <div className="absolute top-3 right-3 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Accessible
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Hand className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-base font-bold text-gray-900 mb-1.5">Sign Language</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              AI avatar explains with sign language gestures and large text captions. No audio needed.
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-purple-600 text-sm font-medium">
+              <Play className="w-4 h-4" /> Start Signing
             </div>
           </button>
         </div>
@@ -772,30 +815,18 @@ export default function CoursePage() {
     );
   }
 
-  // If a topic is selected, show the AdaptiveLesson
+  // If a topic is selected, show YouTube-like layout
   if (selectedTopic) {
-    return (
-      <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-4">
-        {/* Back to course button */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => { markCurrentTopicComplete(); setSelectedTopic(null); }}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Course
-          </button>
-          <span className="text-sm text-gray-400">
-            Topic {currentTopicIndex + 1} of {allTopicsList.length}
-          </span>
-        </div>
+    const currentLesson = findLessonForTopic(selectedTopic?._id || selectedTopic?.id);
 
+    return (
+      <div className="p-4 lg:px-6 lg:py-4 max-w-[1400px] mx-auto">
         {/* Background generation banner */}
         {streamingInProgress && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl px-4 py-3 flex items-center justify-between"
+            className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl px-4 py-3 flex items-center justify-between mb-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -816,42 +847,175 @@ export default function CoursePage() {
           </motion.div>
         )}
 
-        {/* Render based on selected mode */}
-        {lessonMode === 'visual' ? (
-          <AnimationPlayer
-            topic={typeof selectedTopic === 'string' ? selectedTopic : selectedTopic?.title || 'Topic'}
-            classLevel="10"
-            language={localStorage.getItem('app_language') || 'en'}
-            onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : undefined}
-          />
-        ) : (
-          <AdaptiveLesson
-            topic={selectedTopic}
-            language={localStorage.getItem('app_language') || 'en'}
-            onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : null}
-            onPrev={currentTopicIndex > 0 ? handlePrevTopic : null}
-            lowBandwidth={localStorage.getItem('low_bandwidth') === 'true'}
-          />
-        )}
+        {/* ── YouTube two-column layout ── */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* ── Left: Video player ── */}
+          <div className="flex-1 min-w-0">
+            {lessonMode === 'visual' ? (
+              <AnimationPlayer
+                topic={typeof selectedTopic === 'string' ? selectedTopic : selectedTopic?.title || 'Topic'}
+                classLevel="10"
+                language={localStorage.getItem('app_language') || 'en'}
+                onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : undefined}
+              />
+            ) : lessonMode === 'sign' ? (
+              <SignLanguagePlayer
+                topic={selectedTopic}
+                language={localStorage.getItem('app_language') || 'en'}
+                onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : null}
+                onPrev={currentTopicIndex > 0 ? handlePrevTopic : null}
+              />
+            ) : (
+              <AdaptiveLesson
+                topic={selectedTopic}
+                language={localStorage.getItem('app_language') || 'en'}
+                onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : null}
+                onPrev={currentTopicIndex > 0 ? handlePrevTopic : null}
+                lowBandwidth={localStorage.getItem('low_bandwidth') === 'true'}
+              />
+            )}
 
-        {/* Topic navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handlePrevTopic}
-            disabled={currentTopicIndex <= 0}
-            className="btn-secondary flex items-center gap-2 disabled:opacity-30"
-          >
-            <ChevronRight className="w-4 h-4 rotate-180" />
-            Previous Topic
-          </button>
-          <button
-            onClick={handleNextTopic}
-            disabled={currentTopicIndex >= allTopicsList.length - 1}
-            className="btn-primary flex items-center gap-2 disabled:opacity-30"
-          >
-            Next Topic
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            {/* ── Channel-like info under the player ── */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{course?.title || 'Course'}</p>
+                  <p className="text-xs text-gray-500">
+                    {currentLesson?.title || currentLesson?.name || 'Lesson'} &middot; Topic {currentTopicIndex + 1} of {allTopicsList.length}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { markCurrentTopicComplete(); setSelectedTopic(null); }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Course
+              </button>
+            </div>
+          </div>
+
+          {/* ── Right: YouTube-style playlist sidebar ── */}
+          <div className="lg:w-[360px] xl:w-[400px] flex-shrink-0">
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden sticky top-4">
+              {/* Playlist header */}
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 line-clamp-1">{course?.title || 'Course Topics'}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {currentTopicIndex + 1}/{allTopicsList.length} &middot; {progressData.pct}% complete
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { markCurrentTopicComplete(); setSelectedTopic(null); }}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                  >
+                    View all
+                  </button>
+                </div>
+                {/* Mini progress */}
+                <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-600 rounded-full transition-all duration-500" style={{ width: `${progressData.pct}%` }} />
+                </div>
+              </div>
+
+              {/* Playlist items */}
+              <div className="max-h-[calc(100vh-200px)] overflow-y-auto divide-y divide-gray-100">
+                {allTopicsList.map((t, i) => {
+                  const tid = t._id || t.id;
+                  const isActive = (selectedTopic?._id || selectedTopic?.id) === tid;
+                  const isCompleted = t.completed || t.status === 'completed' || completedTopicIds.has(tid);
+                  const topicLesson = findLessonForTopic(tid);
+                  const lessonTitle = topicLesson?.title || topicLesson?.name || '';
+
+                  // Show module/lesson dividers
+                  const prevTopic = i > 0 ? allTopicsList[i - 1] : null;
+                  const prevLesson = prevTopic ? findLessonForTopic(prevTopic._id || prevTopic.id) : null;
+                  const showLessonHeader = !prevLesson || (prevLesson?._id || prevLesson?.id) !== (topicLesson?._id || topicLesson?.id);
+
+                  return (
+                    <div key={tid || i}>
+                      {/* Lesson divider */}
+                      {showLessonHeader && lessonTitle && (
+                        <div className="px-4 py-2 bg-gray-50/80">
+                          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider truncate">
+                            {lessonTitle}
+                          </p>
+                        </div>
+                      )}
+                      {/* Topic row */}
+                      <button
+                        onClick={() => {
+                          const lesson = findLessonForTopic(tid);
+                          if (lesson) {
+                            const lid = lesson._id || lesson.id;
+                            const status = lessonStatuses[lid];
+                            if (status?.locked) {
+                              toast.error("Pass the previous lesson's test to unlock this content");
+                              return;
+                            }
+                          }
+                          markCurrentTopicComplete();
+                          setSelectedTopic(t);
+                        }}
+                        className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 ${
+                          isActive ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                        }`}
+                      >
+                        {/* Index / status */}
+                        <div className="flex-shrink-0 w-6 pt-0.5 text-center">
+                          {isActive ? (
+                            <div className="flex items-center justify-center">
+                              <Play className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                            </div>
+                          ) : isCompleted ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
+                          ) : (
+                            <span className="text-xs text-gray-400">{i + 1}</span>
+                          )}
+                        </div>
+
+                        {/* Thumbnail placeholder */}
+                        <div className={`flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden relative ${
+                          isActive ? 'ring-2 ring-blue-500' : ''
+                        }`}>
+                          <div className={`w-full h-full bg-gradient-to-br ${COLORS[i % COLORS.length]} flex items-center justify-center`}>
+                            <Play className="w-5 h-5 text-white/60" />
+                          </div>
+                          {/* Duration badge */}
+                          <span className="absolute bottom-1 right-1 text-[10px] bg-black/80 text-white px-1 rounded font-mono">
+                            ~{Math.ceil(15 * (3 + (i % 4))/ 60)}:{((15 * (i % 4)) % 60).toString().padStart(2, '0')}
+                          </span>
+                          {/* Completed overlay */}
+                          {isCompleted && !isActive && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <CheckCircle2 className="w-5 h-5 text-white" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Title & meta */}
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <p className={`text-sm font-medium line-clamp-2 leading-tight ${
+                            isActive ? 'text-blue-700' : isCompleted ? 'text-gray-500' : 'text-gray-900'
+                          }`}>
+                            {t.title || t.name || `Topic ${i + 1}`}
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-1 truncate">
+                            {course?.title || 'Course'}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

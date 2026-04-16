@@ -1,18 +1,28 @@
-// Client-side API for calling LangChain agents
+// Client-side API for calling LangChain agents (routed to backend)
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
 
 export async function callAgent(agentName: string, input: string, sessionId?: string) {
-  const res = await fetch(`/api/agents/${agentName}`, {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+  const res = await fetch(`${API_BASE}/agents/${agentName}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
     body: JSON.stringify({ input, sessionId }),
   });
   return res.json();
 }
 
 export async function streamChat(message: string, topic: string, history: any[] = []) {
-  const res = await fetch("/api/stream", {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+  const res = await fetch(`${API_BASE.replace("/api", "")}/api/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
     body: JSON.stringify({ message, topic, history }),
   });
   return res;

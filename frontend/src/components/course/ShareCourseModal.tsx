@@ -144,7 +144,7 @@ export default function ShareCourseModal({ isOpen, onClose, courseId, courseTitl
   };
 
   const handleShareTwitter = () => {
-    const text = encodeURIComponent(`I'm learning "${courseTitle}" on Ed.Ai! Check it out:`);
+    const text = encodeURIComponent(`I'm learning "${courseTitle}" on Learnify! Check it out:`);
     const url = encodeURIComponent(shareUrl);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
   };

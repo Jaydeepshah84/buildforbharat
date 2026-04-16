@@ -149,7 +149,7 @@ const testimonials = [
   {
     name: "Priya Sharma",
     role: "Class 10 Student, Delhi",
-    text: "Ed.Ai turned physics from my worst subject into my favourite. The visual models for electricity and magnetism are absolutely mind-blowing.",
+    text: "Learnify turned physics from my worst subject into my favourite. The visual models for electricity and magnetism are absolutely mind-blowing.",
     avatar: "PS",
     rating: 5,
   },
@@ -223,7 +223,7 @@ export default function LandingPage() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           {/* Logo */}
           <Link href="/" className="text-2xl font-extrabold text-white tracking-tight">
-            Ed<span className="text-[#c3f53c]">.Ai</span>
+            Learnify
           </Link>
 
           {/* Desktop links */}
@@ -670,7 +670,7 @@ export default function LandingPage() {
             {/* Brand column */}
             <div className="lg:col-span-2">
               <Link href="/" className="text-2xl font-extrabold tracking-tight">
-                Ed<span className="text-[#c3f53c]">.Ai</span>
+                Learnify
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-400">
                 Making world-class education accessible to every student in India through the power of artificial intelligence.
@@ -708,7 +708,7 @@ export default function LandingPage() {
           {/* Bottom bar */}
           <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
             <p className="text-xs text-gray-500">
-              &copy; {new Date().getFullYear()} Ed.Ai. All rights reserved.
+              &copy; {new Date().getFullYear()} Learnify. All rights reserved.
             </p>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               Made with <Heart size={12} className="mx-0.5 text-red-500" /> in India
