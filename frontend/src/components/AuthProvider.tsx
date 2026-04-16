@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (params: { email: string; password: string }) => Promise<any>;
-  signup: (params: { email: string; password: string; name: string; role?: string; classLevel?: string; language?: string }) => Promise<any>;
+  signup: (params: { email: string; password: string; name: string; role?: string; classLevel?: string; language?: string; parentEmail?: string }) => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -43,12 +43,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data;
   }, []);
 
-  const signup = useCallback(async ({ email, password, name }: { email: string; password: string; name: string }) => {
+  const signup = useCallback(async ({ email, password, name, role, classLevel, language, parentEmail }: {
+    email: string; password: string; name: string; role?: string; classLevel?: string; language?: string; parentEmail?: string;
+  }) => {
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { data: { full_name: name } },
     });
     if (error) throw error;
+
+    // Register with backend (saves parent_email, sends welcome email)
+    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
+    const token = data.session?.access_token || "";
+    await fetch(`${API}/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ email, name, role, class: classLevel, language, parentEmail }),
+    }).catch(() => {});
+
     return data;
   }, []);
 

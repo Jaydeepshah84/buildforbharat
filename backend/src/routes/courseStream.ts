@@ -3,6 +3,8 @@ import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { openai } from "../config/llm";
 import { config } from "../config/env";
 import * as db from "../services/db";
+import { supabase } from "../config/supabase";
+import { sendCourseCreatedEmail } from "../services/emailService";
 
 const router = Router();
 
@@ -74,6 +76,15 @@ router.post("/generate-stream", authMiddleware, async (req: AuthRequest, res: Re
         }
       }
       if (userId) await db.insert("enrollments", { user_id: userId, course_id: courseId }).catch(() => {});
+
+      // Notify parent about new course
+      if (userId) {
+        supabase.from("users").select("name, parent_email").eq("id", userId).single().then(({ data: u }) => {
+          if (u?.parent_email) {
+            sendCourseCreatedEmail(u.parent_email, u.name || "Student", structure.title || subject, subject, duration).catch(() => {});
+          }
+        }).catch(() => {});
+      }
     } catch {}
 
     send("saved", { courseId: courseId || "generated-" + Date.now() });

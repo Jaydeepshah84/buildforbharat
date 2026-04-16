@@ -310,38 +310,36 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
     );
   }
 
+  const answeredCount = Object.keys(answers).length;
+
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="space-y-6"
-      >
-        {/* Top bar: progress + timer */}
-        <motion.div variants={fadeIn} className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium text-gray-600">
-                {t('quiz.questionOf', 'Question')} {currentIndex + 1} / {totalQuestions}
-              </span>
-              <span className="text-sm text-gray-400">
-                {Math.round(progressPct)}%
-              </span>
-            </div>
-            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]"
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
+    <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
+      {/* ── Main question area ── */}
+      <div className="flex-1 space-y-5">
+        {/* Top bar: topic + timer */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          {/* Progress bar */}
+          <div className="h-1.5 bg-gray-100">
+            <motion.div className="h-full bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]"
+              animate={{ width: `${progressPct}%` }} transition={{ duration: 0.3 }} />
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <span className="text-sm font-mono font-medium text-gray-600">
-              {formatTime(timer)}
-            </span>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#284ce3]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">{quiz.topic || 'Quiz'}</p>
+                <p className="text-[11px] text-gray-400">
+                  Question {currentIndex + 1} of {totalQuestions} &middot; {Math.round(progressPct)}% complete
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100">
+              <Clock className="w-4 h-4 text-[#284ce3]" />
+              <span className="text-sm font-mono font-bold text-gray-700">{formatTime(timer)}</span>
+            </div>
           </div>
         </motion.div>
 
@@ -349,23 +347,26 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.25 }}
-            className="card"
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8"
           >
-            {/* Question text */}
-            <div className="mb-6">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-[#284ce3] text-xs font-semibold mb-3">
-                Q{currentIndex + 1}
-              </span>
-              <h2 className="text-lg font-semibold text-gray-900 leading-relaxed">
+            {/* Question number + text */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-sm font-bold shadow-md shadow-blue-200/40">
+                  {currentIndex + 1}
+                </span>
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-100 to-transparent" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 leading-relaxed">
                 {currentQuestion.question || currentQuestion.text}
               </h2>
             </div>
 
-            {/* Options */}
+            {/* Options — large, clear cards */}
             <div className="space-y-3">
               {options.map((option, i) => {
                 const isSelected = answers[currentIndex] === i;
@@ -374,29 +375,30 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                 return (
                   <motion.button
                     key={i}
-                    whileHover={{ scale: 1.01 }}
+                    whileHover={{ scale: 1.01, y: -1 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => selectAnswer(i)}
-                    className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-200 ${
-                      isSelected ? OPTION_COLORS.selected : OPTION_COLORS.default
+                    className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                      isSelected
+                        ? 'border-[#284ce3] bg-gradient-to-r from-blue-50 to-indigo-50 ring-2 ring-indigo-200 shadow-md shadow-blue-100'
+                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm'
                     }`}
                   >
-                    <span
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                        isSelected
-                          ? 'bg-[#284ce3] text-white'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
+                    <span className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                      isSelected
+                        ? 'bg-[#284ce3] text-white shadow-md shadow-blue-300/40'
+                        : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                    }`}>
                       {OPTION_LETTERS[i]}
                     </span>
-                    <span
-                      className={`text-sm ${
-                        isSelected ? 'text-[#284ce3] font-medium' : 'text-gray-700'
-                      }`}
-                    >
+                    <span className={`text-sm leading-relaxed ${
+                      isSelected ? 'text-[#284ce3] font-semibold' : 'text-gray-700'
+                    }`}>
                       {optionText}
                     </span>
+                    {isSelected && (
+                      <CheckCircle2 className="w-5 h-5 text-[#284ce3] ml-auto flex-shrink-0" />
+                    )}
                   </motion.button>
                 );
               })}
@@ -409,33 +411,16 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           <button
             onClick={goPrev}
             disabled={currentIndex === 0}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
             {t('quiz.previous', 'Previous')}
           </button>
 
-          {/* Question dots */}
-          <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-center max-w-xs">
-            {questions.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                  i === currentIndex
-                    ? 'bg-[#284ce3] scale-125'
-                    : answers[i] !== undefined
-                    ? 'bg-blue-300'
-                    : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-
           {currentIndex < totalQuestions - 1 ? (
             <button
               onClick={goNext}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-[#284ce3] text-white hover:bg-blue-700 shadow-md shadow-blue-200/40 hover:shadow-lg transition-all"
             >
               {t('quiz.next', 'Next')}
               <ChevronRight className="w-4 h-4" />
@@ -444,22 +429,98 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-green-200 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-green-200 transition-all disabled:opacity-50"
             >
               {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('quiz.submitting', 'Submitting...')}
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('quiz.submitting', 'Submitting...')}</>
               ) : (
-                <>
-                  <Target className="w-4 h-4" />
-                  {t('quiz.submit', 'Submit Quiz')}
-                </>
+                <><Target className="w-4 h-4" /> {t('quiz.submit', 'Submit Quiz')}</>
               )}
             </button>
           )}
         </motion.div>
+      </div>
+
+      {/* ── Sidebar: Question navigator ── */}
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+        className="w-full lg:w-64 flex-shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm sticky top-6 overflow-hidden">
+          {/* Sidebar header */}
+          <div className="px-5 py-4 bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              {t('quiz.questionNav', 'Questions')}
+            </h3>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${(answeredCount / totalQuestions) * 100}%` }} />
+              </div>
+              <span className="text-xs text-white/80 font-mono">{answeredCount}/{totalQuestions}</span>
+            </div>
+          </div>
+
+          {/* Question grid */}
+          <div className="p-4">
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((_, i) => {
+                const isActive = i === currentIndex;
+                const isAnswered = answers[i] !== undefined;
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-full aspect-square rounded-lg text-xs font-bold transition-all duration-200 ${
+                      isActive
+                        ? 'bg-[#284ce3] text-white shadow-md shadow-blue-200 scale-110'
+                        : isAnswered
+                        ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <div className="w-2.5 h-2.5 rounded bg-[#284ce3]" /> Current
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <div className="w-2.5 h-2.5 rounded bg-green-200 border border-green-300" /> Answered
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <div className="w-2.5 h-2.5 rounded bg-gray-200" /> Pending
+              </div>
+            </div>
+          </div>
+
+          {/* Timer in sidebar */}
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#284ce3]" />
+                <span className="text-xs text-gray-500">Time</span>
+              </div>
+              <span className="text-sm font-mono font-bold text-gray-700">{formatTime(timer)}</span>
+            </div>
+          </div>
+
+          {/* Submit from sidebar */}
+          <div className="px-4 pb-4">
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || answeredCount === 0}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-green-200 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
+              {t('quiz.submit', 'Submit Quiz')}
+            </button>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

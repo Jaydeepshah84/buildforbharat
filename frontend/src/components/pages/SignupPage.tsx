@@ -30,6 +30,7 @@ export default function SignupPage() {
     name: "",
     email: "",
     password: "",
+    parentEmail: "",
     role: "student",
     classLevel: "10",
     language: "en",
@@ -62,6 +63,7 @@ export default function SignupPage() {
         role: form.role,
         classLevel: form.classLevel,
         language: form.language,
+        parentEmail: form.parentEmail,
       });
       toast.success("Account created!");
       router.push("/dashboard");
@@ -238,6 +240,20 @@ export default function SignupPage() {
                   value={form.email}
                   onChange={update("email")}
                   placeholder="you@example.com"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-semibold text-gray-700 mb-2">Parent/Guardian Email <span className="text-gray-400 font-normal">(for progress reports)</span></label>
+              <div className="relative group">
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <input
+                  type="email"
+                  value={form.parentEmail}
+                  onChange={update("parentEmail")}
+                  placeholder="parent@example.com"
                   className={inputCls}
                 />
               </div>

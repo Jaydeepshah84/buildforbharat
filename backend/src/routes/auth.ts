@@ -2,12 +2,13 @@ import { Router, Response } from "express";
 import { supabaseAnon } from "../config/supabase";
 import * as db from "../services/db";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
+import { sendWelcomeEmail } from "../services/emailService";
 
 const router = Router();
 
 router.post("/signup", async (req: AuthRequest, res: Response) => {
   try {
-    const { email, name, role = "student", class: classLevel, language = "en" } = req.body;
+    const { email, name, role = "student", class: classLevel, language = "en", parentEmail } = req.body;
     let userId: string | null = null;
     const token = req.headers.authorization?.replace("Bearer ", "");
 
@@ -24,13 +25,26 @@ router.post("/signup", async (req: AuthRequest, res: Response) => {
 
     let user;
     try {
-      user = await db.insert("users", { id: userId, name: name || email.split("@")[0], email, role, class: classLevel, language });
+      user = await db.insert("users", {
+        id: userId,
+        name: name || email.split("@")[0],
+        email,
+        role,
+        class: classLevel,
+        language,
+        parent_email: parentEmail || null,
+      });
     } catch {
       user = await db.getUserById(userId!);
     }
 
     if (role === "student" && userId) {
       await db.upsert("student_profile", { user_id: userId, level: "medium", learning_speed: 1.0 }, "user_id").catch(() => {});
+    }
+
+    // Send welcome email to parent
+    if (parentEmail) {
+      sendWelcomeEmail(parentEmail, name || email.split("@")[0], email, classLevel || "N/A").catch(() => {});
     }
 
     res.status(201).json({ message: "Account created", user });

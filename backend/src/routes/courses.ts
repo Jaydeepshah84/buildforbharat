@@ -3,6 +3,13 @@ import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { getAgent } from "../agents";
 import * as db from "../services/db";
 import { supabase } from "../config/supabase";
+import { sendCourseCreatedEmail, sendModuleCompletedEmail, sendAnalyticsEmail } from "../services/emailService";
+
+// Helper: get parent email for a user
+async function getParentEmail(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
+  const { data } = await supabase.from("users").select("name, parent_email").eq("id", userId).single();
+  return { parentEmail: data?.parent_email || null, studentName: data?.name || "Student" };
+}
 
 const router = Router();
 
@@ -464,6 +471,52 @@ router.post("/:courseId/topics/:topicId/complete", authMiddleware, async (req: A
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,course_id" });
 
+    // 6. Notify parent at milestones (every 25% progress or course completion)
+    const milestones = [25, 50, 75, 100];
+    const prevPct = totalTopics > 0 ? Math.round(((completedCount - 1) / totalTopics) * 100) : 0;
+    const crossedMilestone = milestones.find(m => progressPct >= m && prevPct < m);
+
+    if (crossedMilestone) {
+      getParentEmail(userId).then(({ parentEmail, studentName }) => {
+        if (!parentEmail) return;
+
+        // Find which module this topic belongs to
+        let moduleName = "Unknown Module";
+        (course.modules || []).forEach((m: any) =>
+          (m.lessons || []).forEach((l: any) =>
+            (l.topics || []).forEach((t: any) => {
+              if (t.id === topicId) moduleName = m.title || m.module_title || "Module";
+            })
+          )
+        );
+
+        sendModuleCompletedEmail(parentEmail, studentName, course.title, moduleName, progressPct).catch(() => {});
+
+        // If course completed, also send full analytics
+        if (progressPct >= 100) {
+          supabase.from("quizzes").select("score, total").eq("user_id", userId).then(({ data: quizzes }) => {
+            const quizzesTaken = quizzes?.length || 0;
+            const avgQuizScore = quizzesTaken > 0
+              ? Math.round(quizzes!.reduce((s: number, q: any) => s + ((q.score / (q.total || 100)) * 100), 0) / quizzesTaken)
+              : 0;
+
+            sendAnalyticsEmail(parentEmail, studentName, {
+              totalCourses: 1,
+              completedCourses: 1,
+              topicsCompleted: completedCount,
+              avgProgress: 100,
+              quizzesTaken,
+              avgQuizScore,
+              homeworkSubmitted: 0,
+              studyHours: 0,
+              strengths: [],
+              weaknesses: [],
+            }).catch(() => {});
+          });
+        }
+      }).catch(() => {});
+    }
+
     res.json({
       topicId,
       completedTopics,
@@ -474,6 +527,49 @@ router.post("/:courseId/topics/:topicId/complete", authMiddleware, async (req: A
     });
   } catch (err: any) {
     console.error("[Progress] Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Analytics email (manual trigger or cron) ────────────────
+router.post("/send-analytics", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { parentEmail, studentName } = await getParentEmail(userId);
+    if (!parentEmail) return res.status(400).json({ error: "No parent email set" });
+
+    // Gather analytics
+    const { data: enrollments } = await supabase.from("enrollments").select("*, courses(title)").eq("user_id", userId);
+    const { data: quizzes } = await supabase.from("quizzes").select("score, total").eq("user_id", userId);
+    const { data: homework } = await supabase.from("homework").select("id").eq("user_id", userId);
+    const { data: perf } = await supabase.from("student_performance").select("*").eq("user_id", userId);
+
+    const totalCourses = enrollments?.length || 0;
+    const completedCourses = enrollments?.filter((e: any) => e.progress >= 100).length || 0;
+    const avgProgress = totalCourses > 0
+      ? Math.round(enrollments!.reduce((s: number, e: any) => s + (e.progress || 0), 0) / totalCourses)
+      : 0;
+    const quizzesTaken = quizzes?.length || 0;
+    const avgQuizScore = quizzesTaken > 0
+      ? Math.round(quizzes!.reduce((s: number, q: any) => s + ((q.score / (q.total || 100)) * 100), 0) / quizzesTaken)
+      : 0;
+    const topicsCompleted = perf?.reduce((s: number, p: any) => s + (p.subject?.split(",").filter(Boolean).length || 0), 0) || 0;
+
+    await sendAnalyticsEmail(parentEmail, studentName, {
+      totalCourses,
+      completedCourses,
+      topicsCompleted,
+      avgProgress,
+      quizzesTaken,
+      avgQuizScore,
+      homeworkSubmitted: homework?.length || 0,
+      studyHours: 0,
+      strengths: [],
+      weaknesses: [],
+    });
+
+    res.json({ message: "Analytics email sent to " + parentEmail });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
