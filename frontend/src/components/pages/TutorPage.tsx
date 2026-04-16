@@ -60,8 +60,6 @@ function LevelBadge({ level }) {
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-sm capitalize ${colors}`}
     >
-        <PageHero title="AI Tutor" subtitle="Get personalized help from your AI learning assistant." />
-
       <Sparkles className="w-3 h-3" />
       {level || 'N/A'}
     </span>
@@ -486,6 +484,16 @@ export default function TutorPage() {
     });
   });
 
+  // Quick suggestions for empty state
+  const suggestions = [
+    { icon: '📐', text: 'Explain Pythagoras theorem' },
+    { icon: '🧪', text: 'What is photosynthesis?' },
+    { icon: '📜', text: 'Summarize the French Revolution' },
+    { icon: '💻', text: 'How does a computer work?' },
+  ];
+
+  const isWelcomeOnly = messages.length === 1 && messages[0].id === 'welcome';
+
   // --------------- Render ---------------
 
   return (
@@ -494,21 +502,28 @@ export default function TutorPage() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-shrink-0 px-5 lg:px-6 py-3.5 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl flex items-center justify-between gap-4"
+        className="flex-shrink-0 px-5 lg:px-6 py-3 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl flex items-center justify-between gap-4"
       >
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="relative">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-blue-200/50">
               <Bot className="w-5 h-5" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white" />
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"
+            />
           </div>
           <div className="min-w-0">
             <h1 className="text-base font-bold text-gray-900 truncate">
               {t('tutor.title', 'AI Tutor')}
             </h1>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-emerald-500 font-medium">{t('tutor.online', 'Online')}</span>
+              <span className="text-xs text-emerald-500 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                {t('tutor.online', 'Online')}
+              </span>
               {studentLevel && (
                 <>
                   <span className="text-gray-200">·</span>
@@ -600,35 +615,78 @@ export default function TutorPage() {
       {/* Messages area */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-5"
+        className="flex-1 overflow-y-auto px-4 lg:px-6 py-6"
         style={{
           backgroundImage: `radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
                             radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.03) 0%, transparent 50%)`,
         }}
       >
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            onReadAloud={handleReadAloud}
-            readingId={readingId}
-            ttsLoading={ttsLoading}
-          />
-        ))}
-
-        {isTyping && (
+        {/* Welcome / empty state with suggestions */}
+        {isWelcomeOnly && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3"
+            className="flex flex-col items-center justify-center h-full max-w-xl mx-auto text-center"
           >
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white flex items-center justify-center shadow-sm shadow-blue-200">
-              <Bot className="w-4 h-4" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white mb-5 shadow-xl shadow-blue-200/50">
+              <Bot className="w-8 h-8" />
             </div>
-            <div className="bg-white border border-gray-100/80 rounded-2xl rounded-tl-md shadow-sm">
-              <TypingIndicator />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {t('tutor.welcomeTitle', 'How can I help you today?')}
+            </h2>
+            <p className="text-sm text-gray-500 mb-8 max-w-md">
+              {t('tutor.welcomeDesc', "I'm your personal AI tutor. Ask me questions about any subject and I'll explain step by step at your level.")}
+            </p>
+
+            {/* Suggestion cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+              {suggestions.map((s, i) => (
+                <motion.button
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.08 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => sendMessage(s.text)}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#284ce3]/30 hover:bg-blue-50/50 hover:shadow-md transition-all text-left group"
+                >
+                  <span className="text-xl flex-shrink-0">{s.icon}</span>
+                  <span className="text-sm text-gray-700 group-hover:text-[#284ce3] transition-colors">{s.text}</span>
+                </motion.button>
+              ))}
             </div>
           </motion.div>
+        )}
+
+        {/* Chat messages */}
+        {!isWelcomeOnly && (
+          <div className="space-y-5">
+            {messages.filter(m => m.id !== 'welcome').map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onReadAloud={handleReadAloud}
+                readingId={readingId}
+                ttsLoading={ttsLoading}
+              />
+            ))}
+
+            {isTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex gap-3"
+              >
+                <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white flex items-center justify-center shadow-sm shadow-blue-200">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="bg-white border border-gray-100/80 rounded-2xl rounded-tl-md shadow-sm">
+                  <TypingIndicator />
+                </div>
+              </motion.div>
+            )}
+          </div>
         )}
 
         <div ref={messagesEndRef} />
@@ -638,27 +696,34 @@ export default function TutorPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-shrink-0 px-4 lg:px-6 py-4 border-t border-gray-100/80 bg-white/80 backdrop-blur-xl"
+        className="flex-shrink-0 px-4 lg:px-6 py-3 border-t border-gray-100/80 bg-white/80 backdrop-blur-xl"
       >
-        <div className="flex items-end gap-2.5">
+        {/* Recording indicator */}
+        <AnimatePresence>
+          {isRecording && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl bg-red-50 border border-red-100">
+              <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }}
+                className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-sm text-red-600 font-medium">Recording... Tap mic to stop</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex items-end gap-2 max-w-4xl mx-auto">
           {/* Mic button */}
           <button
             onClick={toggleRecording}
             disabled={isTyping || sttLoading}
-            className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 shadow-sm ${
+            className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
               isRecording
-                ? 'bg-red-500 text-white shadow-red-200 animate-pulse-soft hover:bg-red-600'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                ? 'bg-red-500 text-white shadow-md shadow-red-200 hover:bg-red-600'
+                : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-[#284ce3]'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
             title={isRecording ? 'Stop recording' : 'Voice input'}
           >
-            {sttLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : isRecording ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
+            {sttLoading ? <Loader2 className="w-5 h-5 animate-spin" /> :
+              isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
 
           {/* Text input */}
@@ -670,12 +735,12 @@ export default function TutorPage() {
               placeholder={t('tutor.placeholder', 'Ask me anything...')}
               disabled={isTyping || isRecording || sttLoading}
               rows={1}
-              className="w-full px-4 py-3 pr-4 rounded-xl border border-gray-200/80 bg-gray-50/50 text-sm resize-none
-                focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-blue-300 focus:bg-white
-                disabled:bg-gray-100 disabled:cursor-not-allowed placeholder-gray-400
-                transition-all duration-200 shadow-sm"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm resize-none
+                focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-[#284ce3]/40
+                disabled:bg-gray-50 disabled:cursor-not-allowed placeholder-gray-400
+                transition-all duration-200"
               style={{ maxHeight: 120 }}
-              onInput={(e) => {
+              onInput={(e: any) => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
               }}
@@ -686,24 +751,16 @@ export default function TutorPage() {
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isTyping || isRecording || sttLoading}
-            className="flex-shrink-0 p-3 rounded-xl bg-gradient-to-br from-[#284ce3] to-blue-700 text-white
-              hover:from-blue-700 hover:to-indigo-800 transition-all duration-200
-              disabled:opacity-40 disabled:cursor-not-allowed
-              shadow-lg shadow-blue-200/50 active:scale-95"
+            className="flex-shrink-0 p-3 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white
+              hover:shadow-lg hover:shadow-blue-200/50 transition-all duration-200
+              disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
           >
-            {isTyping ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {isTyping ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
 
-        <p className="text-[11px] text-gray-400 mt-2.5 text-center">
-          {t(
-            'tutor.disclaimer',
-            'AI responses may not always be accurate. Verify important information.',
-          )}
+        <p className="text-[10px] text-gray-400 mt-2 text-center">
+          {t('tutor.disclaimer', 'AI responses may not always be accurate. Verify important information.')}
         </p>
       </motion.div>
     </div>

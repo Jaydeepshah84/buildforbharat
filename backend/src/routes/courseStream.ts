@@ -79,11 +79,21 @@ router.post("/generate-stream", authMiddleware, async (req: AuthRequest, res: Re
 
       // Notify parent about new course
       if (userId) {
-        supabase.from("users").select("name, parent_email").eq("id", userId).single().then(({ data: u }) => {
-          if (u?.parent_email) {
-            sendCourseCreatedEmail(u.parent_email, u.name || "Student", structure.title || subject, subject, duration).catch(() => {});
-          }
-        }).catch(() => {});
+        (async () => {
+          try {
+            const { data: user } = await supabase.from("users").select("name").eq("id", userId).single();
+            const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", userId).single();
+            let parentEmail: string | null = null;
+            if (profile?.interests) {
+              const entry = profile.interests.find((i: string) => i.startsWith("parent_email:"));
+              if (entry) parentEmail = entry.replace("parent_email:", "");
+            }
+            console.log(`[Email] Course created — parent_email=${parentEmail || "NOT SET"}`);
+            if (parentEmail) {
+              await sendCourseCreatedEmail(parentEmail, user?.name || "Student", structure.title || subject, subject, duration);
+            }
+          } catch (e) { console.log("[Email] Error:", e); }
+        })();
       }
     } catch {}
 

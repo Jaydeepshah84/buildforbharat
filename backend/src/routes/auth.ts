@@ -100,11 +100,16 @@ router.put("/profile", authMiddleware, async (req: AuthRequest, res: Response) =
       user = data;
     }
 
-    // Store parent_email in student_profile.interests[0] as "parent_email:xxx@yyy.com"
+    // Store parent_email in student_profile.interests as "parent_email:xxx@yyy.com"
     if (parent_email !== undefined) {
+      // Ensure student_profile exists
+      await supabase.from("student_profile").upsert(
+        { user_id: req.user.id, level: "medium", learning_speed: 1.0 },
+        { onConflict: "user_id" }
+      );
+
       const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", req.user.id).single();
       let interests: string[] = profile?.interests || [];
-      // Remove old parent_email entry
       interests = interests.filter((i: string) => !i.startsWith("parent_email:"));
       if (parent_email) interests.unshift(`parent_email:${parent_email}`);
       await supabase.from("student_profile").update({ interests }).eq("user_id", req.user.id);

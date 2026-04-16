@@ -7,14 +7,20 @@ import { sendCourseCreatedEmail, sendModuleCompletedEmail, sendAnalyticsEmail } 
 
 // Helper: get parent email for a user (stored in student_profile.interests)
 async function getParentEmail(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
-  const { data: user } = await supabase.from("users").select("name").eq("id", userId).single();
-  const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", userId).single();
-  let parentEmail: string | null = null;
-  if (profile?.interests) {
-    const entry = profile.interests.find((i: string) => i.startsWith("parent_email:"));
-    if (entry) parentEmail = entry.replace("parent_email:", "");
+  try {
+    const { data: user } = await supabase.from("users").select("name").eq("id", userId).single();
+    const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", userId).single();
+    let parentEmail: string | null = null;
+    if (profile?.interests) {
+      const entry = profile.interests.find((i: string) => i.startsWith("parent_email:"));
+      if (entry) parentEmail = entry.replace("parent_email:", "");
+    }
+    console.log(`[Email] User ${userId}: parent_email=${parentEmail || "NOT SET"}`);
+    return { parentEmail, studentName: user?.name || "Student" };
+  } catch (err) {
+    console.log(`[Email] Error getting parent email for ${userId}:`, err);
+    return { parentEmail: null, studentName: "Student" };
   }
-  return { parentEmail, studentName: user?.name || "Student" };
 }
 
 const router = Router();
