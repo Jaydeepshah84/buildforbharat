@@ -68,14 +68,56 @@ router.post("/login", async (req: AuthRequest, res: Response) => {
 router.get("/profile", authMiddleware, async (req: AuthRequest, res: Response) => {
   const user = await db.getUserById(req.user.id);
   const profile = await db.getByUserId("student_profile", req.user.id);
-  res.json({ user, profile: profile?.[0] || null });
+  const profileData = profile?.[0] || null;
+
+  // Extract parent_email from interests array
+  let parentEmail: string | null = null;
+  if (profileData?.interests) {
+    const entry = profileData.interests.find((i: string) => i.startsWith("parent_email:"));
+    if (entry) parentEmail = entry.replace("parent_email:", "");
+  }
+
+  res.json({
+    user: user ? { ...user, parent_email: parentEmail } : null,
+    profile: profileData,
+  });
 });
 
 router.put("/profile", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { data } = await (await import("../config/supabase")).supabase
-      .from("users").update(req.body).eq("id", req.user.id).select().single();
-    res.json({ user: data });
+    const { supabase } = await import("../config/supabase");
+    const { parent_email, ...rest } = req.body;
+
+    // Update users table (only known columns)
+    const allowedFields: Record<string, any> = {};
+    if (rest.name) allowedFields.name = rest.name;
+    if (rest.language) allowedFields.language = rest.language;
+    if (rest.avatar_url) allowedFields.avatar_url = rest.avatar_url;
+
+    let user: any = null;
+    if (Object.keys(allowedFields).length > 0) {
+      const { data } = await supabase.from("users").update(allowedFields).eq("id", req.user.id).select().single();
+      user = data;
+    }
+
+    // Store parent_email in student_profile.interests[0] as "parent_email:xxx@yyy.com"
+    if (parent_email !== undefined) {
+      const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", req.user.id).single();
+      let interests: string[] = profile?.interests || [];
+      // Remove old parent_email entry
+      interests = interests.filter((i: string) => !i.startsWith("parent_email:"));
+      if (parent_email) interests.unshift(`parent_email:${parent_email}`);
+      await supabase.from("student_profile").update({ interests }).eq("user_id", req.user.id);
+    }
+
+    if (!user) user = await db.getUserById(req.user.id);
+
+    // Attach parent_email to response
+    const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", req.user.id).single();
+    const parentEntry = (profile?.interests || []).find((i: string) => i.startsWith("parent_email:"));
+    const parentEmailVal = parentEntry ? parentEntry.replace("parent_email:", "") : null;
+
+    res.json({ user: { ...user, parent_email: parentEmailVal } });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

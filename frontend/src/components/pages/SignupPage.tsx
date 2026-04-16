@@ -75,16 +75,16 @@ export default function SignupPage() {
   };
 
   const inputCls =
-    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all";
+    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all";
   const selectCls =
-    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer";
+    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all appearance-none cursor-pointer";
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800">
+    <div className="min-h-screen flex bg-gradient-to-br from-[#284ce3] via-[#3b5ef5] to-[#284ce3]">
       {/* LEFT — branding */}
       <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden flex-col justify-between py-14 pl-14 pr-6">
         {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-indigo-500/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-[#284ce3]/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-purple-400/10 blur-[120px] translate-x-1/4 translate-y-1/4" />
         <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full bg-[#c3f53c]/5 blur-[100px] -translate-x-1/2 -translate-y-1/2" />
         <div
@@ -103,7 +103,7 @@ export default function SignupPage() {
           transition={{ duration: 0.5 }}
         >
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">L</span>
+            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-xl font-bold">L</span>
             <span className="text-2xl font-extrabold text-white">Learnify</span>
           </Link>
         </motion.div>
@@ -187,7 +187,7 @@ export default function SignupPage() {
       {/* RIGHT — form */}
       <div className="flex-1 flex items-center justify-center bg-white lg:rounded-[36px] lg:my-3 lg:mr-3 relative overflow-hidden">
         <div className="absolute inset-0 lg:rounded-[36px] overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-indigo-50/60 rounded-full blur-[80px]" />
+          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-blue-50/60 rounded-full blur-[80px]" />
           <div className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-purple-50/40 rounded-full blur-[80px]" />
         </div>
 
@@ -200,7 +200,7 @@ export default function SignupPage() {
           {/* Mobile logo */}
           <div className="text-center mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-lg font-bold">L</span>
+              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-lg font-bold">L</span>
               <span className="text-2xl font-extrabold text-gray-900">Learnify</span>
             </Link>
           </div>
@@ -209,7 +209,7 @@ export default function SignupPage() {
             <h1 className="text-[28px] font-bold text-gray-900 mb-2">Create account</h1>
             <p className="text-[14px] text-gray-400">
               Already have an account?{" "}
-              <Link href="/login" className="text-indigo-600 font-semibold hover:underline">Sign in</Link>
+              <Link href="/login" className="text-[#284ce3] font-semibold hover:underline">Sign in</Link>
             </p>
           </div>
 
@@ -218,7 +218,7 @@ export default function SignupPage() {
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Full Name</label>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type="text"
                   required
@@ -233,7 +233,7 @@ export default function SignupPage() {
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Email address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type="email"
                   required
@@ -248,7 +248,7 @@ export default function SignupPage() {
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Parent/Guardian Email <span className="text-gray-400 font-normal">(for progress reports)</span></label>
               <div className="relative group">
-                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type="email"
                   value={form.parentEmail}
@@ -262,7 +262,7 @@ export default function SignupPage() {
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -288,7 +288,7 @@ export default function SignupPage() {
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 mb-2">Role</label>
                 <div className="relative group">
-                  <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
+                  <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
                   <select value={form.role} onChange={update("role")} className={selectCls}>
                     <option value="student">Student</option>
                     <option value="teacher">Teacher</option>
@@ -298,7 +298,7 @@ export default function SignupPage() {
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 mb-2">Class</label>
                 <div className="relative group">
-                  <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
+                  <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
                   <select value={form.classLevel} onChange={update("classLevel")} className={selectCls}>
                     {["6", "7", "8", "9", "10", "11", "12"].map((v) => (
                       <option key={v} value={v}>Class {v}</option>
@@ -311,7 +311,7 @@ export default function SignupPage() {
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 mb-2">Language</label>
                 <div className="relative group">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
                   <select value={form.language} onChange={update("language")} className={selectCls}>
                     <option value="en">EN</option>
                     <option value="hi">HI</option>
@@ -327,20 +327,20 @@ export default function SignupPage() {
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="w-[18px] h-[18px] mt-0.5 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                className="w-[18px] h-[18px] mt-0.5 rounded-md border-gray-300 text-[#284ce3] focus:ring-[#284ce3] cursor-pointer"
               />
               <span className="text-[12px] text-gray-400 leading-relaxed">
                 I agree to the{" "}
-                <a href="#" className="text-indigo-600 hover:underline font-medium">Terms of Service</a>
+                <a href="#" className="text-[#284ce3] hover:underline font-medium">Terms of Service</a>
                 {" "}and{" "}
-                <a href="#" className="text-indigo-600 hover:underline font-medium">Privacy Policy</a>
+                <a href="#" className="text-[#284ce3] hover:underline font-medium">Privacy Policy</a>
               </span>
             </label>
 
             <motion.button
               type="submit"
               disabled={loading || !agreed}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-sm rounded-2xl disabled:opacity-40 transition-all shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/25"
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-sm rounded-2xl disabled:opacity-40 transition-all shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >

@@ -47,11 +47,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800">
+    <div className="min-h-screen flex bg-gradient-to-br from-[#284ce3] via-[#3b5ef5] to-[#284ce3]">
       {/* LEFT — branding */}
       <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden flex-col justify-between py-14 pl-14 pr-6">
         {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-indigo-500/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-[#284ce3]/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-purple-400/10 blur-[120px] translate-x-1/4 translate-y-1/4" />
         <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full bg-[#c3f53c]/5 blur-[100px] -translate-x-1/2 -translate-y-1/2" />
         <div
@@ -70,7 +70,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
         >
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">L</span>
+            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-xl font-bold">L</span>
             <span className="text-2xl font-extrabold text-white">Learnify</span>
           </Link>
         </motion.div>
@@ -154,7 +154,7 @@ export default function LoginPage() {
       {/* RIGHT — form */}
       <div className="flex-1 flex items-center justify-center bg-white lg:rounded-[36px] lg:my-3 lg:mr-3 relative overflow-hidden">
         <div className="absolute inset-0 lg:rounded-[36px] overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-indigo-50/60 rounded-full blur-[80px]" />
+          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-blue-50/60 rounded-full blur-[80px]" />
           <div className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-purple-50/40 rounded-full blur-[80px]" />
         </div>
 
@@ -167,7 +167,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="text-center mb-10 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-lg font-bold">L</span>
+              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-lg font-bold">L</span>
               <span className="text-2xl font-extrabold text-gray-900">Learnify</span>
             </Link>
           </div>
@@ -176,7 +176,7 @@ export default function LoginPage() {
             <h1 className="text-[28px] font-bold text-gray-900 mb-2">Sign in</h1>
             <p className="text-[14px] text-gray-400">
               New to Learnify?{" "}
-              <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">Create an account</Link>
+              <Link href="/signup" className="text-[#284ce3] font-semibold hover:underline">Create an account</Link>
             </p>
           </div>
 
@@ -185,14 +185,14 @@ export default function LoginPage() {
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">Email address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all"
                 />
               </div>
             </div>
@@ -200,10 +200,10 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between mb-2">
                 <label className="text-[13px] font-semibold text-gray-700">Password</label>
-                <button type="button" className="text-[12px] text-indigo-600 hover:text-indigo-700 font-medium transition-colors">Forgot password?</button>
+                <button type="button" className="text-[12px] text-[#284ce3] hover:text-indigo-700 font-medium transition-colors">Forgot password?</button>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -211,7 +211,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all"
                 />
                 <button
                   type="button"
@@ -227,7 +227,7 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-sm rounded-2xl disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/25"
+              className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-sm rounded-2xl disabled:opacity-50 transition-all shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >

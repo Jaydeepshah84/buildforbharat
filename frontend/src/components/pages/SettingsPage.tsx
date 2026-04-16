@@ -20,6 +20,7 @@ import {
   GraduationCap,
   Shield,
   Smartphone,
+  Users,
 } from 'lucide-react';
 import { auth } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
@@ -102,9 +103,11 @@ export default function SettingsPage() {
 
   // Profile editing
   const [name, setName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [savingParent, setSavingParent] = useState(false);
 
-  // Initialize name from user
+  // Initialize name and parent email from user/backend
   useEffect(() => {
     if (user) {
       const displayName =
@@ -114,6 +117,18 @@ export default function SettingsPage() {
         user.displayName ||
         '';
       setName(displayName);
+
+      // Fetch parent email from backend
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
+      const token = localStorage.getItem("token") || "";
+      fetch(`${API}/auth/profile`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data?.user?.parent_email) setParentEmail(data.user.parent_email);
+        })
+        .catch(() => {});
     }
   }, [user]);
 
@@ -147,10 +162,32 @@ export default function SettingsPage() {
     try {
       await auth.updateProfile({ name: trimmed });
       toast.success(t('settings.nameSaved', 'Name updated successfully!'));
-    } catch (err) {
+    } catch (err: any) {
       toast.error(err.message || t('common.error', 'Something went wrong.'));
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const handleSaveParentEmail = async () => {
+    const trimmed = parentEmail.trim();
+    if (!trimmed) {
+      toast.error('Parent email cannot be empty.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    setSavingParent(true);
+    try {
+      await auth.updateProfile({ parent_email: trimmed });
+      toast.success('Parent email saved! They will receive progress reports.');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save parent email.');
+    } finally {
+      setSavingParent(false);
     }
   };
 
@@ -272,6 +309,41 @@ export default function SettingsPage() {
                     {t('settings.save', 'Save')}
                   </button>
                 </div>
+              </div>
+
+              {/* Parent/Guardian Email - editable */}
+              <div>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                  <Users className="w-3.5 h-3.5 text-gray-400" />
+                  Parent/Guardian Email
+                  <span className="text-xs text-gray-400 font-normal ml-1">(for progress reports)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-[#284ce3]"
+                    placeholder="parent@example.com"
+                  />
+                  <button
+                    onClick={handleSaveParentEmail}
+                    disabled={savingParent}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {savingParent ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save
+                  </button>
+                </div>
+                {parentEmail && (
+                  <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Progress reports will be sent to this email
+                  </p>
+                )}
               </div>
 
               {/* Read-only fields */}

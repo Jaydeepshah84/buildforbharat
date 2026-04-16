@@ -5,10 +5,16 @@ import * as db from "../services/db";
 import { supabase } from "../config/supabase";
 import { sendCourseCreatedEmail, sendModuleCompletedEmail, sendAnalyticsEmail } from "../services/emailService";
 
-// Helper: get parent email for a user
+// Helper: get parent email for a user (stored in student_profile.interests)
 async function getParentEmail(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
-  const { data } = await supabase.from("users").select("name, parent_email").eq("id", userId).single();
-  return { parentEmail: data?.parent_email || null, studentName: data?.name || "Student" };
+  const { data: user } = await supabase.from("users").select("name").eq("id", userId).single();
+  const { data: profile } = await supabase.from("student_profile").select("interests").eq("user_id", userId).single();
+  let parentEmail: string | null = null;
+  if (profile?.interests) {
+    const entry = profile.interests.find((i: string) => i.startsWith("parent_email:"));
+    if (entry) parentEmail = entry.replace("parent_email:", "");
+  }
+  return { parentEmail, studentName: user?.name || "Student" };
 }
 
 const router = Router();
