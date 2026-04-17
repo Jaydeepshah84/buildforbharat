@@ -137,7 +137,7 @@ function BadgeItem({ badge, earned, index }) {
       title={earned ? `${badge.name} - Earned!` : `${badge.name} - Locked`}
     >
       <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+        className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl ${
           earned
             ? 'bg-gradient-to-br from-indigo-50 to-purple-50'
             : 'bg-gray-100'

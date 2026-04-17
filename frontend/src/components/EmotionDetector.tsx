@@ -216,7 +216,7 @@ export default function EmotionDetector({
           <motion.div initial={{ opacity: 0, x: 20, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.9 }} transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="bg-white rounded-xl shadow-xl border border-gray-100 px-4 py-3 flex items-center gap-3 min-w-[200px]">
-            <span className="text-2xl">{e.emoji}</span>
+            <span className="text-4xl">{e.emoji}</span>
             <div className="flex-1">
               <p className="text-sm font-bold text-gray-900">{e.label}</p>
               <div className="flex items-center gap-1.5 mt-1">

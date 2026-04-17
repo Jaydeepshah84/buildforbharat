@@ -272,21 +272,25 @@ function VideoTile({ name, isSelf, stream, muted }: { name: string; isSelf?: boo
   const showVideo = stream && (hasVideo || stream.getVideoTracks().length > 0);
 
   return (
-    <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video">
-      {/* Always render video element (hidden if no stream) */}
+    <div className="relative bg-gray-900 rounded-2xl overflow-hidden aspect-video shadow-xl">
       <video ref={ref} autoPlay playsInline muted={muted || isSelf}
         className={`w-full h-full object-cover ${showVideo ? "" : "hidden"}`}
         style={isSelf ? { transform: "scaleX(-1)" } : {}} />
       {!showVideo && (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-xl shadow-lg">
-            {name?.charAt(0)?.toUpperCase() || "?"}
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#0f1628] to-[#1a2550]">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-2xl shadow-lg mx-auto mb-2">
+              {name?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            <p className="text-white/50 text-xs font-medium">{name?.split(" ")[0]}{isSelf ? " (You)" : ""}</p>
           </div>
         </div>
       )}
-      <div className="absolute bottom-1 left-1 bg-black/60 backdrop-blur-sm text-white text-[8px] px-1.5 py-0.5 rounded font-medium truncate max-w-[90%]">
-        {name?.split(" ")[0]}{isSelf ? " (You)" : ""}
-      </div>
+      {showVideo && (
+        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-lg font-semibold">
+          {name?.split(" ")[0]}{isSelf ? " (You)" : ""}
+        </div>
+      )}
       {isSelf && stream && (
         <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
       )}
@@ -1004,19 +1008,20 @@ export default function ClassroomPage() {
   if (!inRoom) {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Users className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Study Room</h1>
-          <p className="text-gray-500 mt-2">Learn together with a study partner in a real-time AI-powered room</p>
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#284ce3] to-[#5b7cf7] px-8 py-10 text-center">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-10 w-32 h-32 bg-white/5 rounded-full translate-y-1/2" />
+          <div className="relative z-10">
+            <h1 className="text-3xl font-extrabold text-white">Study Room</h1>
+            <p className="text-white/60 mt-2 text-sm">Learn together with a study partner in a real-time AI-powered room</p>
           {/* Connection status */}
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <div className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-500" : "bg-red-400 animate-pulse"}`} />
-            <span className={`text-xs ${connected ? "text-emerald-600" : "text-red-500"}`}>
-              {connected ? "Connected to server" : "Connecting to server..."}
-            </span>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <div className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400 animate-pulse"}`} />
+              <span className={`text-xs ${connected ? "text-white/60" : "text-red-300"}`}>
+                {connected ? "Connected to server" : "Connecting to server..."}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1090,7 +1095,7 @@ export default function ClassroomPage() {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col relative">
       {/* ── Top Bar (compact) ────────────────────────────── */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-gray-200 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg px-3 py-1.5">
             <Hash className="w-3.5 h-3.5 text-gray-400" />
@@ -1114,16 +1119,17 @@ export default function ClassroomPage() {
             {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{unread}</span>}
           </button>
           {/* Media controls in top bar */}
-          <button onClick={toggleMic} className={`p-2 rounded-lg ${micOn ? "bg-blue-100 text-[#284ce3]" : "text-gray-400 hover:bg-gray-100"}`}>
+          <button onClick={toggleMic} className={`p-2.5 rounded-xl transition-all ${micOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "bg-red-50 text-red-500"}`} title={micOn ? "Mute" : "Unmute"}>
             {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           </button>
-          <button onClick={toggleCam} className={`p-2 rounded-lg ${camOn ? "bg-blue-100 text-[#284ce3]" : "text-gray-400 hover:bg-gray-100"}`}>
+          <button onClick={toggleCam} className={`p-2.5 rounded-xl transition-all ${camOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "bg-red-50 text-red-500"}`} title={camOn ? "Camera off" : "Camera on"}>
             {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
           </button>
-          <button onClick={toggleScreen} className={`p-2 rounded-lg ${screenOn ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:bg-gray-100"}`}>
+          <button onClick={toggleScreen} className={`p-2.5 rounded-xl transition-all ${screenOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "text-gray-400 hover:bg-gray-100"}`} title="Screen share">
             {screenOn ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
           </button>
-          <button onClick={leaveRoom} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">
+          <div className="w-px h-6 bg-gray-200" />
+          <button onClick={leaveRoom} className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition shadow-sm">
             <LogOut className="w-3.5 h-3.5" /> Leave
           </button>
         </div>
@@ -1179,24 +1185,24 @@ export default function ClassroomPage() {
         </div>
       </div>
 
-      {/* ── Floating Video Tiles (PIP style, draggable area) ── */}
-      <div className="absolute bottom-3 left-3 flex gap-2 z-20">
-        {/* Your video — small PIP */}
-        <div className="w-28 rounded-lg overflow-hidden shadow-lg border border-white/30">
+      {/* ── Floating Video Tiles (larger PIP) ── */}
+      <div className="absolute bottom-4 left-4 flex gap-3 z-20">
+        {/* Your video */}
+        <div className="w-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 backdrop-blur">
           <VideoTile name={userName} isSelf stream={localStream} muted />
         </div>
-        {/* Partner — show avatar if no video */}
+        {/* Partner */}
         {partner && (
-          <div className="w-28 rounded-lg overflow-hidden shadow-lg border border-white/30 relative">
+          <div className="w-48 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 backdrop-blur relative">
             {remoteStream && remoteStream.getVideoTracks().length > 0 ? (
               <VideoTile name={partner.userName} stream={remoteStream} />
             ) : (
-              <div className="aspect-video bg-gray-800 flex items-center justify-center">
+              <div className="aspect-video bg-gradient-to-br from-[#0f1628] to-[#1a2550] flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm mx-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg mx-auto mb-1">
                     {partner.userName.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-[8px] text-gray-400 mt-1">{partner.userName}</p>
+                  <p className="text-[10px] text-white/50 font-medium">{partner.userName}</p>
                 </div>
               </div>
             )}

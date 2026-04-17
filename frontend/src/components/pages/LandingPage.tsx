@@ -503,7 +503,7 @@ export default function LandingPage() {
             {programs.map((p, i) => (
               <ScaleIn key={p.title} delay={i * 0.08}>
                 <div className="group bg-white rounded-2xl p-7 shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-teal-600/5 hover:border-teal-200 hover:-translate-y-1 transition-all duration-300">
-                  <div className="text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">{p.icon}</div>
+                  <div className="text-5xl mb-4 transition-transform duration-300 group-hover:scale-110">{p.icon}</div>
                   <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
                     {p.title}
                   </h3>

@@ -1,29 +1,25 @@
-import { File, Directory, Paths } from 'expo-file-system/next';
+import * as FileSystem from 'expo-file-system/legacy';
 import { getApiBaseUrl, getTtsToken } from './api';
 
-function getVideoDir(): Directory {
-  const dir = new Directory(Paths.document, 'videos');
-  if (!dir.exists) dir.create();
-  return dir;
-}
+const VIDEO_DIR = `${FileSystem.documentDirectory}videos/`;
 
-function getVideoFile(topicId: string): File {
-  return new File(getVideoDir(), `${topicId}.mp4`);
+async function ensureDir() {
+  const info = await FileSystem.getInfoAsync(VIDEO_DIR);
+  if (!info.exists) await FileSystem.makeDirectoryAsync(VIDEO_DIR, { intermediates: true });
 }
 
 export function getVideoPath(topicId: string): string {
-  return getVideoFile(topicId).uri;
+  return `${VIDEO_DIR}${topicId}.mp4`;
 }
 
-export function hasLocalVideo(topicId: string): boolean {
-  try {
-    return getVideoFile(topicId).exists;
-  } catch { return false; }
+export async function hasLocalVideo(topicId: string): Promise<boolean> {
+  const info = await FileSystem.getInfoAsync(getVideoPath(topicId));
+  return info.exists;
 }
 
 /**
- * Generate + download MP4 video for a topic from backend.
- * Backend creates the video (AI content + TTS voice + ffmpeg render).
+ * Generate a video on server by POSTing to /api/video/generate/:topicId,
+ * then download the resulting mp4 via GET /api/video/:topicId
  */
 export async function downloadTopicVideo(
   topicId: string,
@@ -31,15 +27,15 @@ export async function downloadTopicVideo(
   onProgress?: (msg: string) => void,
 ): Promise<boolean> {
   try {
-    if (hasLocalVideo(topicId)) return true;
-
-    onProgress?.('Generating video on server...');
+    await ensureDir();
+    if (await hasLocalVideo(topicId)) return true;
 
     const token = await getTtsToken();
     const baseUrl = getApiBaseUrl();
 
-    // POST /api/video/generate/:topicId — backend generates MP4 and returns it
-    const response = await fetch(`${baseUrl}/api/video/generate/${topicId}`, {
+    // Step 1: Trigger video generation (POST with JSON body)
+    onProgress?.('Generating video on server...');
+    const genResp = await fetch(`${baseUrl}/api/video/generate/${topicId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,53 +44,40 @@ export async function downloadTopicVideo(
       body: JSON.stringify({ language }),
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      console.log('[Video] Server error:', err);
+    if (!genResp.ok) {
+      console.log('[Video] Generation failed:', genResp.status);
       return false;
     }
 
-    onProgress?.('Downloading video...');
+    // The backend returns the video bytes directly in POST response
+    // We need to stream it to file. Use the Blob approach but wrap safely.
+    onProgress?.('Saving video...');
 
-    // Read response as blob and save to file
-    const blob = await response.blob();
-    const reader = new FileReader();
+    // Alternative: use downloadAsync on GET /api/video/:topicId (video is already cached server-side)
+    const downloadUrl = `${baseUrl}/api/video/${topicId}`;
+    const result = await FileSystem.downloadAsync(downloadUrl, getVideoPath(topicId));
 
-    return new Promise<boolean>((resolve) => {
-      reader.onload = () => {
-        try {
-          const base64 = (reader.result as string).split(',')[1];
-          if (base64 && base64.length > 100) {
-            const file = getVideoFile(topicId);
-            if (file.exists) file.delete();
-            file.create();
-            file.write(base64, { encoding: 'base64' });
-            onProgress?.('Video saved!');
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        } catch (e) {
-          console.error('[Video] Save error:', e);
-          resolve(false);
-        }
-      };
-      reader.onerror = () => resolve(false);
-      reader.readAsDataURL(blob);
-    });
+    if (result.status === 200) {
+      const info = await FileSystem.getInfoAsync(getVideoPath(topicId));
+      if (info.exists && 'size' in info && info.size && info.size > 1000) {
+        onProgress?.('Video saved!');
+        return true;
+      }
+    }
+
+    await FileSystem.deleteAsync(getVideoPath(topicId), { idempotent: true });
+    return false;
   } catch (e: any) {
-    console.error('[Video] Download failed:', e.message);
+    console.error('[Video]', e.message);
+    await FileSystem.deleteAsync(getVideoPath(topicId), { idempotent: true }).catch(() => {});
     return false;
   }
 }
 
-export function deleteTopicVideo(topicId: string): void {
-  try {
-    const file = getVideoFile(topicId);
-    if (file.exists) file.delete();
-  } catch {}
+export async function deleteTopicVideo(topicId: string): Promise<void> {
+  try { await FileSystem.deleteAsync(getVideoPath(topicId), { idempotent: true }); } catch {}
 }
 
-export function deleteModuleVideos(topicIds: string[]): void {
-  for (const id of topicIds) deleteTopicVideo(id);
+export async function deleteModuleVideos(topicIds: string[]): Promise<void> {
+  for (const id of topicIds) await deleteTopicVideo(id);
 }

@@ -1,105 +1,49 @@
-import { File, Directory, Paths } from 'expo-file-system/next';
+import * as FileSystem from 'expo-file-system/legacy';
 import { getTtsUrl, getTtsToken } from './api';
 
-// Audio stored in documents/audio/ directory
-function getAudioDir(): Directory {
-  return new Directory(Paths.document, 'audio');
+const AUDIO_DIR = `${FileSystem.documentDirectory}audio/`;
+
+async function ensureDir() {
+  const info = await FileSystem.getInfoAsync(AUDIO_DIR);
+  if (!info.exists) await FileSystem.makeDirectoryAsync(AUDIO_DIR, { intermediates: true });
 }
 
-function getAudioFile(topicId: string): File {
-  return new File(getAudioDir(), `${topicId}.mp3`);
-}
-
-// Get the URI for playback
 export function getAudioPath(topicId: string): string {
-  return getAudioFile(topicId).uri;
+  return `${AUDIO_DIR}${topicId}.mp3`;
 }
 
-// Check if audio exists locally
 export async function hasLocalAudio(topicId: string): Promise<boolean> {
-  try {
-    return getAudioFile(topicId).exists;
-  } catch {
-    return false;
-  }
+  const info = await FileSystem.getInfoAsync(getAudioPath(topicId));
+  return info.exists;
 }
 
-// Generate and download TTS audio for a topic
 export async function downloadTopicAudio(
-  topicId: string,
-  text: string,
-  language: string = 'en',
+  topicId: string, text: string, language: string = 'en',
 ): Promise<boolean> {
   try {
-    // Skip if already downloaded
+    await ensureDir();
     if (await hasLocalAudio(topicId)) return true;
 
-    // Ensure directory exists
-    const dir = getAudioDir();
-    if (!dir.exists) {
-      dir.create();
-    }
-
-    // Limit text length
-    const truncated = text.slice(0, 2000);
     const token = await getTtsToken();
-    const ttsUrl = getTtsUrl();
-
-    // Use fetch to POST and get audio binary
-    const response = await fetch(ttsUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ text: truncated, language }),
-    });
-
-    if (!response.ok) {
-      console.log('[Audio] TTS returned', response.status);
-      return false;
-    }
-
-    const blob = await response.blob();
-    const reader = new FileReader();
-
-    return new Promise<boolean>((resolve) => {
-      reader.onload = () => {
-        try {
-          const base64 = (reader.result as string).split(',')[1];
-          if (base64) {
-            const file = getAudioFile(topicId);
-            file.create();
-            file.write(base64, { encoding: 'base64' });
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        } catch (e) {
-          console.error('[Audio] Write error:', e);
-          resolve(false);
-        }
-      };
-      reader.onerror = () => resolve(false);
-      reader.readAsDataURL(blob);
-    });
-  } catch (e) {
-    console.error('[Audio] Download failed:', e);
-    return false;
-  }
+    // Write JSON body using POST via downloadAsync (send body as param)
+    const result = await FileSystem.downloadAsync(
+      getTtsUrl(),
+      getAudioPath(topicId),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      } as any
+    );
+    return result.status === 200;
+  } catch { return false; }
 }
 
-// Delete audio for a topic
 export async function deleteTopicAudio(topicId: string): Promise<void> {
-  try {
-    const file = getAudioFile(topicId);
-    if (file.exists) file.delete();
-  } catch {}
+  try { await FileSystem.deleteAsync(getAudioPath(topicId), { idempotent: true }); } catch {}
 }
 
-// Delete all audio for a module's topics
 export async function deleteModuleAudio(topicIds: string[]): Promise<void> {
-  for (const id of topicIds) {
-    await deleteTopicAudio(id);
-  }
+  for (const id of topicIds) await deleteTopicAudio(id);
 }

@@ -651,7 +651,7 @@ export default function TutorPage() {
                   onClick={() => sendMessage(s.text)}
                   className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#284ce3]/30 hover:bg-blue-50/50 hover:shadow-md transition-all text-left group"
                 >
-                  <span className="text-xl flex-shrink-0">{s.icon}</span>
+                  <span className="text-3xl flex-shrink-0">{s.icon}</span>
                   <span className="text-sm text-gray-700 group-hover:text-[#284ce3] transition-colors">{s.text}</span>
                 </motion.button>
               ))}

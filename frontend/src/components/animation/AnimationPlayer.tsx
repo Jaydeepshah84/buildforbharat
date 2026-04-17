@@ -280,8 +280,27 @@ export default function AnimationPlayer({ topic, classLevel = "10", language = "
   function stopAll() {
     cancelSpeakRef.current = true;
     speakingRef.current = false;
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    window.speechSynthesis?.cancel();
+
+    // Stop current audio
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; audioRef.current = null; }
+
+    // Stop ALL preloaded audio elements
+    if (preloadedAudioRef.current) {
+      preloadedAudioRef.current.forEach(a => { try { a.pause(); a.src = ""; } catch {} });
+      preloadedAudioRef.current = [];
+    }
+
+    // Force cancel all speech synthesis (call multiple times for reliability)
+    try {
+      window.speechSynthesis?.cancel();
+      window.speechSynthesis?.cancel();
+    } catch {}
+
+    // Stop any audio elements in the page that might still be playing
+    try {
+      document.querySelectorAll("audio").forEach(a => { a.pause(); a.src = ""; });
+    } catch {}
+
     setSpeakingText("");
     setSentenceIdx(-1);
   }
@@ -350,7 +369,34 @@ export default function AnimationPlayer({ topic, classLevel = "10", language = "
     return () => document.removeEventListener("fullscreenchange", h);
   }, []);
 
-  useEffect(() => () => { stopAll(); }, []);
+  // Cleanup on unmount — stop everything
+  useEffect(() => {
+    return () => {
+      stopAll();
+      // Extra safety: force cancel speech after a delay too
+      setTimeout(() => {
+        try { window.speechSynthesis?.cancel(); } catch {}
+      }, 100);
+      setTimeout(() => {
+        try { window.speechSynthesis?.cancel(); } catch {}
+      }, 500);
+    };
+  }, []);
+
+  // Also stop speech when page becomes hidden (tab switch, navigation)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) stopAll();
+    };
+    const handleBeforeUnload = () => stopAll();
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const totalSentences = sentencesRef.current.length;
   const voiceProgress = totalSentences > 0 ? ((sentenceIdx + 1) / totalSentences) * 100 : 0;

@@ -1,454 +1,461 @@
-# Learnify - AI-Powered Education Platform
+# Learnify — AI-Powered Education Platform for Bharat
 
-An intelligent, full-stack education platform that uses AI to generate courses, teach with voice + visual animations, track progress with lesson tests, and enable collaborative learning between students.
+An end-to-end, multi-surface learning platform that uses Large Language Models to generate complete courses, teach topics with synchronized voice + visual animations, adapt to a learner's emotions in real time, and enable collaborative 2-person study rooms. Built for Indian learners across web, mobile, and even ambient hardware (desk-tap + voice launcher).
+
+This README covers the **entire project** — architecture, components, data flow, design decisions, and setup — across four runtimes: **Web**, **Mobile (React Native)**, **Backend (Node)**, and **Voice/TTS microservice (Python)**, plus a **Tap Launcher** hardware-UX prototype.
 
 ---
 
-## Tech Stack
+## 1. Project Vision
+
+Indian classrooms are under-served by most edtech: content is English-first, one-size-fits-all, and non-interactive. Learnify addresses this with:
+
+- **Multilingual AI course generation** (Hindi, English, Gujarati, Spanish) — any topic, any class level
+- **AI-generated interactive visual animations** with synchronized vernacular voice narration
+- **Real-time emotion-adaptive learning** — the platform detects confusion/boredom via webcam and adjusts content
+- **Strict mastery-based progression** — lesson tests gate the next lesson (60% pass threshold)
+- **Collaborative study rooms** — 2 learners can co-watch, co-draw, co-quiz with live video/voice
+- **Offline-first mobile experience** for low-connectivity regions
+- **Ambient interaction** — desk-tap and wake-word launcher for accessibility
+
+---
+
+## 2. System Architecture
+
+```
+                                   ┌──────────────────────────┐
+                                   │       Azure OpenAI       │
+                                   │   GPT-5.4  (LangChain)   │
+                                   └────────────┬─────────────┘
+                                                │
+                                     9 Agent Pipelines
+                                                │
+┌──────────────────┐  HTTP/SSE   ┌──────────────▼────────────┐  SQL   ┌──────────────┐
+│   Web Frontend   │◄───────────►│        Backend API         │◄──────►│   Supabase   │
+│   Next.js 15     │             │    Express + Socket.io     │        │  PostgreSQL  │
+│   (port 3000)    │             │       (port 5000)          │        │   18 tables  │
+└────────┬─────────┘             └───┬────────────────┬───────┘        └──────────────┘
+         │                           │                │
+         │   Socket.io (real-time)   │                │  HTTP
+         └───────────────────────────┘                │
+                                                ┌────▼────────────┐
+                                                │   TTS Service    │
+                                                │  Python / Flask  │
+                                                │  Edge-TTS + Whisper │
+                                                │   (port 5001)    │
+                                                └──────────────────┘
+
+┌──────────────────┐   HTTP    ┌────────────────────┐       ┌─────────────────────┐
+│  Mobile App      │──────────►│      Backend       │       │   Tap Launcher       │
+│  LearnifyApp     │           │      (shared)      │       │  (Python, MacBook)   │
+│  Expo / RN 0.81  │           └────────────────────┘       │  desk-tap + whisper  │
+└──────────────────┘                                        └─────────────────────┘
+```
+
+### Runtime Topology
+
+| Service | Runtime | Port | Purpose |
+|---|---|---|---|
+| `frontend/` | Next.js 15 (Node) | 3000 | Web SPA — learner + teacher surfaces |
+| `backend/` | Express + Socket.io (Node) | 5000 | REST API, SSE streams, real-time sockets, AI orchestration |
+| `tts-service/` | Flask (Python) | 5001 | Edge Neural TTS, Faster-Whisper STT |
+| `LearnifyApp/` | Expo / React Native | — | Mobile app with offline SQLite cache |
+| `tap-launcher/` | Python CLI | — | Ambient desk-tap + voice launcher for the web app |
+
+---
+
+## 3. Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Framer Motion |
-| Backend | Express.js, TypeScript, Socket.io, LangChain |
+| Web Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Framer Motion |
+| Mobile | Expo 54, React Native 0.81, Expo Router, expo-sqlite, expo-av/expo-video |
+| Backend | Node.js, Express, TypeScript, Socket.io, LangChain, Zod |
 | Database | Supabase (PostgreSQL) — 18 tables |
-| AI Engine | Azure OpenAI GPT-5.4 — 9 LangChain Agents |
-| Voice TTS | Edge Neural TTS (Hindi SwaraNeural, English AriaNeural, 10 languages) |
-| Voice STT | Faster Whisper (real-time speech-to-text) |
-| Real-time | Socket.io (sync), WebRTC (video/voice) |
-| Emotion | face-api.js (TinyFaceDetector + FaceExpressions) |
+| AI Engine | Azure OpenAI GPT-5.4 via 9 LangChain agents |
+| TTS | Edge Neural TTS (10 languages, SSML prosody) |
+| STT | Faster-Whisper (local, CPU/GPU) |
+| Real-time | Socket.io (state sync), WebRTC (video/voice, STUN+TURN) |
+| Emotion AI | face-api.js (TinyFaceDetector + FaceExpressions) |
 | Charts | Chart.js + react-chartjs-2 |
+| OCR | Tesseract.js (client-side image-to-text) |
+| PDF | pdf-parse (server-side text extraction) |
+| Ambient | sounddevice + whisper (desk-tap + voice launcher) |
 
 ---
 
-## Project Structure
+## 4. Repository Layout
 
 ```
-Build For bharat/
-├── frontend/              → Next.js 15 App Router (port 3000)
-├── backend/               → Express + Socket.io API (port 5000)
-├── tts-service/           → Python Flask TTS/STT microservice (port 5001)
-└── supabase-schema.sql    → Database schema (18 tables)
+buildforbharat/
+├── frontend/              → Next.js 15 web app            (port 3000)
+├── backend/               → Express + Socket.io API       (port 5000)
+├── tts-service/           → Python Flask TTS/STT          (port 5001)
+├── LearnifyApp/           → Expo React Native mobile app
+├── tap-launcher/          → Desk-tap + voice launcher (Python)
+└── supabase-schema.sql    → PostgreSQL schema (18 tables)
 ```
 
----
+### Key module maps
 
-## Features
-
-### 1. AI Course Generation
-- Enter any subject (e.g., "Photosynthesis", "Machine Learning", "Food Chain")
-- Select class level (1-12), duration (3-90 days), and language
-- AI generates complete course structure: **Course → Modules → Lessons → Topics**
-- Course saved to database with auto-enrollment
-- Supports **Hindi, English, Gujarati, Spanish** content generation
-- Progressive streaming — first topics load instantly, rest generate in background
-
-### 2. Visual Animation Explanations (AI-Generated)
-- AI generates **interactive HTML/CSS/JS animations** for every topic
-- Two-phase pipeline:
-  - **Phase 1**: Quick text explanation (~3 seconds)
-  - **Phase 2**: Full animated visual with step-by-step narration (~15-30 seconds)
-- Animations include: diagrams, flowcharts, algorithms, emoji-based visualizations, scientific processes
-- **Synchronized voice narration**:
-  - Voice script split into sentences
-  - All audio pre-loaded in parallel BEFORE animation starts
-  - Animation paused during preload, then both start together
-  - Sentence-by-sentence playback in perfect sync with animation steps
-- **Subtitles** overlay on animation (like Netflix captions)
-- Controls: Play/Pause (pauses BOTH animation + voice), Restart, Fullscreen
-- Animation rendered in sandboxed iframe with `postMessage` communication
-- `pauseAnimation()` / `resumeAnimation()` injected into every generated HTML
-
-### 3. Text + Voice Learning Mode
-- AI explains topics with text slides and voice narration
-- **Edge Neural TTS** for natural Hindi voice (`hi-IN-SwaraNeural`) with SSML prosody tuning
-- Browser SpeechSynthesis as fallback
-- Slide-by-slide auto-play with pause/resume
-- No overlapping audio — previous audio stopped before new slide plays
-- Supports: English, Hindi, Gujarati, Spanish
-
-### 4. Lesson Tests (After Every Lesson)
-- **Animated MCQ test** appears as a row inside every lesson accordion
-- Test states visible in course structure:
-  - Grey lock icon: "Complete all topics first"
-  - Purple pulsing "TAKE NOW" badge: all topics done, ready to take
-  - Green checkmark + score: test passed
-- 3 questions for short lessons (<=3 topics), 10 for longer ones
-- **Dark gradient animated UI** with:
-  - Intro screen (question count, pass threshold, format)
-  - Animated question transitions (Framer Motion slide-in)
-  - Instant feedback per question (green check / red X + explanation)
-  - Auto-advance after 1.5 seconds
-  - Timer + progress bar + bottom dots (correct/wrong per question)
-- **60% pass threshold** to unlock next lesson
-- Results screen with **animated circular score**, review mode
-- Retry button regenerates fresh questions
-- Scores saved to `quizzes` table with deterministic server-side scoring
-
-### 5. Lesson Locking (Strict Chronological Progression)
-- First lesson always unlocked, all others locked
-- Student must **pass the lesson test** (score >= 60%) to unlock the next lesson
-- Locking is **cumulative across modules**: Lesson 5 requires ALL previous lessons (1-4) passed
-- Locked lessons show:
-  - Lock icon instead of file icon
-  - "Locked" badge in header
-  - Greyed out (opacity 60%), can't expand
-  - Toast message on click: "Pass the previous lesson's test to unlock"
-- Topic clicks in locked lessons also blocked with toast
-- **Cross-lesson-boundary navigation**: "Next Topic" button auto-triggers lesson test when last topic of a lesson is completed
-
-### 6. Progress Tracking
-- **Topic completion**: marked when clicking "Next Topic" or "Back to Course"
-- Completed topic IDs stored in `student_performance.subject` field (CSV)
-- `enrollments.progress` updated as percentage
-- **Per-module progress bars** in course accordion
-- **Badges**: Started, 5 Topics, Halfway, Almost There, Course Complete
-- **Dashboard stats**: Enrolled Courses, Topics Completed, Avg Progress, Courses Completed
-- Auto-enrollment when viewing any course
-
-### 7. Dashboard
-- Welcome message with student name from Supabase auth
-- **4 stat cards**: Enrolled Courses, Topics Completed, Avg Progress, Courses Completed
-- **Quick actions**: Start Quiz, Ask Tutor, Generate Course
-- **Recent Quizzes**: lesson/topic names resolved from DB (not UUIDs), score bars
-- **Recent Homework**: submission status (completed/pending)
-- **Study Plan**: goal from AI plan, today's tasks, duration
-- **Performance Overview**: course-by-course progress bars with color coding
-
-### 8. Analytics (Fully Dynamic)
-- **Zero hardcoded values** — all data from real API responses
-- 4 metric cards: Avg Progress, Topics Completed, Quiz Average, Total Assessments
-- **Performance chart** (Line): quiz/homework/exam scores over time
-- **Subject chart** (Bar): course-by-course progress
-- **Emotion chart** (Doughnut): from real face-api.js emotion logs
-- **Attention radar**: focus, engagement, consistency, quiz score, completion
-- **Improvement trend** (Line): course completion progression
-- **Weak topics**: courses with < 50% progress highlighted
-
-### 9. Quiz System
-- Generate MCQ quizzes on any topic
-- Select: 5, 10, or 15 questions + Easy/Medium/Hard difficulty
-- AI generates structured MCQs with 4 options, correct answer index (0-3), explanation
-- **Deterministic server-side scoring** (compare `answers[i] === questions[i].correct`)
-- Results saved to `quizzes` table, shown in dashboard and analytics
-
-### 10. Exam System
-- Generate MCQ-only exams with **15, 30, 50, or 75 questions**
-- Timed exam with countdown timer (configurable minutes)
-- Question navigation sidebar with answered/unanswered color indicators
-- Auto-submit on time expiry with confirmation dialog
-- **Deterministic MCQ scoring** with per-question review (correct answer, user answer, explanation)
-- AI feedback based on percentage
-
-### 11. Homework
-- Generate homework questions on any topic (short/long answer types)
-- AI evaluates submissions with score (0-100) and detailed feedback
-- Submission history with status tracking
-- Saved to `homework` table
-
-### 12. AI Tutor Chat
-- Real-time chat with AI teacher
-- **Server-Sent Events** (SSE) for streaming responses
-- Voice input via microphone (Faster Whisper STT)
-- Permission check before mic access with clear error messages
-- Conversation history maintained per session
-- Topic-aware responses
-
-### 13. Voice Assistant
-- Full-screen voice interaction with animated orb UI
-- States: idle (blue), listening (green pulse), speaking (purple wave)
-- Push-to-talk or tap-to-speak
-- AI responds with Edge Neural TTS voice
-- Caption/subtitle display during speech
-- End button to stop session
-
-### 14. Visual Lab
-- Standalone visual explanation tool
-- Enter any topic → AI generates animated visual explanation
-- Same animation engine as course visual mode
-- Follow-up chat for deeper questions
-
-### 15. 2-Person Collaborative Study Room
-- **Create room** with auto-generated 6-character code
-- **Join** via code or invite link (`?code=XXXXXX`)
-- Max 2 students per room
-- **New layout** (redesigned):
-  - Full-width main content (no side panels)
-  - Floating PIP video tiles (bottom-left corner)
-  - Chat in floating modal (toggled by icon with unread badge)
-  - Media controls in top bar
-- **Learn Together tab**:
-  - Browse creator's enrolled courses (cards with title, subject, module count)
-  - Click course → browse modules → lessons → topics
-  - Each topic has "Text + Voice" and "Visual" buttons
-  - Content synced between both users via Socket.io
-- **Shared Whiteboard**: both draw in real-time (pen, eraser, 6 colors, clear)
-- **Shared Notes**: both edit simultaneously, changes sync live (debounced)
-- **Quiz Together**: generate quiz, both answer, see each other's picks + scores
-- **WebRTC video/voice**: auto-start camera+mic, STUN + TURN servers
-- Socket.io events for all sync features
-
-### 16. Career Guidance
-- Enter interests and skills (tag input with `onBlur` auto-add)
-- AI suggests 5 career paths with: title, field, description, required skills, education path, salary range, growth outlook, match score
-- Career icon mapping by field (technology, medicine, arts, etc.)
-
-### 17. Study Planner
-- AI generates **7-day personalized study plan** based on enrolled courses
-- Day-by-day tasks with duration, type (study/quiz/revision/exercise), topic
-- Task completion tracking with checkboxes (localStorage)
-- Previous plans saved to `study_plans` table and browsable
-
-### 18. Notes Management
-- Upload **PDF** → AI extracts text and generates structured notes
-- Upload **Image** → OCR via Tesseract.js → generate notes
-- View and manage all saved notes
-
-### 19. Emotion Detection
-- Real-time webcam emotion detection using face-api.js
-- Detects: focused, confused, bored, happy, distracted, neutral
-- Mini camera feed with emotion badge (top-right corner)
-- Checks every 30 seconds
-- Emotion logs saved to `emotion_logs` table for analytics
-- **Adaptive learning interventions**:
-  - Confused (3+ streak) → AI simplifies explanation
-  - Bored (3+ streak) → AI generates engaging quiz
-  - Distracted (attention < 0.3) → Refocus message
-
-### 20. Multilingual Support
-- 4 languages: English, Hindi, Gujarati, Spanish
-- i18next translations for all UI elements
-- Course generation in selected language
-- Voice narration with language-specific TTS voices:
-  - Hindi: `hi-IN-SwaraNeural` (female, natural)
-  - English: `en-US-AriaNeural`
-  - Gujarati: `gu-IN-DhwaniNeural`
-- Dynamic TTS URL: uses `window.location.hostname` (works on any device)
-
-### 21. Authentication
-- Supabase Auth (email + password)
-- Login / Signup with role, class level, language selection
-- Token stored in `localStorage` and auto-refreshed from Supabase session
-- Guest user fallback for API access
-- Protected dashboard routes with auth check
+- **[backend/src/agents/](backend/src/agents/)** — 9 LangChain agents (course, quiz, notes, homework, career, doubt, visual, classroom, progress)
+- **[backend/src/routes/](backend/src/routes/)** — REST + SSE routes (auth, courses, ai, tutor, tts, animation, signLanguage, student, upload, video, classroom, stream)
+- **[backend/src/socket/handler.ts](backend/src/socket/handler.ts)** — Room/WebRTC/whiteboard/notes/quiz sync
+- **[backend/src/pipelines/aiGenerator.ts](backend/src/pipelines/aiGenerator.ts)** — 2-phase animation pipeline
+- **[frontend/src/app/](frontend/src/app/)** — App Router pages, grouped `(auth)` and `(dashboard)`
+- **[frontend/src/components/animation/](frontend/src/components/animation/)** — Iframe-sandboxed animation runner
+- **[LearnifyApp/src/services/](LearnifyApp/src/services/)** — offline sync, SQLite cache, animation/audio/video services
+- **[tts-service/server.py](tts-service/server.py)** — Flask TTS/STT endpoints
+- **[tap-launcher/tap_launcher.py](tap-launcher/tap_launcher.py)** — desk-tap + wake-word launcher
 
 ---
 
-## 9 LangChain AI Agents
+## 5. Technical Approach
 
-| Agent | Purpose |
-|-------|---------|
-| **Course** | Generate course structures (modules → lessons → topics) |
-| **Notes** | Create structured study notes with key points, definitions |
-| **Quiz** | Generate MCQ questions with 4 options, correct index, explanation |
-| **Homework** | Generate homework problems (short/long answer) |
-| **Career** | Career path recommendations with match scores |
-| **Doubt** | Answer student questions as a friendly AI teacher |
-| **Visual** | Generate visual/diagram explanations |
-| **Classroom** | Facilitate group learning and activities |
-| **Progress** | Analyze student performance across dimensions |
+This section explains **how** the platform works — the decisions, pipelines, and trade-offs behind the headline features.
 
-All agents use `HumanMessage`/`SystemMessage` directly (not prompt templates) to avoid curly brace escaping issues with GPT-5.4. Uses `max_completion_tokens` instead of `max_tokens`.
+### 5.1 AI Orchestration — 9 LangChain Agents
 
----
+Every AI capability is encapsulated in a specialized agent inheriting from `BaseAgent` ([backend/src/agents/baseAgent.ts](backend/src/agents/baseAgent.ts)). Each agent owns its system prompt, schema, and post-processing logic.
 
-## Database Schema (18 Tables)
+| Agent | Responsibility |
+|---|---|
+| `courseAgent` | Generate course structure: Course → Modules → Lessons → Topics |
+| `notesAgent` | Structured notes with key points, definitions |
+| `quizAgent` | MCQ with 4 options, correct index, explanation |
+| `homeworkAgent` | Short/long-answer problems + evaluation |
+| `careerAgent` | 5 career paths with match scores |
+| `doubtAgent` | Socratic AI teacher chat |
+| `visualAgent` | Interactive HTML/CSS/JS animations |
+| `classroomAgent` | Group-learning facilitation |
+| `progressAgent` | Multi-dimensional performance analysis |
+
+**Design decisions:**
+- Agents use `HumanMessage` / `SystemMessage` directly (**not** prompt templates) — avoids brittle curly-brace escaping that GPT-5.4 trips on when generating JSON/JSX.
+- Uses `max_completion_tokens` (GPT-5.4 name) instead of `max_tokens`.
+- Every agent returns **validated JSON** via Zod schemas before hitting the DB.
+- Long generations (full courses) are **streamed** over SSE so the UI paints Lesson 1 while Lessons 2–N are still being produced.
+
+### 5.2 Two-Phase Animation Pipeline
+
+The standout teaching experience is the AI-generated visual animation. Naively asking GPT to "return an animation" is slow (15–30s) and blocks the learner. We use a **two-phase SSE pipeline** ([backend/src/pipelines/aiGenerator.ts](backend/src/pipelines/aiGenerator.ts)):
+
+1. **Phase 1 — Fast text explanation (~3s)**: `doubtAgent` emits a short plain-text explanation. The UI renders this immediately.
+2. **Phase 2 — Full animation (~15–30s)**: `visualAgent` streams a complete self-contained HTML/CSS/JS file with step-by-step JS animation and a per-sentence narration script.
+
+**Rendering pipeline (frontend):**
+- HTML injected into a **sandboxed iframe** (no access to parent window, cookies, or localStorage).
+- Parent ↔ iframe communication via `window.postMessage`.
+- Every generated animation has `pauseAnimation()` / `resumeAnimation()` functions injected so the parent can freeze the scene while audio pre-loads.
+- Voice script is split sentence-by-sentence. All TTS audio is **pre-fetched in parallel** from the TTS service **before** playback; only then does both animation and audio start, guaranteeing sync.
+- Subtitles overlay (Netflix-style captions) are driven by the same sentence timeline.
+- Play/Pause pauses **both** animation and narration via postMessage.
+
+### 5.3 Deterministic vs. Generative Scoring
+
+Quizzes and exams must be **tamper-proof and reproducible**, so scoring is deterministic server-side:
 
 ```
-users, student_profile, courses, modules, lessons, topics, content,
-enrollments, quizzes, homework, exams, study_plans, notes,
-student_performance, emotion_logs, classrooms, classroom_users, messages
+score = Σ (answers[i] === questions[i].correct_index)
 ```
 
-Key relationships: `courses → modules → lessons → topics`
-Progress: `enrollments.progress` (percentage), `student_performance.subject` (completed topic IDs)
+We never ask the LLM to "grade" MCQs — it only generates them. This eliminates LLM hallucination risk in scoring and makes every submission auditable. Homework (free-text) **does** use the LLM (`homeworkAgent`) but stores both rubric and score for review.
+
+### 5.4 Lesson Locking & Mastery Progression
+
+Learnify enforces **strict chronological progression**:
+
+- First lesson unlocked by default; all others locked.
+- Unlock rule: **all previous lessons' tests passed** at ≥60%, across module boundaries.
+- Lock state computed server-side (`/api/courses/:id/lesson-status`) to prevent client bypass.
+- UI surfaces three states: grey lock, pulsing "TAKE NOW" badge, green check + score.
+- When a learner finishes the last topic of a lesson, "Next Topic" auto-triggers the lesson test instead of jumping forward.
+
+Completed topic IDs are stored as CSV in `student_performance.subject` (historical choice — keeps writes cheap without a junction table for a feature that's read far more than it's written).
+
+### 5.5 Real-time Collaboration — Socket.io + WebRTC
+
+The 2-person Study Room uses **two parallel real-time channels**:
+
+- **Socket.io** for application state: room membership, whiteboard strokes, shared-notes edits (debounced), quiz progression, AI prompts/responses, and WebRTC signaling.
+- **WebRTC** for audio/video (P2P) using STUN + TURN. Renegotiation is handled explicitly on track changes (e.g., toggling screen share).
+
+Key events ([backend/src/socket/handler.ts](backend/src/socket/handler.ts)):
+- Room: `room:create|join|leave|members|partner-joined|partner-left`
+- Teaching: `lesson:load|play|pause`, `ai:ask|response|thinking`, `ai:gen-notes|notes-ready`
+- Whiteboard: `wb:draw|clear` (per-stroke payload; broadcast to room)
+- Notes: `notes:update` (debounced server-side to avoid fan-out storms)
+- Quiz: `quiz:start|answer|next`
+- WebRTC: `webrtc:offer|answer|ice|renegotiate|renegotiate-answer`
+- Adaptive: `session:start|end`, `emotion:update|summary`, `adaptive:intervention`
+
+### 5.6 Emotion-Adaptive Learning Loop
+
+Every 30 seconds, the web client runs **face-api.js** (TinyFaceDetector + FaceExpressions) on the local webcam and posts a lightweight emotion vector. The server maintains per-session streaks and fires **adaptive interventions**:
+
+| Signal | Intervention |
+|---|---|
+| `confused` streak ≥ 3 | `doubtAgent` re-explains the current topic in simpler language |
+| `bored` streak ≥ 3 | `quizAgent` injects a short engagement quiz |
+| `attention < 0.3` | Soft refocus toast with a micro-break prompt |
+
+All vectors persist to `emotion_logs` so analytics can visualize emotional patterns over time (doughnut chart + attention radar).
+
+### 5.7 Voice Pipeline (TTS + STT)
+
+The Python TTS service ([tts-service/server.py](tts-service/server.py)) runs independently so it can be GPU-pinned or scaled separately.
+
+- **TTS**: `edge-tts` (Microsoft Edge Neural voices) over a dedicated asyncio event loop. Defaults: `hi-IN-SwaraNeural`, `en-US-AriaNeural`, `gu-IN-DhwaniNeural`, `es-ES-ElviraNeural`, plus Tamil/Telugu/Bengali/Marathi/French/German.
+- **SSML prosody tuning** for natural pacing in Indic languages.
+- **STT**: Faster-Whisper (local). Permission check before mic access with user-facing error messages (not silent failure).
+- Frontend uses **dynamic TTS URL** via `window.location.hostname` so the same build works on `localhost`, LAN IPs, and tunnels.
+- Browser `SpeechSynthesis` is a **graceful fallback** when the TTS service is unavailable.
+
+### 5.8 Content Generation — Streaming-First UX
+
+All long generations (courses, study plans, exams) use **Server-Sent Events (SSE)** instead of waiting for a monolithic response:
+
+- `/api/courses/generate` emits topics as they're generated — the UI renders Lesson 1 in ~2s even if the full course takes 30s.
+- `/api/tutor/pipeline/generate` drives the two-phase animation pipeline.
+- `/api/voice/stream` streams tutor chat tokens.
+
+This shifts perceived latency from ~15s to ~2s without any infra changes.
+
+### 5.9 Mobile — Offline-First React Native
+
+[LearnifyApp/](LearnifyApp/) targets the low-connectivity "Bharat" user.
+
+- **expo-sqlite** ([LearnifyApp/src/services/database.ts](LearnifyApp/src/services/database.ts)) caches full course trees, lesson content, and completed-topic state locally.
+- **offlineSync.ts** reconciles on reconnect (write-through with conflict-free merges for completion state).
+- **expo-av / expo-video** play pre-rendered narration + animation clips; animations fall back to simpler static visuals when no network.
+- **Expo Router** mirrors the web app's URL structure so deep-linking from SMS/WhatsApp works.
+- Uses AsyncStorage for token/session, expo-crypto for IDs, and `react-native-get-random-values` for Supabase polyfill.
+
+### 5.10 Tap Launcher — Ambient UX Prototype
+
+[tap-launcher/tap_launcher.py](tap-launcher/tap_launcher.py) is a MacBook-side Python process that opens Learnify pages via physical desk taps or spoken commands — designed for accessibility and kiosk/classroom scenarios.
+
+- **Tap detection**: single/double/triple taps on the laptop body via microphone RMS energy + inter-tap window timing. Thresholds tuned for the MacBook Pro M1 Pro chassis.
+- **Voice commands**: offline **Whisper** (no cloud round-trip) maps keywords (`dashboard`, `courses`, `quiz`, `tutor`, …) to routes.
+- Launches the frontend URL via the default browser.
+
+### 5.11 Security & Auth
+
+- **Supabase Auth** (email + password) with JWT in `localStorage`; auto-refreshed from the Supabase session on mount.
+- Backend validates Bearer tokens against the Supabase service key on protected routes.
+- **Guest fallback** for read-only endpoints so anonymous demos don't require signup.
+- All AI inputs are passed through **Zod schemas** before reaching the LLM to strip prompt-injection vectors from user fields.
+- Animation HTML runs in a **sandboxed iframe** (`sandbox="allow-scripts"` only) — no access to parent DOM, cookies, or storage.
+- Env vars live in `.env` / `.env.local` (gitignored); never commit service-role keys.
+
+### 5.12 Database Design
+
+18 tables centered around the learning hierarchy:
+
+```
+users ── student_profile
+courses → modules → lessons → topics → content
+enrollments (users ↔ courses, with progress %)
+quizzes, homework, exams, study_plans, notes
+student_performance (CSV of completed topic ids)
+emotion_logs
+classrooms, classroom_users, messages  (study rooms)
+```
+
+Design notes:
+- `courses → modules → lessons → topics` is a strict 4-level hierarchy; all reads go through `/api/courses/:id` which returns the sorted tree in a single query.
+- `enrollments.progress` is denormalized (percentage) for dashboard performance — recomputed on each topic-complete write.
+- `student_performance.subject` stores CSV of completed topic IDs (chosen over a junction table for read simplicity; works fine at current scale).
 
 ---
 
-## API Endpoints (40+)
+## 6. Feature Catalog
+
+Organized by learner surface. Every feature below is implemented and reachable from the UI.
+
+### Learning core
+1. **AI Course Generation** — any subject, class 1–12, 3–90 day plans, 4 languages, streaming topic-by-topic
+2. **Visual Animation Explanations** — two-phase pipeline, synchronized voice + subtitles, pause/resume/restart/fullscreen
+3. **Text + Voice Slides** — SSML-tuned Hindi narration with auto-play and no audio overlap
+4. **Lesson Tests** — animated MCQs inline in each lesson, 60% pass threshold, circular-score results
+5. **Lesson Locking** — strict chronological progression across modules
+6. **Progress Tracking** — per-module bars, badges, dashboard stats, auto-enrollment
+
+### Assessment
+7. **Quizzes** — 5/10/15 questions, E/M/H difficulty, deterministic scoring
+8. **Exams** — 15/30/50/75 MCQs, timed with countdown, per-question navigation, auto-submit
+9. **Homework** — short/long answer, AI-evaluated with feedback
+10. **AI Tutor Chat** — SSE streaming, voice input via Whisper STT
+11. **Voice Assistant** — full-screen orb UI with idle/listening/speaking states
+
+### Content & tools
+12. **Visual Lab** — standalone animation generator with follow-up chat
+13. **Notes** — PDF text extraction + image OCR → structured notes
+14. **Study Planner** — 7-day personalized plan from enrolled courses
+15. **Career Guidance** — 5 paths with match scores
+
+### Collaboration & adaptation
+16. **2-Person Study Room** — shared video, whiteboard, notes, quizzes; synced course browsing
+17. **Emotion Detection** — face-api.js webcam loop with adaptive interventions
+18. **Multilingual UI & Content** — i18next + per-language TTS voices
+
+### Surfaces
+19. **Web Dashboard & Analytics** — zero-hardcoded charts (line, bar, doughnut, radar)
+20. **Mobile App (LearnifyApp)** — offline SQLite cache, Expo Router
+21. **Tap Launcher** — desk-tap + voice wake-word opens app pages
+
+---
+
+## 7. API Surface (40+ endpoints)
 
 ### Auth
 | Method | Route | Purpose |
 |--------|-------|---------|
-| POST | `/api/auth/signup` | Register user |
-| POST | `/api/auth/login` | Login user |
-| GET | `/api/auth/profile` | Get profile |
+| POST | `/api/auth/signup` | Register |
+| POST | `/api/auth/login` | Login |
+| GET | `/api/auth/profile` | Profile |
 
 ### Courses & Progress
 | Method | Route | Purpose |
 |--------|-------|---------|
-| GET | `/api/courses` | List courses |
-| GET | `/api/courses/:id` | Course with modules/lessons/topics (sorted) |
-| POST | `/api/courses/generate` | AI generate course |
-| POST | `/api/courses/:id/enroll` | Enroll in course |
-| DELETE | `/api/courses/:id` | Delete course (cascade) |
+| GET | `/api/courses` | List |
+| GET | `/api/courses/:id` | Full tree (modules/lessons/topics) |
+| POST | `/api/courses/generate` | AI generate (SSE) |
+| POST | `/api/courses/:id/enroll` | Enroll |
+| DELETE | `/api/courses/:id` | Delete (cascade) |
 | POST | `/api/courses/:courseId/topics/:topicId/complete` | Mark topic complete |
-| GET | `/api/courses/:courseId/progress` | Get course progress |
-| GET | `/api/courses/progress/all` | All course progress (dashboard) |
-| GET | `/api/courses/:courseId/lesson-status` | Lesson lock statuses |
-| POST | `/api/courses/:courseId/lessons/:lessonId/test/generate` | Generate lesson test |
+| GET | `/api/courses/:courseId/progress` | Progress % |
+| GET | `/api/courses/progress/all` | All (dashboard) |
+| GET | `/api/courses/:courseId/lesson-status` | Lock states |
+| POST | `/api/courses/:courseId/lessons/:lessonId/test/generate` | Lesson test |
 | POST | `/api/courses/:courseId/lessons/:lessonId/test/submit` | Submit lesson test |
 
-### AI Features
+### AI
 | Method | Route | Purpose |
 |--------|-------|---------|
-| POST | `/api/ai/tutor/chat` | AI tutor chat |
-| POST | `/api/ai/quiz/generate` | Generate MCQ quiz |
-| POST | `/api/ai/quiz/submit` | Submit quiz (deterministic scoring) |
-| POST | `/api/ai/homework/generate` | Generate homework |
-| POST | `/api/ai/homework/submit` | Submit homework (AI evaluation) |
-| POST | `/api/ai/exam/generate` | Generate MCQ exam |
-| POST | `/api/ai/exam/submit` | Submit exam (deterministic scoring) |
-| POST | `/api/ai/study-plan/generate` | Generate 7-day study plan |
-| POST | `/api/ai/career-guidance` | Career guidance (5 paths) |
+| POST | `/api/ai/tutor/chat` | Tutor |
+| POST | `/api/ai/quiz/generate` | Quiz |
+| POST | `/api/ai/quiz/submit` | Submit (deterministic) |
+| POST | `/api/ai/homework/generate` | Homework |
+| POST | `/api/ai/homework/submit` | AI-evaluate |
+| POST | `/api/ai/exam/generate` | Exam |
+| POST | `/api/ai/exam/submit` | Submit (deterministic) |
+| POST | `/api/ai/study-plan/generate` | 7-day plan |
+| POST | `/api/ai/career-guidance` | 5 paths |
 | POST | `/api/ai/doubt` | Doubt solver |
 
-### Voice & Animation
+### Voice / Animation / Sign Language
 | Method | Route | Purpose |
 |--------|-------|---------|
-| POST | `/api/voice/stream` | SSE voice streaming |
-| POST | `/api/tutor/pipeline/generate` | Two-phase animation pipeline (SSE) |
-| POST | `/api/tts` | Text-to-speech |
-| POST | `/api/tts/stt` | Speech-to-text |
+| POST | `/api/voice/stream` | SSE tutor stream |
+| POST | `/api/tutor/pipeline/generate` | 2-phase animation (SSE) |
+| POST | `/api/tts` | Text → audio |
+| POST | `/api/tts/stt` | Audio → text |
 | GET | `/api/tts/voices` | Available voices |
+| POST | `/api/sign-language/*` | Sign-language video routes |
 
 ### Student
 | Method | Route | Purpose |
 |--------|-------|---------|
-| GET | `/api/student/dashboard` | Dashboard stats + recent activity |
-| GET | `/api/student/performance` | Performance metrics |
-| GET | `/api/student/report` | Full report (quiz/homework/exam history) |
+| GET | `/api/student/dashboard` | Stats + recent activity |
+| GET | `/api/student/performance` | Metrics |
+| GET | `/api/student/report` | Full history |
 
 ---
 
-## Socket.io Events
-
-### Study Room
-```
-room:create, room:join, room:leave
-room:partner-joined, room:partner-left, room:members
-lesson:load, lesson:play, lesson:pause
-wb:draw, wb:clear
-notes:update
-chat:message
-quiz:start, quiz:answer, quiz:next
-ai:ask, ai:response, ai:thinking
-ai:gen-notes, ai:notes-ready
-screen:start, screen:stop
-```
-
-### WebRTC Signaling
-```
-webrtc:offer, webrtc:answer, webrtc:ice
-webrtc:renegotiate, webrtc:renegotiate-answer
-```
-
-### Adaptive Learning
-```
-session:start, session:end
-emotion:update, emotion:summary
-adaptive:intervention
-```
-
----
-
-## Getting Started
+## 8. Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.10+
-- Supabase account (free tier works)
-- Azure OpenAI API key
+- Supabase account (free tier)
+- Azure OpenAI key (GPT-5.4 deployment)
 
-### 1. Database Setup
-```sql
--- Run supabase-schema.sql in Supabase SQL Editor
-```
+### 8.1 Database
+Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
 
-### 2. Backend
+### 8.2 Backend
 ```bash
 cd backend
 npm install
-cp .env.example .env  # Fill in your keys
-npx tsx src/server.ts
-# Runs on http://localhost:5000
+cp .env.example .env    # fill keys below
+npx tsx src/server.ts   # or: npm run dev
+# → http://localhost:5000
 ```
 
-### 3. Frontend
+### 8.3 Web Frontend
 ```bash
 cd frontend
 npm install
-# Create .env.local with your keys
+# create .env.local with keys below
 npx next dev -H 0.0.0.0 -p 3000
-# Runs on http://localhost:3000
+# → http://localhost:3000
 ```
 
-### 4. TTS Service
+### 8.4 TTS Service
 ```bash
 cd tts-service
-pip install flask flask-cors edge-tts faster-whisper
+pip install -r requirements.txt
 python server.py
-# Runs on http://localhost:5001
+# → http://localhost:5001
+```
+
+### 8.5 Mobile App
+```bash
+cd LearnifyApp
+npm install
+npx expo start
+# scan QR with Expo Go or run on simulator
+```
+
+### 8.6 Tap Launcher (optional)
+```bash
+cd tap-launcher
+pip install -r requirements.txt
+python tap_launcher.py
+# tap desk once = home, twice = dashboard, etc.
+# or say: "open courses" / "open quiz"
 ```
 
 ### Environment Variables
 
-**Backend (`.env`)**
+**backend/.env**
 ```env
 PORT=5000
-SUPABASE_URL=your-supabase-url
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-AZURE_OPENAI_API_KEY=your-azure-key
-AZURE_OPENAI_ENDPOINT=your-azure-endpoint
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_DEPLOYMENT=gpt-5.4
 AZURE_OPENAI_API_VERSION=2024-08-01-preview
 FRONTEND_URL=http://localhost:3000
 ```
 
-**Frontend (`.env.local`)**
+**frontend/.env.local**
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
 NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
-AZURE_OPENAI_API_KEY=your-azure-key
-AZURE_OPENAI_ENDPOINT=your-azure-endpoint
-AZURE_OPENAI_DEPLOYMENT=gpt-5.4
-AZURE_OPENAI_API_VERSION=2024-08-01-preview
+NEXT_PUBLIC_TTS_URL=http://localhost:5001
 ```
 
 ---
 
-## Architecture
+## 9. Design Trade-offs & Future Work
 
-```
-┌──────────────────┐    HTTP/SSE     ┌────────────────┐    SQL    ┌───────────┐
-│     Frontend     │ ◄─────────────► │    Backend     │ ◄──────► │  Supabase │
-│   (Next.js 15)   │                 │  (Express.js)  │          │ (Postgres) │
-│   Port 3000      │                 │   Port 5000    │          └───────────┘
-└────────┬─────────┘                 └───────┬────────┘
-         │                                   │
-         │  Socket.io (real-time sync)       │ HTTP
-         │◄─────────────────────────────────►│
-         │                                   │
-         │                            ┌──────▼────────┐
-         │                            │  TTS Service   │
-         │                            │  (Python Flask) │
-         │                            │   Port 5001    │
-         │                            └───────────────┘
-         │
-    ┌────▼─────┐
-    │ Azure    │
-    │ OpenAI   │  (GPT-5.4 via LangChain)
-    └──────────┘
-```
+**Trade-offs made**
+- **CSV of completed topics** in `student_performance.subject` — simple, but doesn't scale past ~10k topics per student. Move to a junction table when needed.
+- **Client-side emotion detection** — zero server cost, but varies with device cam/lighting. Consider server-side verification for high-stakes use.
+- **Deterministic MCQ scoring only** — free-response auto-grading is intentionally limited to homework.
+- **Sandboxed iframe animations** — safe, but rules out importing external libs. Everything is vanilla JS/CSS.
+
+**Next**
+- Sign-language avatar for hearing-impaired learners (routes scaffolded in `signLanguage.ts`)
+- Teacher dashboard (cohort analytics)
+- Offline course generation via a smaller local model
+- Push notifications for study-plan reminders
 
 ---
 
-## License
-
-MIT
-
----
-
-Built with AI for Bharat

@@ -27,7 +27,7 @@ export default function AITeacherAvatar({
   const indexRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const sizeMap: Record<string, number> = { sm: 120, md: 160, lg: 200 };
+  const sizeMap: Record<string, number> = { sm: 140, md: 180, lg: 220 };
   const px = sizeMap[size] || 160;
   const posMap: Record<string, string> = { 'bottom-right': 'bottom-2 right-2', 'bottom-left': 'bottom-2 left-2' };
 

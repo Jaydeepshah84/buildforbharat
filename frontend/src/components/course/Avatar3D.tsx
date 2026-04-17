@@ -88,35 +88,55 @@ export default function AvatarScene({ pose, isPlaying, highlightWord, config }: 
         {/* Neck */}
         <rect x="140" y="142" width="20" height="34" rx="8" fill={skin} />
 
-        {/* Left Arm */}
+        {/* Left Arm + emoji hand at end */}
         <motion.g
           style={{ originX: "108px", originY: "186px" }}
           animate={{ rotate: isPlaying ? a.la : 20 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
-          <rect x="72" y="180" width="24" height="58" rx="12" fill="url(#sg)" />
+          <rect x="72" y="180" width="24" height="50" rx="12" fill="url(#sg)" />
           <motion.g
-            style={{ originX: "84px", originY: "235px" }}
+            style={{ originX: "84px", originY: "228px" }}
             animate={{ rotate: isPlaying ? a.le : -25 }}
             transition={{ duration: 0.4 }}
           >
-            <rect x="76" y="232" width="18" height="52" rx="9" fill={skin} />
+            <rect x="76" y="226" width="18" height="40" rx="9" fill={skin} />
+            {/* Emoji hand at wrist */}
+            <foreignObject x="58" y="258" width="50" height="50">
+              <motion.div
+                animate={isPlaying ? { rotate: [0, 5, -5, 0] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                style={{ fontSize: 34, lineHeight: 1, textAlign: "center" }}
+              >
+                {handEmoji}
+              </motion.div>
+            </foreignObject>
           </motion.g>
         </motion.g>
 
-        {/* Right Arm */}
+        {/* Right Arm + emoji hand at end */}
         <motion.g
           style={{ originX: "192px", originY: "186px" }}
           animate={{ rotate: isPlaying ? a.ra : -20 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
-          <rect x="204" y="180" width="24" height="58" rx="12" fill="url(#sg)" />
+          <rect x="204" y="180" width="24" height="50" rx="12" fill="url(#sg)" />
           <motion.g
-            style={{ originX: "216px", originY: "235px" }}
+            style={{ originX: "216px", originY: "228px" }}
             animate={{ rotate: isPlaying ? a.re : -25 }}
             transition={{ duration: 0.4 }}
           >
-            <rect x="206" y="232" width="18" height="52" rx="9" fill={skin} />
+            <rect x="206" y="226" width="18" height="40" rx="9" fill={skin} />
+            {/* Emoji hand at wrist */}
+            <foreignObject x="192" y="258" width="50" height="50">
+              <motion.div
+                animate={isPlaying ? { rotate: [0, -5, 5, 0] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
+                style={{ fontSize: 34, lineHeight: 1, textAlign: "center" }}
+              >
+                {handEmoji}
+              </motion.div>
+            </foreignObject>
           </motion.g>
         </motion.g>
 
@@ -180,27 +200,6 @@ export default function AvatarScene({ pose, isPlaying, highlightWord, config }: 
         <rect x="0" y="285" width="300" height="15" fill="url(#fade)" />
       </svg>
 
-      {/* Emoji Hand Overlay — positioned over the avatar's hands area */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ paddingBottom: "15%" }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={handEmoji}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.5, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="relative"
-          >
-            <motion.span
-              className="text-[72px] leading-none block drop-shadow-lg"
-              animate={isPlaying ? { y: [0, -6, 0], rotateZ: [0, 4, -4, 0] } : {}}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-            >
-              {handEmoji}
-            </motion.span>
-          </motion.div>
-        </AnimatePresence>
-      </div>
     </div>
   );
 }

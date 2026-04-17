@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import {
   getDatabase, markTopicComplete, updateCourseProgress, getTopicsByLesson,
 } from '../../src/services/database';
@@ -14,10 +15,13 @@ import { hasLocalVideo, getVideoPath, downloadTopicVideo } from '../../src/servi
 import { useNetwork } from '../../src/hooks/useNetwork';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../src/constants/theme';
 
+const { width: SW } = Dimensions.get('window');
+
 export default function VideoPlayerScreen() {
   const { topicId, courseId } = useLocalSearchParams<{ topicId: string; courseId: string }>();
   const { isOnline } = useNetwork();
   const insets = useSafeAreaInsets();
+  const videoRef = useRef<Video>(null);
   const [topicTitle, setTopicTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMsg, setLoadingMsg] = useState('Loading...');
@@ -27,22 +31,16 @@ export default function VideoPlayerScreen() {
   const [prevTopic, setPrevTopic] = useState<any>(null);
   const [error, setError] = useState('');
 
-  const player = useVideoPlayer(videoUri || '', (p) => {
-    p.loop = false;
-  });
-
   const loadVideo = useCallback(async () => {
     if (!topicId) return;
     setLoading(true);
     setError('');
 
-    // Get topic info
     const db = await getDatabase();
     const topic: any = await db.getFirstAsync('SELECT * FROM topics WHERE id = ?', [topicId]);
     setTopicTitle(topic?.title || 'Topic');
     setCompleted(!!topic?.is_completed);
 
-    // Get adjacent topics
     if (topic?.lesson_id) {
       const allTopics = await getTopicsByLesson(topic.lesson_id);
       const idx = allTopics.findIndex((t: any) => t.id === topicId);
@@ -50,26 +48,25 @@ export default function VideoPlayerScreen() {
       setNextTopic(idx < allTopics.length - 1 ? allTopics[idx + 1] : null);
     }
 
-    // Check for local video
-    if (hasLocalVideo(topicId)) {
+    // Check local video
+    if (await hasLocalVideo(topicId)) {
       setVideoUri(getVideoPath(topicId));
       setLoading(false);
       return;
     }
 
-    // Generate online if not available
+    // Generate online
     if (isOnline) {
       setLoadingMsg('AI is recording your video lesson...');
       const ok = await downloadTopicVideo(topicId, 'en', (msg) => setLoadingMsg(msg));
-      if (ok && hasLocalVideo(topicId)) {
+      if (ok && await hasLocalVideo(topicId)) {
         setVideoUri(getVideoPath(topicId));
       } else {
         setError('Failed to generate video. Try again.');
       }
     } else {
-      setError('Video not downloaded. Connect to internet to generate.');
+      setError('Video not downloaded. Download the module while online.');
     }
-
     setLoading(false);
   }, [topicId, isOnline]);
 
@@ -93,11 +90,15 @@ export default function VideoPlayerScreen() {
   }
 
   function navigateToTopic(t: any) {
-    player.pause();
     router.replace(`/player/${t.id}?courseId=${courseId}`);
   }
 
-  // Loading state
+  function onPlaybackStatusUpdate(status: AVPlaybackStatus) {
+    if (status.isLoaded && status.didJustFinish) {
+      handleMarkComplete();
+    }
+  }
+
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -110,15 +111,14 @@ export default function VideoPlayerScreen() {
     );
   }
 
-  // Error state
   if (error || !videoUri) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={28} color="#FFF" />
+        <TouchableOpacity style={styles.backBtnAbs} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <View style={styles.center}>
-          <Ionicons name="videocam-off" size={48} color={Colors.textTertiary} />
+          <Ionicons name="videocam-off" size={48} color="#666" />
           <Text style={styles.loadingText}>{error || 'Video not available'}</Text>
           {isOnline && (
             <TouchableOpacity style={styles.retryBtn} onPress={loadVideo}>
@@ -135,26 +135,28 @@ export default function VideoPlayerScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => { player.pause(); router.back(); }}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{topicTitle}</Text>
         {completed && <Ionicons name="checkmark-circle" size={22} color={Colors.success} />}
       </View>
 
-      {/* Video Player */}
-      <View style={styles.videoContainer}>
-        <VideoView
-          player={player}
+      {/* Video */}
+      <View style={styles.videoWrap}>
+        <Video
+          ref={videoRef}
+          source={{ uri: videoUri }}
           style={styles.video}
-          contentFit="contain"
-          nativeControls={true}
+          useNativeControls
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay={false}
+          onPlaybackStatusUpdate={onPlaybackStatusUpdate}
         />
       </View>
 
-      {/* Bottom Controls */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
-        {/* Nav row */}
+      {/* Bottom */}
+      <View style={[styles.bottom, { paddingBottom: insets.bottom + 10 }]}>
         <View style={styles.navRow}>
           {prevTopic ? (
             <TouchableOpacity style={styles.navBtn} onPress={() => navigateToTopic(prevTopic)}>
@@ -169,9 +171,9 @@ export default function VideoPlayerScreen() {
               <Text style={styles.doneText}>Completed</Text>
             </View>
           ) : (
-            <TouchableOpacity style={styles.markDoneBtn} onPress={handleMarkComplete}>
+            <TouchableOpacity style={styles.markBtn} onPress={handleMarkComplete}>
               <Ionicons name="checkmark" size={16} color="#FFF" />
-              <Text style={styles.markDoneText}>Mark Complete</Text>
+              <Text style={styles.markText}>Mark Complete</Text>
             </TouchableOpacity>
           )}
 
@@ -190,13 +192,12 @@ export default function VideoPlayerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  closeBtn: { position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8 },
+  backBtnAbs: { position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8 },
   loadingText: { fontSize: FontSize.md, color: '#AAA', marginTop: 16, textAlign: 'center' },
   subText: { fontSize: FontSize.sm, color: '#666', marginTop: 4 },
   retryBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20,
-    backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: BorderRadius.md,
   },
   retryText: { color: '#FFF', fontWeight: '600' },
   header: {
@@ -204,22 +205,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xxl, paddingVertical: Spacing.md,
   },
   headerTitle: { fontSize: FontSize.lg, fontWeight: '700', color: '#FFF', flex: 1 },
-  videoContainer: { flex: 1, backgroundColor: '#000' },
-  video: { flex: 1, width: '100%' },
-  bottomBar: {
-    backgroundColor: '#111', paddingTop: Spacing.md, paddingHorizontal: Spacing.xxl,
-  },
-  navRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
+  videoWrap: { flex: 1, backgroundColor: '#000', justifyContent: 'center' },
+  video: { width: SW, height: SW * (480 / 720), alignSelf: 'center' },
+  bottom: { backgroundColor: '#111', paddingTop: Spacing.md, paddingHorizontal: Spacing.xxl },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   navBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
   navText: { fontSize: FontSize.sm, color: '#FFF', fontWeight: '600' },
   doneBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   doneText: { fontSize: FontSize.sm, color: Colors.success, fontWeight: '700' },
-  markDoneBtn: {
+  markBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.full,
   },
-  markDoneText: { fontSize: FontSize.sm, color: '#FFF', fontWeight: '600' },
+  markText: { fontSize: FontSize.sm, color: '#FFF', fontWeight: '600' },
 });

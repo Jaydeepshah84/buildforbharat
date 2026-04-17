@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Bot, User, Play, RotateCcw, X, ArrowRight, Hand } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -29,19 +29,31 @@ export default function VisualLabPage() {
   const [showSignLang, setShowSignLang] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Force stop all speech/audio
+  const killAllAudio = () => {
+    try { window.speechSynthesis?.cancel(); } catch {}
+    try { document.querySelectorAll("audio").forEach(a => { a.pause(); a.src = ""; }); } catch {}
+  };
+
   const handleGenerate = (t?: string) => {
     const val = (t || topic).trim();
     if (!val) return;
-    setTopic(val);
-    setActiveTopic(val);
-    setChatHistory([]);
+    killAllAudio();
+    setActiveTopic("");
+    setTimeout(() => { setTopic(val); setActiveTopic(val); setChatHistory([]); }, 50);
   };
 
   const handleReset = () => {
+    killAllAudio();
     setActiveTopic("");
     setTopic("");
     setChatHistory([]);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => killAllAudio();
+  }, []);
 
   const handleChat = async () => {
     if (!chatInput.trim()) return;
@@ -163,7 +175,7 @@ export default function VisualLabPage() {
                     onClick={() => handleGenerate(s.label)}
                     className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white border border-gray-100 text-left hover:border-[#284ce3]/30 hover:shadow-md transition-all group"
                   >
-                    <span className="text-2xl">{s.emoji}</span>
+                    <span className="text-4xl">{s.emoji}</span>
                     <span className="text-sm font-semibold text-gray-700 group-hover:text-[#284ce3] transition-colors">{s.label}</span>
                   </motion.button>
                 ))}

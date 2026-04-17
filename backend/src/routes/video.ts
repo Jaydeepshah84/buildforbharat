@@ -30,12 +30,10 @@ router.post("/generate/:topicId", authMiddleware, async (req: AuthRequest, res: 
   const { language = "en" } = req.body;
 
   try {
-    // Check if video already exists
+    // Check if video already exists — just respond OK, client will GET it
     const videoPath = path.join(VIDEOS_DIR, `${topicId}.mp4`);
     if (fs.existsSync(videoPath)) {
-      res.setHeader("Content-Type", "video/mp4");
-      res.setHeader("Content-Disposition", `attachment; filename="${topicId}.mp4"`);
-      return fs.createReadStream(videoPath).pipe(res);
+      return res.json({ success: true, cached: true });
     }
 
     // Get topic info
@@ -117,9 +115,38 @@ Create 5-7 slides. Use bright educational colors. Narration should be friendly a
       }
     }
 
-    // Step 3: Create slide images using ffmpeg (text on colored background)
-    // Generate a concat file for ffmpeg
+    // Step 3: Create slide videos using ffmpeg (text overlay on colored bg)
+    const FONT_PATH = "/System/Library/Fonts/Supplemental/Arial.ttf";
+    const fontExists = fs.existsSync(FONT_PATH);
     const slideVideoPaths: string[] = [];
+
+    // Escape text for ffmpeg drawtext filter
+    const escText = (s: string) =>
+      (s || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/:/g, "\\:")
+        .replace(/,/g, "\\,")
+        .replace(/%/g, "\\%")
+        .replace(/[\r\n]+/g, " ");
+
+    // Break long text into multiple lines using FFmpeg's line wrapping approach
+    const wrapText = (text: string, maxLineLen: number): string[] => {
+      if (!text) return [];
+      const words = text.split(/\s+/);
+      const lines: string[] = [];
+      let cur = "";
+      for (const w of words) {
+        if ((cur + " " + w).trim().length > maxLineLen) {
+          if (cur) lines.push(cur);
+          cur = w;
+        } else {
+          cur = (cur + " " + w).trim();
+        }
+      }
+      if (cur) lines.push(cur);
+      return lines;
+    };
 
     for (let i = 0; i < slides.length; i++) {
       const slide = slides[i];
@@ -128,14 +155,34 @@ Create 5-7 slides. Use bright educational colors. Narration should be friendly a
       const audioPath = slideAudioPaths[i];
       const bgColor = (slide.bg_color || "#4F46E5").replace("#", "");
 
-      // Escape text for ffmpeg drawtext
-      const title = (slide.title || "").replace(/'/g, "'\\''").replace(/:/g, "\\:").slice(0, 60);
-      const content = (slide.content || "").replace(/'/g, "'\\''").replace(/:/g, "\\:").slice(0, 200);
+      const titleLines = wrapText(slide.title || "", 30).slice(0, 2);
+      const contentLines = wrapText(slide.content || "", 50).slice(0, 6);
+
+      // Build drawtext filters
+      const filters: string[] = [];
+      const fontOption = fontExists ? `:fontfile='${FONT_PATH}'` : "";
+
+      // Title at top (one or two lines)
+      titleLines.forEach((line, idx) => {
+        filters.push(
+          `drawtext=text='${escText(line)}':fontsize=46:fontcolor=0x1A1A2E:x=(w-text_w)/2:y=${60 + idx * 56}${fontOption}`
+        );
+      });
+
+      // Content in middle (multiple lines)
+      contentLines.forEach((line, idx) => {
+        filters.push(
+          `drawtext=text='${escText(line)}':fontsize=26:fontcolor=0x333333:x=(w-text_w)/2:y=${220 + idx * 36}${fontOption}`
+        );
+      });
+
+      const filterStr = filters.join(",");
 
       await new Promise<void>((resolve, reject) => {
         const cmd = ffmpeg()
           .input(`color=c=0x${bgColor}:s=720x480:d=${duration}`)
           .inputFormat("lavfi")
+          .videoFilters(filterStr)
           .outputOptions(["-pix_fmt", "yuv420p", "-r", "24"]);
 
         if (audioPath && fs.existsSync(audioPath)) {
@@ -182,10 +229,8 @@ Create 5-7 slides. Use bright educational colors. Narration should be friendly a
 
     console.log(`[Video] Generated ${videoPath} (${slides.length} slides)`);
 
-    // Return video
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Content-Disposition", `attachment; filename="${topicId}.mp4"`);
-    fs.createReadStream(videoPath).pipe(res);
+    // Respond OK — client will download via GET /api/video/:topicId
+    res.json({ success: true, slides: slides.length });
   } catch (err: any) {
     console.error("[Video] Error:", err.message);
     res.status(500).json({ error: err.message || "Video generation failed" });

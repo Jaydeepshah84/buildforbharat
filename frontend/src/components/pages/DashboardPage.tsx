@@ -169,7 +169,7 @@ export default function DashboardPage() {
             </div>
             {recentQuizzes.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-4xl mb-3">📝</p>
+                <p className="text-6xl mb-4">📝</p>
                 <p className="text-sm text-gray-400 mb-3">No quizzes taken yet</p>
                 <button onClick={() => router.push("/quiz")}
                   className="text-sm font-semibold text-[#284ce3] hover:text-blue-700">Take your first quiz &rarr;</button>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
             </div>
             {recentHomework.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-4xl mb-3">📋</p>
+                <p className="text-6xl mb-4">📋</p>
                 <p className="text-sm text-gray-400">No homework submitted yet</p>
               </div>
             ) : (
@@ -286,7 +286,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-10 text-center">
-                <p className="text-4xl mb-3">🎯</p>
+                <p className="text-6xl mb-4">🎯</p>
                 <p className="text-sm text-gray-400 mb-3">No study plan yet</p>
                 <button onClick={() => router.push("/study-planner")}
                   className="text-sm font-semibold text-[#284ce3] hover:text-blue-700">Create one &rarr;</button>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-10 text-center">
-                <p className="text-4xl mb-3">📊</p>
+                <p className="text-6xl mb-4">📊</p>
                 <p className="text-sm text-gray-400">Complete quizzes to see performance data</p>
               </div>
             )}
