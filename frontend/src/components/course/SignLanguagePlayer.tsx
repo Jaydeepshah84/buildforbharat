@@ -148,7 +148,7 @@ export default function SignLanguagePlayer({ topic, language = 'en', onNext, onP
       if (stopRef.current) { resolve(); return; }
       setCurrentPhrase(phrase);
       const words = phrase.split(/\s+/);
-      const interval = Math.max(500, 2200 / (words.length + 1));
+      const interval = Math.max(450, 2400 / (words.length + 1));
       let wi = 0;
       const iv = setInterval(() => {
         if (stopRef.current) { clearInterval(iv); resolve(); return; }

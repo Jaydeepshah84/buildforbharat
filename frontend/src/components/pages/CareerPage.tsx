@@ -135,8 +135,6 @@ function TagInput({ label, icon: Icon, tags, setTags, placeholder, color, inputI
 
   return (
     <div>
-        <PageHero title="Career Guidance" subtitle="Discover career paths aligned with your skills." />
-
       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
         <Icon className={`w-4 h-4 ${colors.icon}`} />
         {label}
@@ -204,7 +202,7 @@ function LoadingDots() {
 
 // --------------- Career Card ---------------
 
-function CareerCard({ career }) {
+function CareerCard({ career, index = 0 }) {
   const { t } = useTranslation();
   const Icon = getCareerIcon(career);
   const growthText =
@@ -216,54 +214,83 @@ function CareerCard({ career }) {
   const description =
     career.description || career.summary || '';
   const name = career.name || career.title || career.career || 'Career';
+  const salary = career.salary || career.salaryRange || career.salary_range || '';
+  const matchPct = career.match || career.matchPercentage || career.match_percentage || null;
+
+  const gradients = [
+    'from-blue-500 to-indigo-600',
+    'from-purple-500 to-pink-600',
+    'from-emerald-500 to-teal-600',
+    'from-orange-500 to-red-500',
+    'from-cyan-500 to-blue-600',
+    'from-violet-500 to-purple-600',
+  ];
+  const grad = gradients[index % gradients.length];
 
   return (
     <motion.div
       variants={cardVariants}
-      className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all overflow-hidden group"
     >
+      {/* Colored top strip */}
+      <div className={`h-1.5 bg-gradient-to-r ${grad}`} />
+
       <div className="p-5 space-y-4">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white flex items-center justify-center">
-            <Icon className="w-5 h-5" />
+          <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+            <Icon className="w-6 h-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-gray-900">{name}</h3>
-            {growthText && (
-              <span
-                className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getGrowthColor(
-                  growthText
-                )}`}
-              >
-                <TrendingUp className="w-3 h-3" />
-                {growthText}
-              </span>
-            )}
+            <h3 className="text-base font-bold text-gray-900">{name}</h3>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {growthText && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getGrowthColor(growthText)}`}>
+                  <TrendingUp className="w-3 h-3" />
+                  {growthText}
+                </span>
+              )}
+              {matchPct && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                  <Target className="w-3 h-3" />
+                  {matchPct}% match
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Description */}
         {description && (
-          <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{description}</p>
+        )}
+
+        {/* Salary */}
+        {salary && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-400 font-medium">Salary:</span>
+            <span className="text-gray-800 font-semibold">{salary}</span>
+          </div>
         )}
 
         {/* Required Skills */}
         {requiredSkills.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               {t('career.requiredSkills', 'Required Skills')}
             </h4>
             <div className="flex flex-wrap gap-1.5">
-              {(Array.isArray(requiredSkills) ? requiredSkills : [requiredSkills]).map(
+              {(Array.isArray(requiredSkills) ? requiredSkills : [requiredSkills]).slice(0, 6).map(
                 (skill, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium"
-                  >
+                  <span key={idx}
+                    className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-50 text-gray-700 text-xs font-medium border border-gray-100">
                     {skill}
                   </span>
                 )
+              )}
+              {requiredSkills.length > 6 && (
+                <span className="text-xs text-gray-400 px-2 py-1">+{requiredSkills.length - 6} more</span>
               )}
             </div>
           </div>
@@ -271,13 +298,13 @@ function CareerCard({ career }) {
 
         {/* Education Path */}
         {educationPath && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50/60 border border-blue-100">
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
             <GraduationCap className="w-4 h-4 text-[#284ce3] flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-xs font-semibold text-[#284ce3] mb-0.5">
+              <h4 className="text-[11px] font-bold text-[#284ce3] uppercase tracking-wider mb-0.5">
                 {t('career.educationPath', 'Education Path')}
               </h4>
-              <p className="text-xs text-[#284ce3] leading-relaxed">{educationPath}</p>
+              <p className="text-xs text-blue-800 leading-relaxed">{educationPath}</p>
             </div>
           </div>
         )}
@@ -347,36 +374,32 @@ export default function CareerPage() {
     }
   };
 
+  // Quick suggestion chips
+  const interestSuggestions = ['Technology', 'Medicine', 'Art & Design', 'Space', 'Business', 'Music', 'Sports', 'Environment'];
+  const skillSuggestions = ['Python', 'Communication', 'Drawing', 'Mathematics', 'Leadership', 'Writing', 'Problem Solving'];
+
   return (
-    <div className="min-h-screen bg-gray-50/50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Page header */}
-        <motion.div variants={fadeIn} initial="hidden" animate="visible">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {t('career.title', 'Career Guidance')}
-              </h1>
-              <p className="text-sm text-gray-500">
-                {t('career.subtitle', 'Discover career paths tailored to your interests and skills')}
-              </p>
-            </div>
-          </div>
-        </motion.div>
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Hero */}
+      <PageHero title="Career Guidance" subtitle="Discover career paths tailored to your interests and skills.">
+        <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+          <Compass className="w-4 h-4 text-white/80" />
+          <span className="text-xs text-white/80 font-medium">AI-Powered</span>
+        </div>
+      </PageHero>
 
         {/* ======== Input Form ======== */}
         <motion.section
           variants={fadeIn}
           initial="hidden"
           animate="visible"
-          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
         >
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Target className="w-5 h-5 text-[#284ce3]" />
+          <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center">
+                <Target className="w-4 h-4 text-white" />
+              </div>
               {t('career.tellUs', 'Tell Us About Yourself')}
             </h2>
           </div>
@@ -391,6 +414,17 @@ export default function CareerPage() {
               color="indigo"
               inputId="interests"
             />
+            {/* Quick add chips for interests */}
+            {interests.length < 3 && (
+              <div className="flex flex-wrap gap-2 -mt-2">
+                {interestSuggestions.filter(s => !interests.includes(s)).slice(0, 5).map(s => (
+                  <button key={s} onClick={() => setInterests([...interests, s])}
+                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-[#284ce3] hover:text-[#284ce3] hover:bg-blue-50 transition-all flex items-center gap-1">
+                    <Plus className="w-3 h-3" /> {s}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <TagInput
               label={t('career.skills', 'Your Skills')}
@@ -401,20 +435,31 @@ export default function CareerPage() {
               color="purple"
               inputId="skills"
             />
+            {/* Quick add chips for skills */}
+            {skills.length < 3 && (
+              <div className="flex flex-wrap gap-2 -mt-2">
+                {skillSuggestions.filter(s => !skills.includes(s)).slice(0, 5).map(s => (
+                  <button key={s} onClick={() => setSkills([...skills, s])}
+                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50 transition-all flex items-center gap-1">
+                    <Plus className="w-3 h-3" /> {s}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-200"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#5b7cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('career.analyzing', 'Analyzing...')}
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {t('career.analyzing', 'Analyzing your profile...')}
                 </>
               ) : (
                 <>
-                  <Rocket className="w-4 h-4" />
+                  <Rocket className="w-5 h-5" />
                   {t('career.findCareers', 'Find Career Paths')}
                 </>
               )}
@@ -459,16 +504,15 @@ export default function CareerPage() {
                 variants={stagger}
                 initial="hidden"
                 animate="visible"
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 gap-5"
               >
                 {careers.map((career, idx) => (
-                  <CareerCard key={career.id || career._id || idx} career={career} />
+                  <CareerCard key={career.id || career._id || idx} career={career} index={idx} />
                 ))}
               </motion.div>
             </motion.section>
           )}
         </AnimatePresence>
-      </div>
     </div>
   );
 }

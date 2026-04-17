@@ -19,6 +19,7 @@ import ttsRoutes from "./routes/tts";
 import animationRoutes from "./routes/animation";
 import tutorPipelineRoutes from "./routes/tutor";
 import signLanguageRoutes from "./routes/signLanguage";
+import videoRoutes from "./routes/video";
 
 const app = express();
 const server = http.createServer(app);
@@ -46,6 +47,7 @@ app.use("/api/tts", ttsRoutes);
 app.use("/api/animation", animationRoutes);
 app.use("/api/tutor/pipeline", tutorPipelineRoutes);
 app.use("/api/sign-language", signLanguageRoutes);
+app.use("/api/video", videoRoutes);
 
 // Health check
 app.get("/api/health", (_req, res) => {
