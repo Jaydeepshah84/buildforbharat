@@ -4,10 +4,35 @@ import { getAgent } from "../agents";
 import { openai } from "../config/llm";
 import { config } from "../config/env";
 import * as db from "../services/db";
+import { sendQuizResultEmail, sendExamResultEmail } from "../services/emailService";
 import multer from "multer";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Helper: get parent email + student name for a user
+async function getParentInfo(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
+  try {
+    // Try users table first
+    const user = await db.getUserById(userId);
+    const studentName = user?.name || user?.full_name || user?.email?.split('@')[0] || 'Student';
+
+    // Try parent_email from users table
+    if (user?.parent_email) return { parentEmail: user.parent_email, studentName };
+
+    // Fallback: check student_profile.interests for parent_email:xxx
+    const profiles = await db.getByUserId("student_profile", userId);
+    const profile = profiles?.[0];
+    if (profile?.interests?.length) {
+      const entry = profile.interests.find((i: string) => i?.startsWith?.('parent_email:'));
+      if (entry) return { parentEmail: entry.split(':').slice(1).join(':'), studentName };
+    }
+
+    return { parentEmail: null, studentName };
+  } catch {
+    return { parentEmail: null, studentName: 'Student' };
+  }
+}
 
 // AI Tutor chat (uses Doubt agent)
 router.post("/tutor/chat", authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -75,6 +100,14 @@ router.post("/quiz/submit", authMiddleware, async (req: AuthRequest, res: Respon
       user_id: req.user.id, topic_id: topic, questions, answers,
       score: pct, total: 100, time_taken: timeTaken || 0,
     }).catch(() => null);
+
+    // Send result to parent email (non-blocking)
+    getParentInfo(req.user.id).then(({ parentEmail, studentName }) => {
+      if (parentEmail) {
+        sendQuizResultEmail(parentEmail, studentName, topic || 'Quiz', score, total, pct, timeTaken || 0)
+          .catch(err => console.warn('[Email] Quiz result email failed:', err.message));
+      }
+    }).catch(() => {});
 
     res.json({ result: saved, score, total, percentage: pct });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -202,6 +235,18 @@ router.post("/exam/submit", authMiddleware, async (req: AuthRequest, res: Respon
     const pct = maxMarks > 0 ? Math.round((totalScore / maxMarks) * 100) : 0;
 
     await db.insert("exams", { user_id: req.user.id, questions, answers: submission, score: pct, total: 100, time_taken: timeTaken || 0 }).catch(() => {});
+
+    // Send result to parent email (non-blocking)
+    const examTopics = req.body.topics || (questions || []).slice(0, 3).map((q: any) => q.topic).filter(Boolean);
+    getParentInfo(req.user.id).then(({ parentEmail, studentName }) => {
+      if (parentEmail) {
+        sendExamResultEmail(
+          parentEmail, studentName,
+          examTopics.length > 0 ? examTopics : ['General Exam'],
+          totalScore, maxMarks, pct, timeTaken || 0, (questions || []).length
+        ).catch(err => console.warn('[Email] Exam result email failed:', err.message));
+      }
+    }).catch(() => {});
 
     res.json({
       exam: { score: pct },

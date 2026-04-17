@@ -231,10 +231,105 @@ export async function sendAnalyticsEmail(
   );
 }
 
+/** Notify parent when student completes a quiz */
+export async function sendQuizResultEmail(
+  parentEmail: string,
+  studentName: string,
+  topic: string,
+  score: number,
+  total: number,
+  percentage: number,
+  timeTaken: number
+): Promise<boolean> {
+  const mins = Math.floor(timeTaken / 60);
+  const secs = timeTaken % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+  const scoreColor = percentage >= 70 ? '#059669' : percentage >= 40 ? '#d97706' : '#dc2626';
+  const scoreLabel = percentage >= 70 ? 'Excellent!' : percentage >= 40 ? 'Good Effort' : 'Needs Practice';
+
+  const body = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="display:inline-block;width:100px;height:100px;border-radius:50%;border:6px solid ${scoreColor};line-height:100px;font-size:32px;font-weight:800;color:${scoreColor};">
+        ${percentage}%
+      </div>
+      <p style="color:${scoreColor};font-size:16px;font-weight:700;margin:8px 0 0;">${scoreLabel}</p>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Topic:</strong></td><td style="color:#333;font-size:14px;">${topic}</td></tr>
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Score:</strong></td><td style="color:${scoreColor};font-size:14px;font-weight:700;">${score} / ${total} correct</td></tr>
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Time Taken:</strong></td><td style="color:#333;font-size:14px;">${timeStr}</td></tr>
+    </table>
+    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a quiz on Learnify. ${
+      percentage >= 70 ? 'Great performance!' : 'Encourage them to review the topic and try again.'
+    }</p>
+  `;
+
+  return sendEmail(
+    parentEmail,
+    `Quiz Result: ${studentName} scored ${percentage}% on ${topic}`,
+    baseTemplate("Quiz Completed", body, studentName)
+  );
+}
+
+/** Notify parent when student completes an exam */
+export async function sendExamResultEmail(
+  parentEmail: string,
+  studentName: string,
+  topics: string[],
+  score: number,
+  totalMarks: number,
+  percentage: number,
+  timeTaken: number,
+  totalQuestions: number
+): Promise<boolean> {
+  const mins = Math.floor(timeTaken / 60);
+  const secs = timeTaken % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+  const scoreColor = percentage >= 70 ? '#059669' : percentage >= 40 ? '#d97706' : '#dc2626';
+  const scoreLabel = percentage >= 70 ? 'Excellent!' : percentage >= 40 ? 'Good Effort' : 'Needs Practice';
+
+  const progressBar = `
+    <div style="background:#e2e8f0;border-radius:8px;height:14px;margin:12px 0;overflow:hidden;">
+      <div style="background:${scoreColor};height:100%;width:${percentage}%;border-radius:8px;"></div>
+    </div>
+  `;
+
+  const body = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="display:inline-block;width:110px;height:110px;border-radius:50%;border:6px solid ${scoreColor};line-height:110px;font-size:36px;font-weight:800;color:${scoreColor};">
+        ${percentage}%
+      </div>
+      <p style="color:${scoreColor};font-size:18px;font-weight:700;margin:8px 0 0;">${scoreLabel}</p>
+    </div>
+    ${progressBar}
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Topics:</strong></td><td style="color:#333;font-size:14px;">${topics.join(', ')}</td></tr>
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Score:</strong></td><td style="color:${scoreColor};font-size:14px;font-weight:700;">${score} / ${totalMarks} marks</td></tr>
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Questions:</strong></td><td style="color:#333;font-size:14px;">${totalQuestions} MCQs</td></tr>
+      <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Time Taken:</strong></td><td style="color:#333;font-size:14px;">${timeStr}</td></tr>
+    </table>
+    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a timed exam on Learnify. ${
+      percentage >= 70 ? 'Excellent performance! They have a strong grasp of the material.'
+      : percentage >= 40 ? 'Good attempt. Some topics may need review.'
+      : 'They may need additional practice on these topics. Consider reviewing together.'
+    }</p>
+  `;
+
+  return sendEmail(
+    parentEmail,
+    `Exam Result: ${studentName} scored ${percentage}% — ${topics.slice(0, 3).join(', ')}`,
+    baseTemplate("Exam Completed", body, studentName)
+  );
+}
+
 export default {
   sendWelcomeEmail,
   sendCourseCreatedEmail,
   sendModuleCompletedEmail,
   sendAnalyticsEmail,
+  sendQuizResultEmail,
+  sendExamResultEmail,
   isConfigured,
 };
