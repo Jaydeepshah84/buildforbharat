@@ -2,7 +2,17 @@
 // API Service - Native fetch wrapper for all backend endpoints
 // ============================================================
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Dynamic API URL: use the current page's hostname so it works from any device on the network
+function getBaseUrl() {
+  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // If env URL points to localhost but we're accessing from a different host, use current hostname
+  if (envUrl.includes('localhost') && window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5050/api`;
+  }
+  return envUrl || `http://${window.location.hostname}:5050/api`;
+}
+const BASE_URL = typeof window !== 'undefined' ? getBaseUrl() : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api');
 
 // --------------- helpers ---------------
 

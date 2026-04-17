@@ -15,8 +15,14 @@ import AnimationPlayer from "@/components/animation/AnimationPlayer";
 import AdaptiveLesson from "@/components/course/AdaptiveLesson";
 import { useAuth } from "@/components/AuthProvider";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+// Dynamic URLs so it works from any device on the same network
+const _host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const API = typeof window !== 'undefined' && _host !== 'localhost'
+  ? `http://${_host}:5050/api`
+  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api");
+const SOCKET_URL = typeof window !== 'undefined' && _host !== 'localhost'
+  ? `http://${_host}:5050`
+  : (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5050");
 
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },

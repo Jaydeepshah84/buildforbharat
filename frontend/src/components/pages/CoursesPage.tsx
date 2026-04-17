@@ -346,7 +346,9 @@ export default function CoursesPage() {
     setGenStatus('Creating course structure...');
     setGenTopicsReady(0);
     setGenTotalTopics(0);
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const API = window.location.hostname !== 'localhost'
+      ? `http://${window.location.hostname}:5050/api`
+      : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api');
     const token = localStorage.getItem('token') || '';
     let navigated = false;
     try {

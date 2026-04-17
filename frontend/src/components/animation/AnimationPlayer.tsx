@@ -10,7 +10,11 @@ interface Props {
   onNext?: () => void;
 }
 
-const BACKEND = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api") : "";
+const BACKEND = typeof window !== "undefined"
+  ? (window.location.hostname !== "localhost"
+    ? `http://${window.location.hostname}:5050/api`
+    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api"))
+  : "";
 const getTtsUrl = () => {
   const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
   return `http://${host}:5001/tts`;

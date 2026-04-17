@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? `http://${window.location.hostname}:5050/api`
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api');
 
 const COLORS = [
   'from-indigo-600 to-purple-700', 'from-blue-600 to-cyan-600',

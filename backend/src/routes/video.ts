@@ -132,24 +132,10 @@ Create 5-7 slides. Use bright educational colors. Narration should be friendly a
       const title = (slide.title || "").replace(/'/g, "'\\''").replace(/:/g, "\\:").slice(0, 60);
       const content = (slide.content || "").replace(/'/g, "'\\''").replace(/:/g, "\\:").slice(0, 200);
 
-      const drawtextFilters = [
-        `drawtext=text='${title}':fontsize=42:fontcolor=white:x=(w-text_w)/2:y=80:font=Arial`,
-        `drawtext=text='${content.slice(0, 80)}':fontsize=24:fontcolor=white:x=(w-text_w)/2:y=(h/2)-20:font=Arial`,
-      ];
-
-      if (content.length > 80) {
-        drawtextFilters.push(
-          `drawtext=text='${content.slice(80, 160)}':fontsize=24:fontcolor=white:x=(w-text_w)/2:y=(h/2)+20:font=Arial`
-        );
-      }
-
-      const filterStr = drawtextFilters.join(",");
-
       await new Promise<void>((resolve, reject) => {
         const cmd = ffmpeg()
           .input(`color=c=0x${bgColor}:s=720x480:d=${duration}`)
           .inputFormat("lavfi")
-          .videoFilters(filterStr)
           .outputOptions(["-pix_fmt", "yuv420p", "-r", "24"]);
 
         if (audioPath && fs.existsSync(audioPath)) {

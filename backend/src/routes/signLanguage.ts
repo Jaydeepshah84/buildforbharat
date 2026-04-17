@@ -6,94 +6,134 @@ import { config } from "../config/env";
 const router = Router();
 
 /**
- * Generate sign language animation HTML for a given topic/text.
- * The AI creates an interactive HTML/CSS/JS animation showing
- * hand gestures, finger positions, and sign language movements
- * with step-by-step narration.
+ * Generate sign language animation keyframes for a phrase.
+ * AI returns exact arm, hand, finger positions as keyframe sequences.
  */
-router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post("/animate", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { text, topic, language = "ISL" } = req.body;
-    const content = text || topic;
-    if (!content) return res.status(400).json({ error: "text or topic is required" });
-
-    const signLanguageMap: Record<string, string> = {
-      ISL: "Indian Sign Language (ISL)",
-      ASL: "American Sign Language (ASL)",
-      BSL: "British Sign Language (BSL)",
-    };
-    const slName = signLanguageMap[language] || "Indian Sign Language (ISL)";
+    const { phrase } = req.body;
+    if (!phrase) return res.status(400).json({ error: "phrase required" });
 
     const resp = await openai.chat.completions.create({
       model: config.azure.deployment,
       messages: [
         {
           role: "system",
-          content: `You are an expert in ${slName} and web animation. Generate a COMPLETE, SELF-CONTAINED HTML page that animates sign language gestures to explain the given concept.
+          content: `You are an Indian Sign Language (ISL) animation expert. Given a phrase, generate keyframe animation data for a sign language avatar.
 
-Requirements:
-1. Create animated SVG hands/figures showing each sign gesture step by step
-2. Use CSS animations and JavaScript for smooth transitions between signs
-3. Show the word/phrase being signed above each gesture
-4. Include a timeline/progress bar at the bottom
-5. Use a dark background (#1a1a2e) with white/yellow text for visibility
-6. Each sign should display for 2-3 seconds with smooth transitions
-7. Include a play/pause button and restart button
-8. Show the English word + Sign description for each gesture
-9. Make hands realistic using SVG paths (palm, fingers, wrist)
-10. Add subtle motion trails for movement-based signs
+For each word in the phrase, return a sequence of keyframes that represent the ISL sign for that word. Each keyframe is a snapshot of the avatar's pose.
 
-The HTML must be COMPLETELY self-contained (inline CSS + JS, no external deps).
-Return ONLY the HTML code, no markdown, no explanation.`,
-        },
+Return JSON:
+{
+  "signs": [
+    {
+      "word": "the word",
+      "keyframes": [
         {
-          role: "user",
-          content: `Create a sign language animation for: "${content}"
-
-Break it down into individual signs/gestures. For each sign show:
-- The word being signed
-- Hand shape (using SVG)
-- Movement direction (arrows/animation)
-- Brief description of the sign
-
-Make it educational and visually clear. The animation should auto-play and loop.`,
-        },
-      ],
-      temperature: 0.7,
-      max_completion_tokens: 4000,
-    });
-
-    const html = resp.choices[0].message.content || "";
-
-    // Extract just the HTML if wrapped in markdown
-    let cleanHtml = html;
-    const htmlMatch = html.match(/```(?:html)?\s*([\s\S]*?)```/);
-    if (htmlMatch) cleanHtml = htmlMatch[1];
-
-    // Ensure it starts with proper HTML
-    if (!cleanHtml.trim().startsWith("<!DOCTYPE") && !cleanHtml.trim().startsWith("<html") && !cleanHtml.trim().startsWith("<div")) {
-      cleanHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#1a1a2e;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:white;"><div style="text-align:center;padding:40px;"><h2>Sign Language: ${content}</h2><p style="color:#888;">Animation could not be generated. Please try again.</p></div></body></html>`;
+          "duration": 0.4,
+          "leftArm": { "shoulder": -45, "elbow": -30, "wrist": 10 },
+          "rightArm": { "shoulder": -50, "elbow": -40, "wrist": -5 },
+          "leftHand": { "shape": "open|fist|point|peace|thumbsUp|claw|flat|cup", "fingers": [0,0,0,0,0] },
+          "rightHand": { "shape": "open|fist|point|peace|thumbsUp|claw|flat|cup", "fingers": [0,0,0,0,0] },
+          "head": { "tilt": 0, "nod": 0 },
+          "body": { "lean": 0 },
+          "expression": "neutral|smile|surprise|thinking|serious"
+        }
+      ]
     }
+  ]
+}
 
-    res.json({
-      html: cleanHtml,
-      topic: content,
-      language: slName,
-      signs: [], // Could parse signs from AI response
+Rules:
+- shoulder: -90 to 90 (negative = raise arm up, positive = lower)
+- elbow: -90 to 0 (negative = bend more)
+- wrist: -30 to 30 (rotation)
+- fingers: array of 5 values [thumb,index,middle,ring,pinky], each 0 (straight) to 1 (curled)
+- Each word should have 2-4 keyframes showing the motion of the sign
+- Signs should flow naturally from one to the next
+- Use realistic ISL gestures — not random movements
+- Common signs: namaste (palms together at chest), hello (wave), yes (head nod + fist), no (head shake + finger wag)
+- duration is in seconds (0.3-0.8 per keyframe)`,
+        },
+        { role: "user", content: `Generate ISL sign animation keyframes for: "${phrase}"` },
+      ],
+      temperature: 0.5,
+      max_completion_tokens: 2000,
+      response_format: { type: "json_object" },
     });
+
+    let data: any;
+    try { data = JSON.parse(resp.choices[0].message.content || "{}"); } catch { data = { signs: [] }; }
+
+    res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
 /**
- * Stream sign language explanation (SSE) — breaks down a sentence
- * into individual signs and streams them one by one.
+ * Generate sign language animation HTML (full visual).
+ */
+router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { text, topic, language = "ISL" } = req.body;
+    const content = text || topic;
+    if (!content) return res.status(400).json({ error: "text or topic required" });
+
+    const resp = await openai.chat.completions.create({
+      model: config.azure.deployment,
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert in Indian Sign Language (ISL) and CSS/JS animation. Generate a COMPLETE self-contained HTML page showing a realistic animated human avatar performing the ISL sign.
+
+REQUIREMENTS:
+1. Draw a realistic upper-body human using CSS (not SVG) — head, face, neck, shoulders, chest, arms, hands with 5 fingers each
+2. Use skin-colored divs with border-radius for body parts
+3. The avatar must perform the ACTUAL ISL sign for the given word/phrase:
+   - Show the correct hand shape (open palm, fist, point, etc.)
+   - Show the correct arm position and movement
+   - Show the correct hand location relative to the body
+   - Animate through the sign's movement smoothly
+4. Use CSS @keyframes animations with multiple steps for fluid motion
+5. Each finger should be individually visible and positioned correctly
+6. Dark background: #0f1628
+7. Avatar should be centered and large (fill 80% of the viewport)
+8. Show the word being signed at the bottom in a caption
+9. Animation should loop seamlessly
+10. Use transform: rotate() for joint movements, translate() for positioning
+11. The hand/arm movement must look like ACTUAL sign language, not just waving
+12. Add subtle breathing animation to the chest
+13. Eyes should blink occasionally
+14. Head should move naturally with the signing
+
+STYLE: Modern, clean, the avatar should look like a 3D character rendered in CSS (use box-shadow for depth, gradients for volume). Shirt color: #284ce3.
+
+Return ONLY the complete HTML. No markdown. No explanation.`,
+        },
+        { role: "user", content: `Create a realistic ISL sign language animation for the word/phrase: "${content}". The avatar must perform the EXACT Indian Sign Language sign for this word with correct hand shapes, positions, and movements.` },
+      ],
+      temperature: 0.7,
+      max_completion_tokens: 4000,
+    });
+
+    let html = resp.choices[0].message.content || "";
+    const match = html.match(/```(?:html)?\s*([\s\S]*?)```/);
+    if (match) html = match[1];
+
+    res.json({ html, topic: content });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Stream sign breakdown (SSE).
  */
 router.post("/explain-stream", authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { text, topic, language = "ISL" } = req.body;
+  const { text, topic } = req.body;
   const content = text || topic;
-  if (!content) return res.status(400).json({ error: "text or topic is required" });
+  if (!content) return res.status(400).json({ error: "text or topic required" });
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -107,56 +147,23 @@ router.post("/explain-stream", authMiddleware, async (req: AuthRequest, res: Res
     const resp = await openai.chat.completions.create({
       model: config.azure.deployment,
       messages: [
-        {
-          role: "system",
-          content: `You are an Indian Sign Language (ISL) expert. Break down the given text into individual sign language gestures.
-
-Return JSON: {
-  "signs": [
-    {
-      "word": "the word being signed",
-      "gesture": "description of hand shape and movement",
-      "handShape": "open palm / fist / pointing / etc",
-      "movement": "up / down / circular / none",
-      "position": "chest / forehead / side / etc",
-      "emoji": "closest emoji representation"
-    }
-  ],
-  "fullSentence": "the complete ISL gloss translation"
-}`,
-        },
-        { role: "user", content: `Break down into ISL signs: "${content}"` },
+        { role: "system", content: `Break down text into ISL signs. Return JSON: { "signs": [{ "word": "", "gesture": "", "handShape": "", "movement": "", "position": "", "emoji": "" }], "fullSentence": "" }` },
+        { role: "user", content: `ISL signs for: "${content}"` },
       ],
-      temperature: 0.7,
-      max_completion_tokens: 1500,
-      response_format: { type: "json_object" },
+      temperature: 0.7, max_completion_tokens: 1500, response_format: { type: "json_object" },
     });
 
     let parsed: any;
-    try {
-      parsed = JSON.parse(resp.choices[0].message.content || "{}");
-    } catch {
-      parsed = { signs: [], fullSentence: content };
+    try { parsed = JSON.parse(resp.choices[0].message.content || "{}"); } catch { parsed = { signs: [] }; }
+
+    send({ phase: "ready", totalSigns: parsed.signs?.length || 0, fullSentence: parsed.fullSentence });
+    for (const [i, sign] of (parsed.signs || []).entries()) {
+      send({ phase: "sign", index: i, total: parsed.signs.length, ...sign });
     }
-
-    const signs = parsed.signs || [];
-    send({ phase: "ready", totalSigns: signs.length, fullSentence: parsed.fullSentence });
-
-    // Send each sign one by one
-    for (let i = 0; i < signs.length; i++) {
-      send({
-        phase: "sign",
-        index: i,
-        total: signs.length,
-        ...signs[i],
-      });
-    }
-
-    send({ phase: "complete", totalSigns: signs.length });
+    send({ phase: "complete" });
   } catch (err: any) {
     send({ phase: "error", message: err.message });
   }
-
   res.end();
 });
 
