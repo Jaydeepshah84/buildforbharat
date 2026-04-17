@@ -13,23 +13,35 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Helper: get parent email + student name for a user
 async function getParentInfo(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
   try {
-    // Try users table first
+    // 1. Try users table
     const user = await db.getUserById(userId);
     const studentName = user?.name || user?.full_name || user?.email?.split('@')[0] || 'Student';
+    console.log(`[ParentInfo] User: ${studentName} (${userId}), parent_email in users: ${user?.parent_email || 'none'}`);
 
-    // Try parent_email from users table
     if (user?.parent_email) return { parentEmail: user.parent_email, studentName };
 
-    // Fallback: check student_profile.interests for parent_email:xxx
+    // 2. Fallback: student_profile.interests array (parent_email:xxx format)
     const profiles = await db.getByUserId("student_profile", userId);
     const profile = profiles?.[0];
     if (profile?.interests?.length) {
-      const entry = profile.interests.find((i: string) => i?.startsWith?.('parent_email:'));
-      if (entry) return { parentEmail: entry.split(':').slice(1).join(':'), studentName };
+      const entry = (profile.interests as string[]).find((i: string) => typeof i === 'string' && i.startsWith('parent_email:'));
+      if (entry) {
+        const email = entry.replace('parent_email:', '').trim();
+        console.log(`[ParentInfo] Found parent email in profile.interests: ${email}`);
+        return { parentEmail: email, studentName };
+      }
     }
 
+    // 3. Fallback: check if parent_email is stored as a separate column in student_profile
+    if (profile?.parent_email) {
+      console.log(`[ParentInfo] Found parent email in profile.parent_email: ${profile.parent_email}`);
+      return { parentEmail: profile.parent_email, studentName };
+    }
+
+    console.log(`[ParentInfo] No parent email found for user ${userId}`);
     return { parentEmail: null, studentName };
-  } catch {
+  } catch (err: any) {
+    console.warn(`[ParentInfo] Error looking up parent: ${err.message}`);
     return { parentEmail: null, studentName: 'Student' };
   }
 }
@@ -102,12 +114,17 @@ router.post("/quiz/submit", authMiddleware, async (req: AuthRequest, res: Respon
     }).catch(() => null);
 
     // Send result to parent email (non-blocking)
+    console.log(`[Quiz] Submitting for user ${req.user.id}, score ${pct}%`);
     getParentInfo(req.user.id).then(({ parentEmail, studentName }) => {
+      console.log(`[Quiz] Parent lookup: email=${parentEmail}, student=${studentName}`);
       if (parentEmail) {
         sendQuizResultEmail(parentEmail, studentName, topic || 'Quiz', score, total, pct, timeTaken || 0)
-          .catch(err => console.warn('[Email] Quiz result email failed:', err.message));
+          .then(ok => console.log(`[Quiz] Email sent: ${ok}`))
+          .catch(err => console.warn('[Quiz] Email failed:', err.message));
+      } else {
+        console.log('[Quiz] No parent email — skipping notification');
       }
-    }).catch(() => {});
+    }).catch(err => console.warn('[Quiz] Parent lookup failed:', err.message));
 
     res.json({ result: saved, score, total, percentage: pct });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -238,15 +255,20 @@ router.post("/exam/submit", authMiddleware, async (req: AuthRequest, res: Respon
 
     // Send result to parent email (non-blocking)
     const examTopics = req.body.topics || (questions || []).slice(0, 3).map((q: any) => q.topic).filter(Boolean);
+    console.log(`[Exam] Submitting for user ${req.user.id}, score ${pct}%`);
     getParentInfo(req.user.id).then(({ parentEmail, studentName }) => {
+      console.log(`[Exam] Parent lookup: email=${parentEmail}, student=${studentName}`);
       if (parentEmail) {
         sendExamResultEmail(
           parentEmail, studentName,
           examTopics.length > 0 ? examTopics : ['General Exam'],
           totalScore, maxMarks, pct, timeTaken || 0, (questions || []).length
-        ).catch(err => console.warn('[Email] Exam result email failed:', err.message));
+        ).then(ok => console.log(`[Exam] Email sent: ${ok}`))
+          .catch(err => console.warn('[Exam] Email failed:', err.message));
+      } else {
+        console.log('[Exam] No parent email — skipping notification');
       }
-    }).catch(() => {});
+    }).catch(err => console.warn('[Exam] Parent lookup failed:', err.message));
 
     res.json({
       exam: { score: pct },

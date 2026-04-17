@@ -64,17 +64,22 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
     return false;
   }
 
+  if (!to || !to.includes('@')) {
+    console.log(`[Email] Invalid recipient: "${to}" — skipping`);
+    return false;
+  }
+
   try {
-    await transporter.sendMail({
-      from: config.email.from,
-      to,
-      subject,
-      html,
-    });
-    console.log(`[Email] Sent: "${subject}" to ${to}`);
+    // Gmail requires From to match the authenticated user or be omitted
+    const from = config.email.user
+      ? `Learnify <${config.email.user}>`
+      : config.email.from;
+
+    await transporter.sendMail({ from, to, subject, html });
+    console.log(`[Email] ✓ Sent: "${subject}" to ${to}`);
     return true;
   } catch (err: any) {
-    console.error(`[Email] Failed: ${err.message}`);
+    console.error(`[Email] ✗ Failed to ${to}: ${err.message}`);
     return false;
   }
 }
