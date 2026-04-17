@@ -535,15 +535,14 @@ function QuizResults({ quiz, answers, timeTaken, onRetry, onDashboard }) {
   const questions = quiz.questions || [];
   const totalQuestions = questions.length;
 
-  // Calculate score
+  // Calculate score — check all possible field names for the correct answer
   const score = useMemo(() => {
     let correct = 0;
     questions.forEach((q, i) => {
       const userAnswer = answers[i];
       const correctIndex =
-        q.correctAnswer ?? q.correct_answer ?? q.answer ?? q.correctIndex ?? q.correct_index;
+        q.correct ?? q.correctAnswer ?? q.correct_answer ?? q.answer ?? q.correctIndex ?? q.correct_index;
 
-      // correctIndex can be a number or a letter
       let correctIdx;
       if (typeof correctIndex === 'number') {
         correctIdx = correctIndex;
@@ -640,7 +639,7 @@ function QuizResults({ quiz, answers, timeTaken, onRetry, onDashboard }) {
             {questions.map((q, i) => {
               const userAnswer = answers[i];
               const correctIndex =
-                q.correctAnswer ?? q.correct_answer ?? q.answer ?? q.correctIndex ?? q.correct_index;
+                q.correct ?? q.correctAnswer ?? q.correct_answer ?? q.answer ?? q.correctIndex ?? q.correct_index;
 
               let correctIdx;
               if (typeof correctIndex === 'number') {
@@ -777,12 +776,26 @@ export default function QuizPage() {
 
       // Normalize: ensure we have a questions array
       let questions = quizData?.questions || (Array.isArray(quizData) ? quizData : []);
-      questions = questions.map((q: any) => ({
-        ...q,
-        question: q.question || q.text || '',
-        options: q.options || [],
-        correct: typeof q.correct === 'number' ? q.correct : 0,
-      }));
+      questions = questions.map((q: any) => {
+        // Resolve correct answer index from various formats
+        let correctVal = q.correct ?? q.correctAnswer ?? q.correct_answer ?? q.answer ?? 0;
+        let correctIdx: number;
+        if (typeof correctVal === 'number') {
+          correctIdx = correctVal;
+        } else if (typeof correctVal === 'string') {
+          const letterMap: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+          correctIdx = letterMap[correctVal.toUpperCase()] ?? (parseInt(correctVal, 10) || 0);
+        } else {
+          correctIdx = 0;
+        }
+
+        return {
+          ...q,
+          question: q.question || q.text || '',
+          options: q.options || [],
+          correct: correctIdx,
+        };
+      });
 
       if (questions.length === 0) {
         toast.error(t('quiz.noQuestions', 'Failed to generate questions. Try again.'));
