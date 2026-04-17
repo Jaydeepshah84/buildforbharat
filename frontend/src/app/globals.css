@@ -13,9 +13,9 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-[#284ce3] text-white px-6 py-2.5 rounded-xl font-semibold
+    @apply bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold
       hover:bg-blue-700 transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-[#284ce3]/40 focus:ring-offset-2
+      focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-2
       disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20
       active:scale-[0.98];
   }
@@ -24,20 +24,20 @@
       hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-[0.98];
   }
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100/80 p-6
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6
       hover:shadow-md transition-shadow duration-300;
   }
   .input-field {
     @apply w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white
-      focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-[#284ce3]
+      focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
       placeholder-gray-400 transition-all text-sm;
   }
   .sidebar-link {
     @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500
-      hover:bg-blue-50/60 hover:text-[#284ce3] transition-all duration-200;
+      hover:bg-blue-50/60 hover:text-blue-600 transition-all duration-200;
   }
   .sidebar-link.active {
-    @apply bg-blue-50 text-[#284ce3] font-semibold
+    @apply bg-blue-50 text-blue-600 font-semibold
       shadow-sm shadow-blue-100/50 border border-blue-100/50;
   }
 
@@ -57,7 +57,7 @@
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
 /* Selection */
-::selection { background: rgba(99, 102, 241, 0.15); color: inherit; }
+::selection { background: rgba(40, 76, 227, 0.15); color: inherit; }
 
 /* Smooth transitions for all interactive elements */
 @layer utilities {
@@ -96,7 +96,8 @@
 .prose-chat ul, .prose-chat ol { @apply my-1.5 pl-4; }
 .prose-chat li { @apply my-0.5; }
 .prose-chat code {
-  @apply bg-gray-100 text-[#284ce3] px-1.5 py-0.5 rounded text-xs font-mono;
+  @apply bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono;
+  color: #284ce3;
 }
 .prose-chat pre {
   @apply bg-gray-900 text-gray-100 p-3 rounded-lg my-2 overflow-x-auto text-xs;
@@ -108,7 +109,8 @@
   @apply border-l-2 border-blue-300 pl-3 italic text-gray-600 my-2;
 }
 .prose-chat a {
-  @apply text-[#284ce3] underline decoration-blue-300 underline-offset-2 hover:text-blue-800;
+  @apply underline decoration-blue-300 underline-offset-2 hover:text-blue-800;
+  color: #284ce3;
 }
 .prose-chat strong { @apply font-semibold text-gray-900; }
 .prose-chat table { @apply w-full text-xs border-collapse my-2; }

@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="course/[id]" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="learn/[topicId]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="quiz-take/[id]" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="player/[topicId]" options={{ animation: 'slide_from_bottom', contentStyle: { backgroundColor: Colors.dark } }} />
       </Stack>
     </AuthProvider>
   );

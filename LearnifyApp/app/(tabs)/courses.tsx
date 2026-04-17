@@ -10,7 +10,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useNetwork } from '../../src/hooks/useNetwork';
 import { getCoursesByUser } from '../../src/services/database';
 import { apiGetCourses, apiGenerateCourseStream, apiEnrollCourse } from '../../src/services/api';
-import { downloadCourseForOffline, isCourseOffline, DownloadProgress } from '../../src/services/offlineSync';
+import { isCourseOffline, getDownloadedModuleIds } from '../../src/services/offlineSync';
 import { POPULAR_SUBJECTS } from '../../src/data/courseKnowledge';
 import { Card, Button, ProgressBar, Badge, EmptyState } from '../../src/components/ui';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../src/constants/theme';
@@ -35,9 +35,6 @@ export default function CoursesScreen() {
   const [duration, setDuration] = useState('7');
   const [language, setLanguage] = useState(user?.language || 'en');
 
-  // Download state
-  const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
-  const [downloadProgress, setDownloadProgress] = useState<Record<string, DownloadProgress>>({});
   const [offlineIds, setOfflineIds] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
@@ -106,9 +103,9 @@ export default function CoursesScreen() {
         setSubject('');
         setGenPercent(0);
         loadData();
-        Alert.alert('Course Created!', 'Your course is ready. Download it to access offline.', [
+        Alert.alert('Course Created!', 'Your course is ready. Open it to download modules.', [
           { text: 'Later', style: 'cancel' },
-          { text: 'Download Now', onPress: () => handleDownload(courseId) },
+          { text: 'Open Course', onPress: () => router.push(`/course/${courseId}`) },
         ]);
       },
       (error) => {
@@ -117,27 +114,6 @@ export default function CoursesScreen() {
         Alert.alert('Error', error);
       }
     );
-  }
-
-  async function handleDownload(courseId: string) {
-    if (!user) return;
-    setDownloadingIds(prev => new Set(prev).add(courseId));
-
-    await downloadCourseForOffline(courseId, user.id, (p) => {
-      setDownloadProgress(prev => ({ ...prev, [courseId]: p }));
-    });
-
-    setDownloadingIds(prev => {
-      const next = new Set(prev);
-      next.delete(courseId);
-      return next;
-    });
-    setDownloadProgress(prev => {
-      const next = { ...prev };
-      delete next[courseId];
-      return next;
-    });
-    loadData();
   }
 
   const displayCourses = tab === 'online' ? serverCourses : localCourses;
@@ -202,22 +178,13 @@ export default function CoursesScreen() {
         {displayCourses.map((course: any) => {
           const courseId = course.id;
           const isDownloaded = offlineIds.has(courseId);
-          const isDownloading = downloadingIds.has(courseId);
-          const dlProgress = downloadProgress[courseId];
           const color = course.image_color || course.color || Colors.primary;
 
           return (
             <Card key={courseId} style={styles.courseCard}>
               <TouchableOpacity
-                onPress={() => {
-                  if (tab === 'downloaded' || isDownloaded) {
-                    router.push(`/course/${courseId}`);
-                  } else if (isOnline) {
-                    router.push(`/course/${courseId}`);
-                  } else {
-                    Alert.alert('Not Downloaded', 'Download this course to access offline.');
-                  }
-                }}
+                onPress={() => router.push(`/course/${courseId}`)}
+
                 activeOpacity={0.7}
               >
                 <View style={styles.cardTop}>
@@ -242,40 +209,20 @@ export default function CoursesScreen() {
                 </View>
               </TouchableOpacity>
 
-              {/* Download / Status bar */}
-              {tab === 'online' && (
-                <View style={styles.cardActions}>
-                  {isDownloaded ? (
-                    <View style={styles.downloadedBadge}>
-                      <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                      <Text style={styles.downloadedText}>Available Offline</Text>
-                    </View>
-                  ) : isDownloading ? (
-                    <View style={styles.downloadingBar}>
-                      <ActivityIndicator size="small" color={Colors.primary} />
-                      <Text style={styles.downloadingText}>{dlProgress?.message || 'Downloading...'}</Text>
-                      <Text style={styles.downloadingPercent}>{dlProgress?.percent || 0}%</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity style={styles.downloadBtn} onPress={() => handleDownload(courseId)}>
-                      <Ionicons name="download-outline" size={18} color={Colors.primary} />
-                      <Text style={styles.downloadBtnText}>Download for Offline</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-
-              {tab === 'downloaded' && (
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={styles.openBtn}
-                    onPress={() => router.push(`/course/${courseId}`)}
-                  >
-                    <Ionicons name="play-circle" size={18} color="#FFF" />
-                    <Text style={styles.openBtnText}>Open Course</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {/* Action bar */}
+              <View style={styles.cardActions}>
+                {isDownloaded ? (
+                  <View style={styles.downloadedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+                    <Text style={styles.downloadedText}>Modules available offline</Text>
+                  </View>
+                ) : (
+                  <View style={styles.downloadedBadge}>
+                    <Ionicons name="arrow-forward-circle" size={14} color={Colors.primary} />
+                    <Text style={[styles.downloadedText, { color: Colors.primary }]}>Open to download modules</Text>
+                  </View>
+                )}
+              </View>
             </Card>
           );
         })}

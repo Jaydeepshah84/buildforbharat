@@ -194,13 +194,16 @@ function ChartCard({ title, icon: Icon, children, className = '' }) {
   return (
     <motion.div
       variants={itemVariants}
-      className={`bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden ${className}`}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 ${className}`}
     >
-        <PageHero title="Analytics" subtitle="Track your learning progress with detailed insights." />
-
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100">
-        {Icon && <Icon className="w-5 h-5 text-blue-600" />}
-        <h3 className="text-base font-semibold text-gray-800">{title}</h3>
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+        {Icon && (
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center">
+            <Icon className="w-4 h-4 text-white" />
+          </div>
+        )}
+        <h3 className="text-sm font-bold text-gray-800">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
     </motion.div>
@@ -209,30 +212,64 @@ function ChartCard({ title, icon: Icon, children, className = '' }) {
 
 // --------------- Metric Card ---------------
 
-function MetricCard({ label, value, sub, icon: Icon, color = 'blue' }) {
+function AnimatedNumber({ value, suffix = '' }: { value: number | string; suffix?: string }) {
+  const numValue = typeof value === 'string' ? parseInt(value) || 0 : value;
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (numValue === 0) { setDisplay(0); return; }
+    const duration = 1200;
+    const steps = 40;
+    const stepTime = duration / steps;
+    let current = 0;
+    const increment = numValue / steps;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= numValue) { setDisplay(numValue); clearInterval(timer); }
+      else setDisplay(Math.round(current));
+    }, stepTime);
+    return () => clearInterval(timer);
+  }, [numValue]);
+
+  return <>{display}{suffix}</>;
+}
+
+function MetricCard({ label, value, sub, icon: Icon, color = 'blue', trend = 0 }) {
   const colorMap = {
-    blue: 'from-blue-500 to-blue-600',
-    purple: 'from-purple-500 to-purple-600',
-    green: 'from-green-500 to-green-600',
-    indigo: 'from-indigo-500 to-indigo-600',
+    blue:   { gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-200' },
+    purple: { gradient: 'from-purple-500 to-purple-600', bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-200' },
+    green:  { gradient: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-200' },
+    indigo: { gradient: 'from-indigo-500 to-indigo-600', bg: 'bg-indigo-50', text: 'text-indigo-600', ring: 'ring-indigo-200' },
   };
+  const c = colorMap[color] || colorMap.blue;
+
+  const numericValue = typeof value === 'string' ? parseInt(value) || 0 : value;
+  const hasPct = typeof value === 'string' && value.includes('%');
 
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow"
+      whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
+      className={`relative bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-xl transition-all overflow-hidden group`}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={`w-10 h-10 bg-gradient-to-r ${colorMap[color] || colorMap.blue} rounded-xl flex items-center justify-center`}
-        >
+      {/* Decorative gradient corner */}
+      <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full bg-gradient-to-br ${c.gradient} opacity-5 group-hover:opacity-10 transition-opacity`} />
+
+      <div className="flex items-start justify-between mb-3 relative">
+        <div className={`w-11 h-11 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center shadow-lg shadow-${color}-200/40`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
+        {trend !== 0 && (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${trend > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+            {trend > 0 ? '+' : ''}{trend}%
+          </span>
+        )}
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-0.5">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      <p className="text-3xl font-extrabold text-gray-900 relative">
+        {numericValue > 0 ? <AnimatedNumber value={numericValue} suffix={hasPct ? '%' : ''} /> : value}
+      </p>
+      <p className="text-sm font-medium text-gray-600 mt-1">{label}</p>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </motion.div>
   );
 }
@@ -517,18 +554,24 @@ export default function AnalyticsPage() {
 
   return (
     <motion.div
-      className="max-w-7xl mx-auto px-4 py-8"
+      className="max-w-7xl mx-auto"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Page Header */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{t('Analytics')}</h1>
-        <p className="text-gray-500 mt-1">
-          {t('Track your learning progress and performance insights')}
-        </p>
-      </motion.div>
+      {/* Page Hero */}
+      <PageHero title="Analytics" subtitle="Track your learning progress with detailed performance insights.">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+            <Activity className="w-4 h-4 text-white/80" />
+            <span className="text-xs text-white/80 font-medium">{totalAssessments} Assessments</span>
+          </div>
+          <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+            <Target className="w-4 h-4 text-white/80" />
+            <span className="text-xs text-white/80 font-medium">{overallScore}% Overall</span>
+          </div>
+        </div>
+      </PageHero>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

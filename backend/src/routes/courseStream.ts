@@ -67,12 +67,14 @@ router.post("/generate-stream", authMiddleware, async (req: AuthRequest, res: Re
       courseId = saved.id;
 
       const savedMods = await Promise.all(modules.map((m: any, i: number) => db.insert("modules", { course_id: courseId, title: m.title, order_index: i }).catch(() => null)));
+      const topicIdMap: Record<string, string> = {}; // "mi-li-ti" -> topicDbId
       for (let mi = 0; mi < modules.length; mi++) {
         if (!savedMods[mi]) continue;
         const savedLes = await Promise.all(modules[mi].lessons.map((l: any, i: number) => db.insert("lessons", { module_id: savedMods[mi]!.id, title: l.title, order_index: i }).catch(() => null)));
         for (let li = 0; li < modules[mi].lessons.length; li++) {
           if (!savedLes[li]) continue;
-          await Promise.all(modules[mi].lessons[li].topics.map((t: string, i: number) => db.insert("topics", { lesson_id: savedLes[li]!.id, title: t, order_index: i }).catch(() => null)));
+          const savedTopics = await Promise.all(modules[mi].lessons[li].topics.map((t: string, i: number) => db.insert("topics", { lesson_id: savedLes[li]!.id, title: t, order_index: i }).catch(() => null)));
+          savedTopics.forEach((st: any, ti: number) => { if (st?.id) topicIdMap[`${mi}-${li}-${ti}`] = st.id; });
         }
       }
       if (userId) await db.insert("enrollments", { user_id: userId, course_id: courseId }).catch(() => {});
@@ -113,7 +115,13 @@ router.post("/generate-stream", authMiddleware, async (req: AuthRequest, res: Re
           ],
           temperature: 0.7, max_completion_tokens: i < 2 ? 800 : 600,
         });
-        send("topic:ready", { index: i, title: t.title, content: resp.choices[0].message.content, moduleIdx: t.mi, lessonIdx: t.li });
+        const generatedContent = resp.choices[0].message.content || "";
+        send("topic:ready", { index: i, title: t.title, content: generatedContent, moduleIdx: t.mi, lessonIdx: t.li });
+        // Save content to DB
+        const topicDbId = topicIdMap[`${t.mi}-${t.li}-${t.ti}`];
+        if (topicDbId && generatedContent) {
+          db.insert("content", { topic_id: topicDbId, mode: "text", content_text: generatedContent, language: language || "en" }).catch(() => {});
+        }
       } catch {
         send("topic:ready", { index: i, title: t.title, content: `Topic: ${t.title}`, error: true });
       }

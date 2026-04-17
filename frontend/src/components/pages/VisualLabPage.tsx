@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Play, RotateCcw, X, ArrowRight } from "lucide-react";
+import { Send, Bot, User, Play, RotateCcw, X, ArrowRight, Hand } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AnimationPlayer from "@/components/animation/AnimationPlayer";
+import SignLanguagePlayer from "@/components/SignLanguagePlayer";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
 
@@ -25,6 +26,7 @@ export default function VisualLabPage() {
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [showSignLang, setShowSignLang] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = (t?: string) => {
@@ -222,14 +224,38 @@ export default function VisualLabPage() {
               </div>
             </div>
 
-            {/* Animation */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <AnimationPlayer
-                topic={activeTopic}
-                classLevel="10"
-                language={localStorage.getItem("app_language") || "en"}
-              />
+            {/* Mode toggle: Visual / Sign Language */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => setShowSignLang(false)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  !showSignLang ? "bg-[#284ce3] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Visual Animation
+              </button>
+              <button
+                onClick={() => setShowSignLang(true)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-1.5 ${
+                  showSignLang ? "bg-[#284ce3] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Hand className="w-3.5 h-3.5" /> Sign Language
+              </button>
             </div>
+
+            {/* Animation or Sign Language */}
+            {showSignLang ? (
+              <SignLanguagePlayer topic={activeTopic} />
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <AnimationPlayer
+                  topic={activeTopic}
+                  classLevel="10"
+                  language={localStorage.getItem("app_language") || "en"}
+                />
+              </div>
+            )}
 
             {/* Chat */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

@@ -7,12 +7,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetwork } from '../../src/hooks/useNetwork';
-import { apiMarkTopicComplete } from '../../src/services/api';
+import { apiMarkTopicComplete, apiTutorChat } from '../../src/services/api';
 import {
   getTopicContent, markTopicComplete as markTopicCompleteLocal,
   getTopicsByLesson, updateCourseProgress, getDatabase,
+  insertTopicContent,
 } from '../../src/services/database';
 import { isCourseOffline } from '../../src/services/offlineSync';
+import { hasLocalAudio } from '../../src/services/audioService';
+import { hasLocalAnimation } from '../../src/services/animationService';
 import { Card, Button } from '../../src/components/ui';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../src/constants/theme';
 
@@ -23,6 +26,7 @@ export default function LearnScreen() {
   const [content, setContent] = useState<any>(null);
   const [topicInfo, setTopicInfo] = useState<any>(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [audioAvailable, setAudioAvailable] = useState(false);
   const [marking, setMarking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adjacentTopics, setAdjacentTopics] = useState<{ prev: any; next: any }>({ prev: null, next: null });
@@ -34,38 +38,80 @@ export default function LearnScreen() {
     try {
       const db = await getDatabase();
 
-      // Try local SQLite first (for downloaded courses)
+      // Get topic info from local DB
       const topic: any = await db.getFirstAsync('SELECT * FROM topics WHERE id = ?', [topicId]);
       if (topic) {
         setTopicInfo(topic);
         setIsCompleted(!!topic.is_completed);
 
+        // Check for video/audio
+        const animExists = hasLocalAnimation(topicId);
+        const audioExists = await hasLocalAudio(topicId);
+        setAudioAvailable(animExists || audioExists);
+
+        // Get adjacent topics for navigation
+        if (topic.lesson_id) {
+          const allTopics = await getTopicsByLesson(topic.lesson_id);
+          const idx = allTopics.findIndex((t: any) => t.id === topicId);
+          setAdjacentTopics({
+            prev: idx > 0 ? allTopics[idx - 1] : null,
+            next: idx < allTopics.length - 1 ? allTopics[idx + 1] : null,
+          });
+        }
+
+        // Try local content first
         const localContent = await getTopicContent(topicId);
-        if (localContent) {
+        if (localContent && localContent.text_content) {
           const keyPoints = typeof localContent.key_points === 'string'
             ? JSON.parse(localContent.key_points) : (localContent.key_points || []);
           const examples = typeof localContent.examples === 'string'
             ? JSON.parse(localContent.examples) : (localContent.examples || []);
           setContent({ ...localContent, key_points: keyPoints, examples });
-        }
-
-        // Get adjacent topics
-        if (topic.lesson_id) {
-          const topics = await getTopicsByLesson(topic.lesson_id);
-          const idx = topics.findIndex((t: any) => t.id === topicId);
-          setAdjacentTopics({
-            prev: idx > 0 ? topics[idx - 1] : null,
-            next: idx < topics.length - 1 ? topics[idx + 1] : null,
+        } else if (isOnline) {
+          // No local content — generate via AI on the fly
+          setContent({ text_content: 'Loading content from server...', key_points: [], examples: [] });
+          try {
+            const resp = await apiTutorChat(
+              topic.title,
+              `Explain "${topic.title}" in detail for a student. Include 2-3 paragraphs of explanation, then list key points and examples.`,
+              [],
+              'en'
+            );
+            const text = resp?.response || resp?.answer || '';
+            if (text) {
+              setContent({ text_content: text, key_points: [], examples: [] });
+              // Save to local DB for offline
+              const { randomUUID } = await import('expo-crypto');
+              await insertTopicContent({
+                id: randomUUID(),
+                topicId,
+                text,
+                keyPoints: [],
+                examples: [],
+                language: 'en',
+              }).catch(() => {});
+            }
+          } catch {
+            setContent({
+              text_content: 'Could not load content. Please try again or download the full course.',
+              key_points: [],
+              examples: [],
+            });
+          }
+        } else {
+          setContent({
+            text_content: 'No content available offline. Download the course while online to access all topics.',
+            key_points: [],
+            examples: [],
           });
         }
-      } else if (isOnline) {
-        // Topic not in local DB — set basic info
+      } else {
         setTopicInfo({ id: topicId, title: 'Topic' });
-        setContent({
-          text_content: 'This topic content is only available when the course is downloaded for offline access.\n\nGo to the course page and tap "Download for Offline Access" to save all topic content to your device.',
-          key_points: [],
-          examples: [],
-        });
+        if (isOnline) {
+          setContent({ text_content: 'Topic not found locally. Go back and re-download the course.', key_points: [], examples: [] });
+        } else {
+          setContent({ text_content: 'Not available offline.', key_points: [], examples: [] });
+        }
       }
     } catch (e) {
       console.error('Load error:', e);
@@ -142,6 +188,14 @@ export default function LearnScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle} numberOfLines={1}>{topicInfo?.title || 'Topic'}</Text>
         </View>
+        {audioAvailable && (
+          <TouchableOpacity
+            style={styles.playHeaderBtn}
+            onPress={() => router.push(`/player/${topicId}?courseId=${courseId}`)}
+          >
+            <Ionicons name="play-circle" size={28} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
         {isCompleted && <Ionicons name="checkmark-circle" size={22} color={Colors.success} />}
       </View>
 
@@ -258,10 +312,22 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 4 },
   headerTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text },
+  playHeaderBtn: { padding: 2 },
   content: { paddingHorizontal: Spacing.xxl, paddingBottom: 100 },
   noContent: { alignItems: 'center', paddingVertical: 60 },
   noContentText: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.md },
   noContentHint: { fontSize: FontSize.sm, color: Colors.textTertiary, marginTop: 4, textAlign: 'center' },
+  playLessonCard: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    backgroundColor: Colors.primary, padding: Spacing.lg, borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.lg,
+  },
+  playLessonIcon: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  playLessonTitle: { fontSize: FontSize.lg, fontWeight: '700', color: '#FFF' },
+  playLessonDesc: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   contentCard: { padding: Spacing.xl },
   paragraph: { fontSize: FontSize.md, color: Colors.text, lineHeight: 26, marginBottom: Spacing.md },
   contentHeader: { fontSize: FontSize.lg, fontWeight: '700', marginTop: Spacing.md, marginBottom: Spacing.sm },

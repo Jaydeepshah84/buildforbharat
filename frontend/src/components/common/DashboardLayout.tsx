@@ -11,7 +11,7 @@ import {
   LayoutGrid, Briefcase, BookOpen, DollarSign, FileText,
   MessageCircle, Activity, ArrowRight,
   LogOut, Menu, X, ChevronDown, Sparkles,
-  ChevronsLeft, ChevronsRight, Bell,
+  ChevronsLeft, ChevronsRight, Bell, SlidersHorizontal,
 } from "lucide-react";
 
 /* ── Nav structure with section headers ── */
@@ -257,9 +257,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
             </button>
 
-            {/* User avatar + name */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#284ce3] to-[#6366f1] flex items-center justify-center shadow-md shadow-blue-200/40 cursor-pointer">
-              <span className="text-sm font-bold text-white">{initials}</span>
+            {/* User avatar + name + dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2.5 pl-3 pr-1 py-1 rounded-full hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100"
+              >
+                <span className="hidden sm:block text-sm font-semibold text-gray-700">{userName}</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#284ce3] to-[#6366f1] flex items-center justify-center shadow-sm">
+                  <span className="text-xs font-bold text-white">{initials}</span>
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden z-50"
+                  >
+                    <div className="px-4 py-3 border-b border-gray-50">
+                      <p className="text-sm font-semibold text-gray-800">{userName}</p>
+                      <p className="text-xs text-gray-400 truncate">{user?.email || ""}</p>
+                    </div>
+                    <Link href="/settings" onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                      <SlidersHorizontal className="w-4 h-4" /> Settings
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Log Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>

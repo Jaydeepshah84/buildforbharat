@@ -18,6 +18,7 @@ import agentRoutes from "./routes/agents";
 import ttsRoutes from "./routes/tts";
 import animationRoutes from "./routes/animation";
 import tutorPipelineRoutes from "./routes/tutor";
+import signLanguageRoutes from "./routes/signLanguage";
 
 const app = express();
 const server = http.createServer(app);
@@ -44,6 +45,7 @@ app.use("/api/agents", agentRoutes);
 app.use("/api/tts", ttsRoutes);
 app.use("/api/animation", animationRoutes);
 app.use("/api/tutor/pipeline", tutorPipelineRoutes);
+app.use("/api/sign-language", signLanguageRoutes);
 
 // Health check
 app.get("/api/health", (_req, res) => {

@@ -4,9 +4,8 @@ let db: SQLite.SQLiteDatabase | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!db) {
-    db = await SQLite.openDatabaseAsync('learnify.db');
+    db = await SQLite.openDatabaseAsync('learnify_v2.db');
     await db.execAsync('PRAGMA journal_mode = WAL;');
-    await db.execAsync('PRAGMA foreign_keys = ON;');
   }
   return db;
 }
@@ -15,17 +14,6 @@ export async function initializeDatabase(): Promise<void> {
   const database = await getDatabase();
 
   await database.execAsync(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT DEFAULT 'student',
-      class_level INTEGER DEFAULT 10,
-      language TEXT DEFAULT 'en',
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-
     CREATE TABLE IF NOT EXISTS courses (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -38,17 +26,14 @@ export async function initializeDatabase(): Promise<void> {
       completed_topics INTEGER DEFAULT 0,
       progress REAL DEFAULT 0,
       image_color TEXT DEFAULT '#6C63FF',
-      synced INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS modules (
       id TEXT PRIMARY KEY,
       course_id TEXT NOT NULL,
       title TEXT NOT NULL,
-      order_index INTEGER NOT NULL,
-      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+      order_index INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS lessons (
@@ -57,8 +42,7 @@ export async function initializeDatabase(): Promise<void> {
       title TEXT NOT NULL,
       order_index INTEGER NOT NULL,
       is_locked INTEGER DEFAULT 1,
-      is_passed INTEGER DEFAULT 0,
-      FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+      is_passed INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS topics (
@@ -66,8 +50,7 @@ export async function initializeDatabase(): Promise<void> {
       lesson_id TEXT NOT NULL,
       title TEXT NOT NULL,
       order_index INTEGER NOT NULL,
-      is_completed INTEGER DEFAULT 0,
-      FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+      is_completed INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS topic_content (
@@ -76,8 +59,7 @@ export async function initializeDatabase(): Promise<void> {
       text_content TEXT NOT NULL,
       key_points TEXT DEFAULT '[]',
       examples TEXT DEFAULT '[]',
-      language TEXT DEFAULT 'en',
-      FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+      language TEXT DEFAULT 'en'
     );
 
     CREATE TABLE IF NOT EXISTS quizzes (
@@ -89,17 +71,7 @@ export async function initializeDatabase(): Promise<void> {
       score REAL,
       total_questions INTEGER NOT NULL,
       completed_at TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS study_plans (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      plan_data TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS app_settings (
@@ -116,37 +88,6 @@ export async function initializeDatabase(): Promise<void> {
   `);
 }
 
-// --- User Operations ---
-
-export async function createUser(
-  id: string, name: string, email: string, passwordHash: string,
-  classLevel: number, language: string
-): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync(
-    'INSERT INTO users (id, name, email, password_hash, class_level, language) VALUES (?, ?, ?, ?, ?, ?)',
-    [id, name, email, passwordHash, classLevel, language]
-  );
-}
-
-export async function getUserByEmail(email: string): Promise<any> {
-  const database = await getDatabase();
-  return database.getFirstAsync('SELECT * FROM users WHERE email = ?', [email]);
-}
-
-export async function getUserById(id: string): Promise<any> {
-  const database = await getDatabase();
-  return database.getFirstAsync('SELECT * FROM users WHERE id = ?', [id]);
-}
-
-export async function updateUser(id: string, updates: Record<string, any>): Promise<void> {
-  const database = await getDatabase();
-  const keys = Object.keys(updates);
-  const values = Object.values(updates);
-  const setClause = keys.map(k => `${k} = ?`).join(', ');
-  await database.runAsync(`UPDATE users SET ${setClause} WHERE id = ?`, [...values, id]);
-}
-
 // --- Course Operations ---
 
 export async function insertCourse(course: {
@@ -156,7 +97,7 @@ export async function insertCourse(course: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT INTO courses (id, user_id, title, subject, class_level, duration, language, total_topics, image_color)
+    `INSERT OR REPLACE INTO courses (id, user_id, title, subject, class_level, duration, language, total_topics, image_color)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [course.id, course.userId, course.title, course.subject, course.classLevel,
      course.duration, course.language, course.totalTopics, course.imageColor]
@@ -186,6 +127,21 @@ export async function updateCourseProgress(courseId: string, completedTopics: nu
 
 export async function deleteCourse(courseId: string): Promise<void> {
   const database = await getDatabase();
+  // Manual cascade since we removed foreign keys
+  const modules = await getModulesByCourse(courseId);
+  for (const mod of modules) {
+    const lessons = await getLessonsByModule(mod.id);
+    for (const les of lessons) {
+      const topics = await getTopicsByLesson(les.id);
+      for (const top of topics) {
+        await database.runAsync('DELETE FROM topic_content WHERE topic_id = ?', [top.id]);
+      }
+      await database.runAsync('DELETE FROM topics WHERE lesson_id = ?', [les.id]);
+    }
+    await database.runAsync('DELETE FROM lessons WHERE module_id = ?', [mod.id]);
+  }
+  await database.runAsync('DELETE FROM modules WHERE course_id = ?', [courseId]);
+  await database.runAsync('DELETE FROM quizzes WHERE course_id = ?', [courseId]);
   await database.runAsync('DELETE FROM courses WHERE id = ?', [courseId]);
 }
 
@@ -196,7 +152,7 @@ export async function insertModule(module: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    'INSERT INTO modules (id, course_id, title, order_index) VALUES (?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO modules (id, course_id, title, order_index) VALUES (?, ?, ?, ?)',
     [module.id, module.courseId, module.title, module.orderIndex]
   );
 }
@@ -215,7 +171,7 @@ export async function insertLesson(lesson: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    'INSERT INTO lessons (id, module_id, title, order_index, is_locked) VALUES (?, ?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO lessons (id, module_id, title, order_index, is_locked) VALUES (?, ?, ?, ?, ?)',
     [lesson.id, lesson.moduleId, lesson.title, lesson.orderIndex, lesson.isLocked ? 1 : 0]
   );
 }
@@ -244,7 +200,7 @@ export async function insertTopic(topic: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    'INSERT INTO topics (id, lesson_id, title, order_index) VALUES (?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO topics (id, lesson_id, title, order_index) VALUES (?, ?, ?, ?)',
     [topic.id, topic.lessonId, topic.title, topic.orderIndex]
   );
 }
@@ -269,7 +225,7 @@ export async function insertTopicContent(content: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT INTO topic_content (id, topic_id, text_content, key_points, examples, language)
+    `INSERT OR REPLACE INTO topic_content (id, topic_id, text_content, key_points, examples, language)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [content.id, content.topicId, content.text,
      JSON.stringify(content.keyPoints), JSON.stringify(content.examples), content.language]
@@ -289,7 +245,7 @@ export async function insertQuiz(quiz: {
 }): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT INTO quizzes (id, course_id, user_id, title, questions, total_questions)
+    `INSERT OR REPLACE INTO quizzes (id, course_id, user_id, title, questions, total_questions)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [quiz.id, quiz.courseId, quiz.userId, quiz.title,
      JSON.stringify(quiz.questions), quiz.totalQuestions]
@@ -311,26 +267,7 @@ export async function getQuizzesByUser(userId: string): Promise<any[]> {
   );
 }
 
-// --- Study Plan Operations ---
-
-export async function insertStudyPlan(plan: {
-  id: string; userId: string; planData: any;
-}): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync(
-    'INSERT INTO study_plans (id, user_id, plan_data) VALUES (?, ?, ?)',
-    [plan.id, plan.userId, JSON.stringify(plan.planData)]
-  );
-}
-
-export async function getLatestStudyPlan(userId: string): Promise<any> {
-  const database = await getDatabase();
-  return database.getFirstAsync(
-    'SELECT * FROM study_plans WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', [userId]
-  );
-}
-
-// --- Settings Operations ---
+// --- Settings ---
 
 export async function setSetting(key: string, value: string): Promise<void> {
   const database = await getDatabase();
@@ -349,13 +286,8 @@ export async function getSetting(key: string): Promise<string | null> {
 
 // --- Stats ---
 
-export async function getPerformanceStats(userId: string): Promise<{
-  totalCourses: number; completedCourses: number;
-  totalTopicsCompleted: number; averageProgress: number;
-  averageQuizScore: number; totalQuizzes: number;
-}> {
+export async function getPerformanceStats(userId: string): Promise<any> {
   const database = await getDatabase();
-
   const courseStats: any = await database.getFirstAsync(
     `SELECT COUNT(*) as total,
             SUM(CASE WHEN progress >= 100 THEN 1 ELSE 0 END) as completed,
@@ -363,13 +295,10 @@ export async function getPerformanceStats(userId: string): Promise<{
             COALESCE(AVG(progress), 0) as avg_progress
      FROM courses WHERE user_id = ?`, [userId]
   );
-
   const quizStats: any = await database.getFirstAsync(
-    `SELECT COUNT(*) as total,
-            COALESCE(AVG(score), 0) as avg_score
+    `SELECT COUNT(*) as total, COALESCE(AVG(score), 0) as avg_score
      FROM quizzes WHERE user_id = ? AND score IS NOT NULL`, [userId]
   );
-
   return {
     totalCourses: courseStats?.total ?? 0,
     completedCourses: courseStats?.completed ?? 0,
@@ -383,10 +312,8 @@ export async function getPerformanceStats(userId: string): Promise<{
 // --- Full Course Tree ---
 
 export async function getFullCourseTree(courseId: string): Promise<any> {
-  const database = await getDatabase();
   const course = await getCourseById(courseId);
   if (!course) return null;
-
   const modules = await getModulesByCourse(courseId);
   for (const mod of modules) {
     mod.lessons = await getLessonsByModule(mod.id);

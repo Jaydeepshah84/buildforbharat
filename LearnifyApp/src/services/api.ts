@@ -158,6 +158,13 @@ export async function apiDeleteCourse(courseId: string): Promise<any> {
   return request(`/api/courses/${courseId}`, { method: 'DELETE' });
 }
 
+// GET /api/courses/:id/content — fetch all topic content for offline download
+// Returns: { content: [{ id, topic_id, mode, content_text, language }] }
+export async function apiGetCourseContent(courseId: string): Promise<any[]> {
+  const data = await request<{ content: any[] }>(`/api/courses/${courseId}/content`);
+  return data.content || [];
+}
+
 // ===================== COURSE GENERATION (SSE) =====================
 
 // POST /api/courses/stream/generate-stream
@@ -333,6 +340,18 @@ export async function apiGetPerformance(): Promise<any> {
 // GET /api/student/report
 export async function apiGetReport(): Promise<any> {
   return request('/api/student/report');
+}
+
+// ===================== TTS =====================
+
+// POST /api/tts → returns audio binary
+// We return the full URL for download, not the data
+export function getTtsUrl(): string {
+  return `${baseUrl}/api/tts`;
+}
+
+export async function getTtsToken(): Promise<string | null> {
+  return getToken();
 }
 
 // ===================== HEALTH CHECK =====================

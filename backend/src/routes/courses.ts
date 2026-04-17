@@ -4,6 +4,8 @@ import { getAgent } from "../agents";
 import * as db from "../services/db";
 import { supabase } from "../config/supabase";
 import { sendCourseCreatedEmail, sendModuleCompletedEmail, sendAnalyticsEmail } from "../services/emailService";
+import { config } from "../config/env";
+import { openai } from "../config/llm";
 
 // Helper: get parent email for a user (stored in student_profile.interests)
 async function getParentEmail(userId: string): Promise<{ parentEmail: string | null; studentName: string }> {
@@ -291,6 +293,75 @@ router.get("/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 
   res.json({ course });
+});
+
+// GET /api/courses/:id/content — fetch or generate all topic content for offline download
+router.get("/:id/content", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const courseId = req.params.id;
+
+    // Get course info for class level
+    const course = await db.getById("courses", courseId);
+    const classLevel = course?.class || "10";
+
+    // Get all topics for this course
+    const { data: modules } = await supabase.from("modules").select("id").eq("course_id", courseId);
+    if (!modules || modules.length === 0) { res.json({ content: [] }); return; }
+
+    const moduleIds = modules.map((m: any) => m.id);
+    const { data: lessons } = await supabase.from("lessons").select("id").in("module_id", moduleIds);
+    if (!lessons || lessons.length === 0) { res.json({ content: [] }); return; }
+
+    const lessonIds = lessons.map((l: any) => l.id);
+    const { data: topics } = await supabase.from("topics").select("id, title").in("lesson_id", lessonIds);
+    if (!topics || topics.length === 0) { res.json({ content: [] }); return; }
+
+    const topicIds = topics.map((t: any) => t.id);
+
+    // Get existing content
+    const { data: existingContent } = await supabase.from("content").select("*").in("topic_id", topicIds);
+    const existingMap = new Set((existingContent || []).map((c: any) => c.topic_id));
+
+    // Find topics missing content
+    const missingTopics = topics.filter((t: any) => !existingMap.has(t.id));
+
+    // Generate content for missing topics using AI
+    if (missingTopics.length > 0) {
+      console.log(`[Content] Generating content for ${missingTopics.length} topics in course ${courseId}`);
+
+      for (const topic of missingTopics) {
+        try {
+          const resp = await openai.chat.completions.create({
+            model: config.azure.deployment,
+            messages: [
+              { role: "system", content: "You are a friendly teacher. Explain clearly for students." },
+              { role: "user", content: `Explain "${topic.title}" for class ${classLevel} in 2-3 paragraphs. Include key points and examples.` },
+            ],
+            temperature: 0.7,
+            max_completion_tokens: 600,
+          });
+          const text = resp.choices[0]?.message?.content || "";
+          if (text) {
+            await db.insert("content", {
+              topic_id: topic.id,
+              mode: "text",
+              content_text: text,
+              language: course?.language || "en",
+            }).catch(() => {});
+          }
+        } catch (e: any) {
+          console.log(`[Content] Failed for topic ${topic.title}:`, e.message);
+        }
+      }
+    }
+
+    // Re-fetch all content
+    const { data: allContent } = await supabase.from("content").select("*").in("topic_id", topicIds);
+    res.json({ content: allContent || [] });
+  } catch (err: any) {
+    console.error("[Content] Error:", err.message);
+    res.json({ content: [], error: err.message });
+  }
 });
 
 router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response) => {

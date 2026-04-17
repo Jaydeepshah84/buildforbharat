@@ -1,12 +1,16 @@
+import 'react-native-get-random-values';
 import { randomUUID } from 'expo-crypto';
-import { apiGetCourseDetail, apiGetCourseProgress, checkServerConnection } from './api';
+import {
+  apiGetCourseDetail, apiGetCourseContent, apiGetLessonStatus,
+} from './api';
 import {
   insertCourse, insertModule, insertLesson, insertTopic,
   insertTopicContent, getCourseById, getModulesByCourse,
-  updateCourseProgress, getFullCourseTree, deleteCourse,
-  getDatabase,
+  updateCourseProgress, deleteCourse, getDatabase,
 } from './database';
 import { getSubjectColor } from '../data/courseKnowledge';
+import { downloadTopicAudio, deleteModuleAudio } from './audioService';
+import { generateAndSaveAnimation, deleteTopicAnimation } from './animationService';
 
 export type DownloadStatus = 'idle' | 'downloading' | 'complete' | 'error';
 
@@ -14,63 +18,53 @@ export interface DownloadProgress {
   status: DownloadStatus;
   message: string;
   percent: number;
-  courseId?: string;
 }
 
-// Download a course from the backend and save to local SQLite for offline access
-export async function downloadCourseForOffline(
+// Download a SINGLE MODULE from a course and save to SQLite
+export async function downloadModuleForOffline(
   courseId: string,
+  moduleId: string,
   userId: string,
-  onProgress?: (progress: DownloadProgress) => void
+  onProgress?: (p: DownloadProgress) => void
 ): Promise<boolean> {
   try {
-    onProgress?.({ status: 'downloading', message: 'Fetching course from server...', percent: 10 });
+    onProgress?.({ status: 'downloading', message: 'Fetching course data...', percent: 5 });
 
-    // Check if already fully downloaded
-    const existing = await getCourseById(courseId);
-    if (existing) {
-      const existingModules = await getModulesByCourse(courseId);
-      if (existingModules.length > 0) {
-        onProgress?.({ status: 'complete', message: 'Already available offline!', percent: 100, courseId });
-        return true;
-      }
-      await deleteCourse(courseId);
-    }
-
-    // GET /api/courses/:id → { course: { id, title, subject, class, duration_days, modules: [...] } }
+    // Step 1: Fetch course detail
     const data = await apiGetCourseDetail(courseId);
-    const course = data.course || data;
-    const modules = course.modules || [];
+    const course = data?.course || data;
+    if (!course) throw new Error('Course not found');
 
-    onProgress?.({ status: 'downloading', message: 'Saving course structure...', percent: 20 });
+    const allModules = course.modules || [];
+    const targetModule = allModules.find((m: any) => m.id === moduleId);
+    if (!targetModule) throw new Error('Module not found');
 
-    // Count total topics
-    let totalTopics = 0;
-    for (const mod of modules) {
-      for (const les of mod.lessons || []) {
-        totalTopics += (les.topics || []).length;
+    onProgress?.({ status: 'downloading', message: `Saving: ${targetModule.title}`, percent: 10 });
+
+    // Step 2: Ensure course row exists in SQLite
+    const existingCourse = await getCourseById(courseId);
+    if (!existingCourse) {
+      let totalTopics = 0;
+      for (const m of allModules) {
+        for (const l of m.lessons || []) totalTopics += (l.topics || []).length;
       }
+      await insertCourse({
+        id: course.id,
+        userId,
+        title: course.title || 'Untitled',
+        subject: course.subject || 'General',
+        classLevel: parseInt(course.class || '10') || 10,
+        duration: course.duration_days || 7,
+        language: course.language || 'en',
+        totalTopics,
+        imageColor: getSubjectColor(course.subject || ''),
+      });
     }
 
-    const color = getSubjectColor(course.subject || '');
-
-    // Insert course into SQLite
-    await insertCourse({
-      id: course.id || courseId,
-      userId,
-      title: course.title || 'Untitled Course',
-      subject: course.subject || 'General',
-      classLevel: parseInt(course.class || course.class_level || '10') || 10,
-      duration: course.duration_days || course.duration || 7,
-      language: course.language || 'en',
-      totalTopics,
-      imageColor: color,
-    });
-
-    // Get lesson lock status from server
+    // Step 3: Get lesson lock statuses
     let lessonStatuses: Record<string, { locked: boolean; testPassed: boolean }> = {};
     try {
-      const statusData = await import('./api').then(m => m.apiGetLessonStatus(courseId));
+      const statusData = await apiGetLessonStatus(courseId);
       if (statusData?.lessons) {
         for (const ls of statusData.lessons) {
           lessonStatuses[ls.lessonId] = { locked: ls.locked, testPassed: ls.testPassed };
@@ -78,123 +72,159 @@ export async function downloadCourseForOffline(
       }
     } catch {}
 
-    // Get completed topics
-    let completedTopicIds = new Set<string>();
-    try {
-      const progressData = await apiGetCourseProgress(courseId);
-      if (progressData?.completedTopics) {
-        for (const tid of progressData.completedTopics) {
-          completedTopicIds.add(tid);
-        }
-      }
-    } catch {}
+    // Step 4: Save module
+    await insertModule({
+      id: targetModule.id,
+      courseId: course.id,
+      title: targetModule.title,
+      orderIndex: targetModule.order_index ?? allModules.indexOf(targetModule),
+    });
 
-    // Insert modules → lessons → topics → content
+    // Step 5: Save lessons and topics
+    const lessons = targetModule.lessons || [];
+    let totalTopics = 0;
     let processed = 0;
+    for (const l of lessons) totalTopics += (l.topics || []).length;
 
-    for (let mi = 0; mi < modules.length; mi++) {
-      const mod = modules[mi];
-      const moduleId = mod.id || randomUUID();
+    const topicIds: string[] = [];
 
-      await insertModule({
-        id: moduleId,
-        courseId: course.id || courseId,
-        title: mod.title || `Module ${mi + 1}`,
-        orderIndex: mod.order_index ?? mi,
+    for (let li = 0; li < lessons.length; li++) {
+      const les = lessons[li];
+      const lessonId = les.id || randomUUID();
+      const status = lessonStatuses[lessonId];
+
+      await insertLesson({
+        id: lessonId,
+        moduleId: targetModule.id,
+        title: les.title || `Lesson ${li + 1}`,
+        orderIndex: les.order_index ?? li,
+        isLocked: status ? status.locked : (li === 0 ? false : true),
       });
 
-      const lessons = mod.lessons || [];
-      for (let li = 0; li < lessons.length; li++) {
-        const les = lessons[li];
-        const lessonId = les.id || randomUUID();
-        const status = lessonStatuses[lessonId];
+      if (status?.testPassed) {
+        const db = await getDatabase();
+        await db.runAsync('UPDATE lessons SET is_passed = 1 WHERE id = ?', [lessonId]);
+      }
 
-        await insertLesson({
-          id: lessonId,
-          moduleId,
-          title: les.title || `Lesson ${li + 1}`,
-          orderIndex: les.order_index ?? li,
-          isLocked: status ? status.locked : (mi === 0 && li === 0 ? false : true),
+      const topics = les.topics || [];
+      for (let ti = 0; ti < topics.length; ti++) {
+        const top = topics[ti];
+        const topicId = typeof top === 'string' ? randomUUID() : (top.id || randomUUID());
+
+        await insertTopic({
+          id: topicId,
+          lessonId,
+          title: typeof top === 'string' ? top : (top.title || `Topic ${ti + 1}`),
+          orderIndex: typeof top === 'string' ? ti : (top.order_index ?? ti),
         });
 
-        // If lesson status says passed, update
-        if (status?.testPassed) {
-          const db = await getDatabase();
-          await db.runAsync('UPDATE lessons SET is_passed = 1 WHERE id = ?', [lessonId]);
-        }
-
-        const topics = les.topics || [];
-        for (let ti = 0; ti < topics.length; ti++) {
-          const top = topics[ti];
-          const topicId = top.id || randomUUID();
-
-          await insertTopic({
-            id: topicId,
-            lessonId,
-            title: top.title || `Topic ${ti + 1}`,
-            orderIndex: top.order_index ?? ti,
-          });
-
-          // Mark as completed if server says so
-          if (completedTopicIds.has(topicId)) {
-            const db = await getDatabase();
-            await db.runAsync('UPDATE topics SET is_completed = 1 WHERE id = ?', [topicId]);
-          }
-
-          // Save content (from the content table joined in the API response)
-          const contentText = top.content?.text_content || top.content?.text || top.text_content || top.content || '';
-          if (typeof contentText === 'string' && contentText.length > 0) {
-            let keyPoints: string[] = [];
-            let examples: string[] = [];
-
-            if (top.content?.key_points) {
-              keyPoints = typeof top.content.key_points === 'string'
-                ? JSON.parse(top.content.key_points) : top.content.key_points;
-            }
-            if (top.content?.examples) {
-              examples = typeof top.content.examples === 'string'
-                ? JSON.parse(top.content.examples) : top.content.examples;
-            }
-
-            await insertTopicContent({
-              id: randomUUID(),
-              topicId,
-              text: contentText,
-              keyPoints,
-              examples,
-              language: course.language || 'en',
-            });
-          }
-
-          processed++;
-          const percent = 20 + Math.round((processed / Math.max(totalTopics, 1)) * 75);
-          onProgress?.({
-            status: 'downloading',
-            message: `Saving: ${top.title || 'topic'}`,
-            percent,
-            courseId: course.id || courseId,
-          });
-        }
+        topicIds.push(topicId);
+        processed++;
+        const percent = 10 + Math.round((processed / Math.max(totalTopics, 1)) * 50);
+        onProgress?.({ status: 'downloading', message: `Saved ${processed}/${totalTopics} topics`, percent });
       }
     }
 
-    // Update course progress
-    await updateCourseProgress(course.id || courseId, completedTopicIds.size, totalTopics);
+    // Step 6: Fetch content for this module's topics
+    onProgress?.({ status: 'downloading', message: 'Downloading content...', percent: 65 });
+    try {
+      const contentList = await apiGetCourseContent(courseId);
+      const topicIdSet = new Set(topicIds);
+      let saved = 0;
+      for (const c of contentList) {
+        if (c.topic_id && topicIdSet.has(c.topic_id) && c.content_text) {
+          try {
+            await insertTopicContent({
+              id: c.id || randomUUID(),
+              topicId: c.topic_id,
+              text: c.content_text,
+              keyPoints: [],
+              examples: [],
+              language: c.language || 'en',
+            });
+            saved++;
+          } catch {}
+        }
+      }
+      onProgress?.({ status: 'downloading', message: `Saved ${saved} topic contents`, percent: 70 });
 
-    onProgress?.({
-      status: 'complete',
-      message: 'Course downloaded for offline access!',
-      percent: 100,
-      courseId: course.id || courseId,
-    });
+      // Step 7: Generate video animations + voice for each topic
+      onProgress?.({ status: 'downloading', message: 'Generating video lessons...', percent: 72 });
 
+      // Get topic titles for animation generation
+      const db2 = await getDatabase();
+      let videoCount = 0;
+      for (let i = 0; i < topicIds.length; i++) {
+        const tid = topicIds[i];
+        const topicRow: any = await db2.getFirstAsync('SELECT title FROM topics WHERE id = ?', [tid]);
+        const title = topicRow?.title || `Topic ${i + 1}`;
+
+        onProgress?.({
+          status: 'downloading',
+          message: `Creating video ${i + 1}/${topicIds.length}: ${title}`,
+          percent: 72 + Math.round((i / topicIds.length) * 25),
+        });
+
+        const anim = await generateAndSaveAnimation(tid, title, course?.language || 'en');
+        if (anim) videoCount++;
+      }
+      onProgress?.({ status: 'downloading', message: `${videoCount} video lessons ready`, percent: 98 });
+    } catch {
+      onProgress?.({ status: 'downloading', message: 'Content will load on demand', percent: 98 });
+    }
+
+    onProgress?.({ status: 'complete', message: 'Module downloaded with audio!', percent: 100 });
     return true;
   } catch (err: any) {
-    onProgress?.({ status: 'error', message: err.message || 'Download failed', percent: 0 });
+    const msg = err?.message || String(err) || 'Unknown error';
+    console.error('[Module Download Error]', msg);
+    onProgress?.({ status: 'error', message: msg, percent: 0 });
     return false;
   }
 }
 
+// Check if a specific module is downloaded
+export async function isModuleDownloaded(moduleId: string): Promise<boolean> {
+  const db = await getDatabase();
+  const mod: any = await db.getFirstAsync('SELECT id FROM modules WHERE id = ?', [moduleId]);
+  if (!mod) return false;
+  const lessons: any[] = await db.getAllAsync('SELECT id FROM lessons WHERE module_id = ?', [moduleId]);
+  return lessons.length > 0;
+}
+
+// Get all downloaded module IDs for a course
+export async function getDownloadedModuleIds(courseId: string): Promise<Set<string>> {
+  const modules = await getModulesByCourse(courseId);
+  const ids = new Set<string>();
+  for (const m of modules) {
+    const db = await getDatabase();
+    const lessons: any[] = await db.getAllAsync('SELECT id FROM lessons WHERE module_id = ?', [m.id]);
+    if (lessons.length > 0) ids.add(m.id);
+  }
+  return ids;
+}
+
+// Remove a single module from offline (including audio files)
+export async function removeModuleOffline(moduleId: string): Promise<void> {
+  const db = await getDatabase();
+  const lessons: any[] = await db.getAllAsync('SELECT id FROM lessons WHERE module_id = ?', [moduleId]);
+  const allTopicIds: string[] = [];
+  for (const les of lessons) {
+    const topics: any[] = await db.getAllAsync('SELECT id FROM topics WHERE lesson_id = ?', [les.id]);
+    for (const top of topics) {
+      allTopicIds.push(top.id);
+      await db.runAsync('DELETE FROM topic_content WHERE topic_id = ?', [top.id]);
+    }
+    await db.runAsync('DELETE FROM topics WHERE lesson_id = ?', [les.id]);
+  }
+  await db.runAsync('DELETE FROM lessons WHERE module_id = ?', [moduleId]);
+  await db.runAsync('DELETE FROM modules WHERE id = ?', [moduleId]);
+  // Delete audio + animation files
+  await deleteModuleAudio(allTopicIds);
+  for (const tid of allTopicIds) deleteTopicAnimation(tid);
+}
+
+// Legacy helpers
 export async function isCourseOffline(courseId: string): Promise<boolean> {
   const course = await getCourseById(courseId);
   if (!course) return false;
@@ -204,10 +234,4 @@ export async function isCourseOffline(courseId: string): Promise<boolean> {
 
 export async function removeCourseOffline(courseId: string): Promise<void> {
   await deleteCourse(courseId);
-}
-
-export async function getOfflineCourseIds(): Promise<string[]> {
-  const db = await getDatabase();
-  const rows: any[] = await db.getAllAsync('SELECT id FROM courses');
-  return rows.map(r => r.id);
 }
