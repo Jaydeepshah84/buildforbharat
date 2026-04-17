@@ -8,7 +8,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Learnify - AI Learning Platform",
   description: "AI-Powered Adaptive Education Ecosystem",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
