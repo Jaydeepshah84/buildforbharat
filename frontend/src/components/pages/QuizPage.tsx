@@ -42,8 +42,8 @@ const DIFFICULTIES = [
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
 const OPTION_COLORS = {
-  default: 'border-gray-200 hover:border-blue-300 hover:bg-blue-50',
-  selected: 'border-[#284ce3] bg-blue-50 ring-2 ring-indigo-200',
+  default: 'border-gray-200 hover:border-primary-300 hover:bg-primary-50',
+  selected: 'border-[#1e40af] bg-primary-50 ring-2 ring-primary-200',
   correct: 'border-green-500 bg-green-50 ring-2 ring-green-200',
   incorrect: 'border-red-500 bg-red-50 ring-2 ring-red-200',
 };
@@ -152,7 +152,7 @@ function GenerateForm({ onGenerate, loading }) {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder={t('quiz.topicPlaceholder', 'e.g. Photosynthesis, Quadratic Equations, WW2')}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -170,7 +170,7 @@ function GenerateForm({ onGenerate, loading }) {
                   onClick={() => setCount(n)}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
                     count === n
-                      ? 'border-[#284ce3] bg-blue-50 text-[#284ce3]'
+                      ? 'border-[#1e40af] bg-primary-50 text-[#1e40af]'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
@@ -207,7 +207,7 @@ function GenerateForm({ onGenerate, loading }) {
           <button
             type="submit"
             disabled={loading || !topic.trim()}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1e40af] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-primary-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -321,13 +321,13 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           {/* Progress bar */}
           <div className="h-1.5 bg-gray-100">
-            <motion.div className="h-full bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]"
+            <motion.div className="h-full bg-gradient-to-r from-[#1e40af] to-[#5b7cf7]"
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.3 }} />
           </div>
           <div className="flex items-center justify-between px-5 py-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-[#284ce3]" />
+              <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#1e40af]" />
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900">{quiz.topic || 'Quiz'}</p>
@@ -337,7 +337,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100">
-              <Clock className="w-4 h-4 text-[#284ce3]" />
+              <Clock className="w-4 h-4 text-[#1e40af]" />
               <span className="text-sm font-mono font-bold text-gray-700">{formatTime(timer)}</span>
             </div>
           </div>
@@ -356,10 +356,10 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
             {/* Question number + text */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-sm font-bold shadow-md shadow-blue-200/40">
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] text-white text-sm font-bold shadow-md shadow-primary-200/40">
                   {currentIndex + 1}
                 </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-100 to-transparent" />
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-primary-100 to-transparent" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 leading-relaxed">
                 {currentQuestion.question || currentQuestion.text}
@@ -380,24 +380,24 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                     onClick={() => selectAnswer(i)}
                     className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border-2 text-left transition-all duration-200 ${
                       isSelected
-                        ? 'border-[#284ce3] bg-gradient-to-r from-blue-50 to-indigo-50 ring-2 ring-indigo-200 shadow-md shadow-blue-100'
-                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm'
+                        ? 'border-[#1e40af] bg-gradient-to-r from-primary-50 to-primary-50 ring-2 ring-primary-200 shadow-md shadow-primary-100'
+                        : 'border-gray-200 hover:border-primary-200 hover:bg-primary-50/50 hover:shadow-sm'
                     }`}
                   >
                     <span className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
                       isSelected
-                        ? 'bg-[#284ce3] text-white shadow-md shadow-blue-300/40'
+                        ? 'bg-[#1e40af] text-white shadow-md shadow-primary-300/40'
                         : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
                     }`}>
                       {OPTION_LETTERS[i]}
                     </span>
                     <span className={`text-sm leading-relaxed ${
-                      isSelected ? 'text-[#284ce3] font-semibold' : 'text-gray-700'
+                      isSelected ? 'text-[#1e40af] font-semibold' : 'text-gray-700'
                     }`}>
                       {optionText}
                     </span>
                     {isSelected && (
-                      <CheckCircle2 className="w-5 h-5 text-[#284ce3] ml-auto flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#1e40af] ml-auto flex-shrink-0" />
                     )}
                   </motion.button>
                 );
@@ -420,7 +420,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           {currentIndex < totalQuestions - 1 ? (
             <button
               onClick={goNext}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-[#284ce3] text-white hover:bg-blue-700 shadow-md shadow-blue-200/40 hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-[#1e40af] text-white hover:bg-primary-700 shadow-md shadow-primary-200/40 hover:shadow-lg transition-all"
             >
               {t('quiz.next', 'Next')}
               <ChevronRight className="w-4 h-4" />
@@ -446,7 +446,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
         className="w-full lg:w-64 flex-shrink-0">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm sticky top-6 overflow-hidden">
           {/* Sidebar header */}
-          <div className="px-5 py-4 bg-gradient-to-r from-[#284ce3] to-[#5b7cf7]">
+          <div className="px-5 py-4 bg-gradient-to-r from-[#1e40af] to-[#5b7cf7]">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Target className="w-4 h-4" />
               {t('quiz.questionNav', 'Questions')}
@@ -472,7 +472,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
                     onClick={() => setCurrentIndex(i)}
                     className={`w-full aspect-square rounded-lg text-xs font-bold transition-all duration-200 ${
                       isActive
-                        ? 'bg-[#284ce3] text-white shadow-md shadow-blue-200 scale-110'
+                        ? 'bg-[#1e40af] text-white shadow-md shadow-primary-200 scale-110'
                         : isAnswered
                         ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200'
                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -487,7 +487,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
             {/* Legend */}
             <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                <div className="w-2.5 h-2.5 rounded bg-[#284ce3]" /> Current
+                <div className="w-2.5 h-2.5 rounded bg-[#1e40af]" /> Current
               </div>
               <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                 <div className="w-2.5 h-2.5 rounded bg-green-200 border border-green-300" /> Answered
@@ -502,7 +502,7 @@ function QuizTaker({ quiz, onSubmit, onBack }) {
           <div className="px-4 pb-4">
             <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#284ce3]" />
+                <Clock className="w-4 h-4 text-[#1e40af]" />
                 <span className="text-xs text-gray-500">Time</span>
               </div>
               <span className="text-sm font-mono font-bold text-gray-700">{formatTime(timer)}</span>
@@ -621,7 +621,7 @@ function QuizResults({ quiz, answers, timeTaken, onRetry, onDashboard }) {
             </button>
             <button
               onClick={onDashboard}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#284ce3] text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#1e40af] text-white hover:bg-primary-700 transition-colors"
             >
               <Home className="w-4 h-4" />
               {t('quiz.backToDashboard', 'Back to Dashboard')}
@@ -732,9 +732,9 @@ function QuizResults({ quiz, answers, timeTaken, onRetry, onDashboard }) {
                       )}
 
                       {explanation && (
-                        <div className="mt-2 p-3 rounded-lg bg-blue-50 border border-blue-100">
-                          <p className="text-xs font-semibold text-blue-600 mb-1">Explanation</p>
-                          <p className="text-sm text-blue-800">{explanation}</p>
+                        <div className="mt-2 p-3 rounded-lg bg-primary-50 border border-primary-100">
+                          <p className="text-xs font-semibold text-primary-600 mb-1">Explanation</p>
+                          <p className="text-sm text-primary-800">{explanation}</p>
                         </div>
                       )}
                     </div>

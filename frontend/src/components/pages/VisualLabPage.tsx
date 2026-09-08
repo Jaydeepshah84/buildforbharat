@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Play, RotateCcw, X, ArrowRight, Hand } from "lucide-react";
+import { Send, Bot, User, Play, RotateCcw, X, ArrowRight, Hand, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AnimationPlayer from "@/components/animation/AnimationPlayer";
-import SignLanguagePlayer from "@/components/SignLanguagePlayer";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
 
@@ -27,6 +26,7 @@ export default function VisualLabPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [showSignLang, setShowSignLang] = useState(false);
+  const [regenNonce, setRegenNonce] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Force stop all speech/audio
@@ -108,36 +108,47 @@ export default function VisualLabPage() {
             className="space-y-8"
           >
             {/* Hero */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#284ce3] via-[#4a6cf7] to-[#7c8ff7] px-10 py-16 text-center">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3" />
-              <div className="absolute bottom-0 left-10 w-48 h-48 bg-white/5 rounded-full translate-y-1/2" />
-              <div className="absolute top-10 left-24 w-14 h-14 bg-white/10 rounded-2xl rotate-12" />
-              <div className="absolute bottom-10 right-28 w-10 h-10 bg-yellow-300/20 rounded-xl -rotate-6" />
+            <div className="sheen relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#16308a] via-[#2f52d6] to-[#5f7cf0] px-8 sm:px-10 py-16 text-center shadow-[0_30px_70px_-32px_rgba(30,64,175,0.75)]">
+              {/* Dot-grid texture */}
+              <div className="absolute inset-0 opacity-[0.13]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+              {/* Drifting depth blobs */}
+              <motion.div aria-hidden className="absolute top-0 right-0 w-80 h-80 bg-white/12 rounded-full blur-2xl -translate-y-1/3 translate-x-1/4"
+                animate={{ x: [0, 30, 0], y: [0, 20, 0], scale: [1, 1.16, 1] }} transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }} />
+              <motion.div aria-hidden className="absolute bottom-0 left-4 w-56 h-56 bg-sky-300/18 rounded-full blur-2xl translate-y-1/3"
+                animate={{ x: [0, -24, 0], y: [0, -16, 0], scale: [1, 1.22, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 1 }} />
+              {/* Floating topic emojis */}
+              {["🌱", "🪐", "🧬", "⚡", "💧", "📊"].map((e, i) => (
+                <motion.span key={i} aria-hidden className="absolute text-2xl select-none pointer-events-none hidden sm:block"
+                  style={{ left: `${[7, 89, 14, 82, 46, 62][i]}%`, top: `${[22, 26, 70, 66, 10, 78][i]}%` }}
+                  animate={{ opacity: [0, 0.55, 0.55, 0], y: [12, -16, -16, 12] }}
+                  transition={{ duration: 7 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.6 }}>{e}</motion.span>
+              ))}
 
               <div className="relative z-10">
-                <motion.p
-                  className="text-white/50 text-sm font-medium mb-2 uppercase tracking-wider"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+                <motion.div
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur border border-white/20 mb-4"
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
                 >
-                  AI-Powered Visual Learning
-                </motion.p>
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-white/80 text-[11px] font-semibold uppercase tracking-wider">AI-Powered Visual Learning</span>
+                </motion.div>
                 <motion.h1
-                  className="text-4xl lg:text-5xl font-extrabold text-white mb-4"
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                  className="text-4xl lg:text-5xl font-extrabold text-white mb-4 drop-shadow-sm"
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 >
                   Visual Lab
                 </motion.h1>
                 <motion.p
-                  className="text-white/50 text-sm max-w-lg mx-auto mb-10"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                  className="text-white/70 text-sm max-w-lg mx-auto mb-9"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
                 >
-                  Type any topic and watch AI generate animated visual explanations with diagrams, flowcharts, and step-by-step narration.
+                  Type any topic and watch AI generate animated visual explanations with diagrams, motion, and step-by-step narration.
                 </motion.p>
 
                 {/* Input */}
                 <motion.div
                   className="max-w-2xl mx-auto"
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
                 >
                   <div className="relative">
                     <input
@@ -146,15 +157,16 @@ export default function VisualLabPage() {
                       onChange={e => setTopic(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handleGenerate()}
                       placeholder="What do you want to visualize?"
-                      className="w-full px-6 py-[18px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-lg font-medium placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-white/30 transition pr-36"
+                      className="w-full px-6 py-[18px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-lg font-medium placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40 focus:bg-white/20 transition pr-36"
                     />
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                       onClick={() => handleGenerate()}
                       disabled={!topic.trim()}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2.5 rounded-xl bg-white text-[#284ce3] font-bold text-sm hover:bg-white/90 disabled:opacity-30 transition-all flex items-center gap-1.5"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2.5 rounded-xl bg-white text-[#1e40af] font-bold text-sm hover:bg-white/95 disabled:opacity-30 transition-colors flex items-center gap-1.5 shadow-md group/btn"
                     >
-                      Visualize <ArrowRight className="w-4 h-4" />
-                    </button>
+                      Visualize <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                    </motion.button>
                   </div>
                 </motion.div>
               </div>
@@ -169,14 +181,16 @@ export default function VisualLabPage() {
                 {SUGGESTIONS.map((s, i) => (
                   <motion.button
                     key={s.label}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 + i * 0.04 }}
+                    whileHover={{ y: -4, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => handleGenerate(s.label)}
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white border border-gray-100 text-left hover:border-[#284ce3]/30 hover:shadow-md transition-all group"
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white border border-gray-100 text-left hover:border-[#1e40af]/40 hover:shadow-[0_16px_34px_-16px_rgba(30,64,175,0.32)] transition-[box-shadow,border-color] duration-300 group"
                   >
-                    <span className="text-4xl">{s.emoji}</span>
-                    <span className="text-sm font-semibold text-gray-700 group-hover:text-[#284ce3] transition-colors">{s.label}</span>
+                    <span className="text-3xl transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-6">{s.emoji}</span>
+                    <span className="text-sm font-semibold text-gray-700 group-hover:text-[#1e40af] transition-colors">{s.label}</span>
                   </motion.button>
                 ))}
               </div>
@@ -192,8 +206,8 @@ export default function VisualLabPage() {
                 { n: "02", title: "Voice Narration", desc: "Synchronized voice explains each step as the animation plays in real time." },
                 { n: "03", title: "Ask Follow-ups", desc: "Chat with AI to go deeper into any part of the visual explanation." },
               ].map((c, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-sm transition-shadow">
-                  <span className="text-3xl font-extrabold text-gray-100">{c.n}</span>
+                <div key={i} className="card-premium p-6">
+                  <span className="text-3xl font-extrabold text-gradient opacity-80">{c.n}</span>
                   <h3 className="text-sm font-bold text-gray-800 mt-2 mb-1">{c.title}</h3>
                   <p className="text-xs text-gray-400 leading-relaxed">{c.desc}</p>
                 </div>
@@ -212,64 +226,85 @@ export default function VisualLabPage() {
             {/* Top bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#284ce3] flex items-center justify-center shadow-md shadow-blue-200/40">
-                  <Play className="w-5 h-5 text-white" />
-                </div>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e40af] to-[#3b5bd9] flex items-center justify-center shadow-md shadow-primary-200/50">
+                  <Play className="w-5 h-5 text-white" fill="currentColor" />
+                </motion.div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{activeTopic}</h2>
-                  <p className="text-xs text-gray-400">Visual explanation</p>
+                  <p className="text-xs text-gray-400">{showSignLang ? "Sign-language lesson · 3D avatar narrates" : "Visual explanation"}</p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => { setActiveTopic(""); setTimeout(() => setActiveTopic(topic), 50); }}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition flex items-center gap-1.5"
+                <motion.button
+                  whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    killAllAudio();
+                    setRegenNonce(n => n + 1);
+                    setActiveTopic("");
+                    setTimeout(() => setActiveTopic(topic), 50);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-primary-200 hover:text-[#1e40af] transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Regenerate
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }}
                   onClick={handleReset}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                 >
                   <X className="w-3.5 h-3.5" /> New Topic
-                </button>
+                </motion.button>
               </div>
             </div>
 
-            {/* Mode toggle: Visual / Sign Language */}
-            <div className="flex gap-2 mb-2">
+            {/* Mode toggle: Visual / Sign Language — animated segmented control */}
+            <div className="inline-flex p-1 rounded-xl bg-gray-100 mb-2">
               <button
                 onClick={() => setShowSignLang(false)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                  !showSignLang ? "bg-[#284ce3] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                Visual Animation
+                {!showSignLang && (
+                  <motion.span layoutId="vl-mode-pill" className="absolute inset-0 bg-[#1e40af] rounded-lg shadow-sm"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+                )}
+                <span className={`relative z-10 ${!showSignLang ? "text-white" : "text-gray-600"}`}>Visual Animation</span>
               </button>
               <button
                 onClick={() => setShowSignLang(true)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-1.5 ${
-                  showSignLang ? "bg-[#284ce3] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                <Hand className="w-3.5 h-3.5" /> Sign Language
+                {showSignLang && (
+                  <motion.span layoutId="vl-mode-pill" className="absolute inset-0 bg-[#1e40af] rounded-lg shadow-sm"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+                )}
+                <span className={`relative z-10 flex items-center gap-1.5 ${showSignLang ? "text-white" : "text-gray-600"}`}>
+                  <Hand className="w-3.5 h-3.5" /> Sign Language
+                </span>
               </button>
             </div>
 
-            {/* Animation or Sign Language */}
-            {showSignLang ? (
-              <SignLanguagePlayer topic={activeTopic} />
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <AnimationPlayer
-                  topic={activeTopic}
-                  classLevel="10"
-                  language={localStorage.getItem("app_language") || "en"}
-                />
-              </div>
-            )}
+            {/* Visual lesson. In sign mode the same animated diagrams play, but the 3D signing avatar
+                narrates each step instead of the voice, and answers questions in sign language. */}
+            <motion.div
+              key={showSignLang ? "sign" : "voice"}
+              initial={{ opacity: 0, y: 12, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl border border-gray-100 shadow-[0_20px_50px_-24px_rgba(30,64,175,0.35)] overflow-hidden"
+            >
+              <AnimationPlayer
+                topic={activeTopic}
+                classLevel="10"
+                language={localStorage.getItem("app_language") || "en"}
+                regenerateNonce={regenNonce}
+                signLanguage={showSignLang}
+              />
+            </motion.div>
 
-            {/* Chat */}
+            {/* Chat (voice mode). In sign mode questions are asked inside the player and the avatar signs the answers. */}
+            {!showSignLang && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h3 className="text-sm font-bold text-gray-800 mb-4">
                 Ask follow-up questions about &ldquo;{activeTopic}&rdquo;
@@ -285,7 +320,7 @@ export default function VisualLabPage() {
                       className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center ${
-                        m.role === "user" ? "bg-[#284ce3]" : "bg-gray-100"
+                        m.role === "user" ? "bg-[#1e40af]" : "bg-gray-100"
                       }`}>
                         {m.role === "user"
                           ? <User className="w-4 h-4 text-white" />
@@ -293,7 +328,7 @@ export default function VisualLabPage() {
                       </div>
                       <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${
                         m.role === "user"
-                          ? "bg-[#284ce3] text-white"
+                          ? "bg-[#1e40af] text-white"
                           : "bg-gray-50 text-gray-700 border border-gray-100"
                       }`}>
                         <ReactMarkdown components={{
@@ -325,17 +360,18 @@ export default function VisualLabPage() {
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   placeholder="Ask anything about this topic..."
-                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-[#284ce3] transition"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1e40af]/20 focus:border-[#1e40af] transition"
                 />
                 <button
                   type="submit"
                   disabled={chatLoading || !chatInput.trim()}
-                  className="px-4 py-3 bg-[#284ce3] text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-all"
+                  className="px-4 py-3 bg-[#1e40af] text-white rounded-xl hover:bg-primary-700 disabled:opacity-40 transition-all"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </form>
             </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

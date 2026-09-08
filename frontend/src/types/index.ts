@@ -1,4 +1,4 @@
-// ── Learnify Type Definitions ──────────────────────────────────
+// ── LearnerAI Type Definitions ──────────────────────────────────
 
 export interface User {
   id: string;

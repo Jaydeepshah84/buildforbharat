@@ -57,7 +57,7 @@ const ARM_POSES: Record<string, { la: number; ra: number; le: number; re: number
 export default function AvatarScene({ pose, isPlaying, highlightWord, config }: AvatarProps) {
   const skin = config?.skinColor || "#FFCBA4";
   const hair = config?.hairColor || "#3B2314";
-  const shirt = config?.shirtColor || "#284ce3";
+  const shirt = config?.shirtColor || "#1e40af";
   const hairStyle = config?.hairStyle || "short";
 
   const a = ARM_POSES[pose] || ARM_POSES.center;

@@ -12,10 +12,10 @@ import { Camera, CameraOff, Eye, EyeOff } from "lucide-react";
 
 const EMOTION_MAP: Record<string, { emoji: string; label: string; color: string; learning: string }> = {
   happy:      { emoji: "😊", label: "Happy",      color: "bg-emerald-500", learning: "engaged" },
-  neutral:    { emoji: "😐", label: "Focused",     color: "bg-blue-500",    learning: "focused" },
+  neutral:    { emoji: "😐", label: "Focused",     color: "bg-primary-500",    learning: "focused" },
   sad:        { emoji: "😢", label: "Confused",     color: "bg-amber-500",   learning: "struggling" },
   angry:      { emoji: "😤", label: "Frustrated",  color: "bg-red-500",     learning: "frustrated" },
-  surprised:  { emoji: "😮", label: "Surprised",   color: "bg-purple-500",  learning: "curious" },
+  surprised:  { emoji: "😮", label: "Surprised",   color: "bg-primary-500",  learning: "curious" },
   fearful:    { emoji: "😰", label: "Anxious",     color: "bg-orange-500",  learning: "anxious" },
   disgusted:  { emoji: "😣", label: "Bored",       color: "bg-gray-500",    learning: "bored" },
 };

@@ -84,7 +84,7 @@ function SettingsSection({ icon: Icon, title, children }) {
       className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
     >
       <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-        <Icon className="w-5 h-5 text-indigo-500" />
+        <Icon className="w-5 h-5 text-primary-500" />
         <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
       </div>
       <div className="p-6">{children}</div>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
         {/* Page header */}
         <motion.div variants={fadeIn} initial="hidden" animate="visible">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white">
               <Settings className="w-5 h-5" />
             </div>
             <div>
@@ -239,15 +239,15 @@ export default function SettingsPage() {
                     onClick={() => handleLanguageChange(lang.code)}
                     className={`relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                       isSelected
-                        ? 'border-indigo-500 bg-indigo-50/50 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/20'
+                        ? 'border-primary-500 bg-primary-50/50 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/20'
                     }`}
                   >
                     {/* Language flag/code badge */}
                     <div
                       className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${
                         isSelected
-                          ? 'bg-indigo-500 text-white'
+                          ? 'bg-primary-500 text-white'
                           : 'bg-gray-100 text-gray-600'
                       }`}
                     >
@@ -266,7 +266,7 @@ export default function SettingsPage() {
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center"
+                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center"
                       >
                         <Check className="w-3 h-3" />
                       </motion.div>
@@ -293,13 +293,13 @@ export default function SettingsPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder={t('settings.namePlaceholder', 'Enter your name')}
                   />
                   <button
                     onClick={handleSaveName}
                     disabled={savingName}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {savingName ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -323,13 +323,13 @@ export default function SettingsPage() {
                     type="email"
                     value={parentEmail}
                     onChange={(e) => setParentEmail(e.target.value)}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3]/20 focus:border-[#284ce3]"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e40af]/20 focus:border-[#1e40af]"
                     placeholder="parent@example.com"
                   />
                   <button
                     onClick={handleSaveParentEmail}
                     disabled={savingParent}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#284ce3] text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1e40af] text-white text-sm font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
                   >
                     {savingParent ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -393,7 +393,7 @@ export default function SettingsPage() {
               <div className="flex gap-3">
                 {/* Light theme */}
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 rounded-xl border-2 border-indigo-500 bg-white flex items-center justify-center shadow-sm cursor-pointer">
+                  <div className="w-16 h-16 rounded-xl border-2 border-primary-500 bg-white flex items-center justify-center shadow-sm cursor-pointer">
                     <div className="w-10 h-2 rounded-full bg-gray-200" />
                   </div>
                   <span className="text-xs font-medium text-gray-700">
@@ -447,7 +447,7 @@ export default function SettingsPage() {
                     window.location.reload();
                   }}
                   className={`relative w-12 h-6 rounded-full transition-colors ${
-                    localStorage.getItem('low_bandwidth') === 'true' ? 'bg-indigo-600' : 'bg-gray-300'
+                    localStorage.getItem('low_bandwidth') === 'true' ? 'bg-primary-600' : 'bg-gray-300'
                   }`}
                 >
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -468,7 +468,7 @@ export default function SettingsPage() {
                     localStorage.setItem('webcam_enabled', !curr);
                   }}
                   className={`relative w-12 h-6 rounded-full transition-colors ${
-                    localStorage.getItem('webcam_enabled') !== 'false' ? 'bg-indigo-600' : 'bg-gray-300'
+                    localStorage.getItem('webcam_enabled') !== 'false' ? 'bg-primary-600' : 'bg-gray-300'
                   }`}
                 >
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -489,7 +489,7 @@ export default function SettingsPage() {
                     localStorage.setItem('subtitles', !curr);
                   }}
                   className={`relative w-12 h-6 rounded-full transition-colors ${
-                    localStorage.getItem('subtitles') !== 'false' ? 'bg-indigo-600' : 'bg-gray-300'
+                    localStorage.getItem('subtitles') !== 'false' ? 'bg-primary-600' : 'bg-gray-300'
                   }`}
                 >
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                 <span className="text-sm text-gray-600">
                   {t('settings.poweredBy', 'Powered By')}
                 </span>
-                <span className="text-sm font-semibold text-indigo-600">
+                <span className="text-sm font-semibold text-primary-600">
                   AI / Gemini
                 </span>
               </div>

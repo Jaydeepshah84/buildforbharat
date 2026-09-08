@@ -124,9 +124,9 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
   // ── Loading ──
   if (phase === "loading") {
     return (
-      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 rounded-2xl flex items-center justify-center">
+      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-primary-950 to-primary-950 rounded-2xl flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-indigo-400 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-10 h-10 text-primary-400 animate-spin mx-auto mb-4" />
           <p className="text-white font-medium">Generating your test...</p>
           <p className="text-gray-400 text-sm mt-1">AI is creating questions for "{lessonTitle}"</p>
         </div>
@@ -137,10 +137,10 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
   // ── Intro ──
   if (phase === "intro") {
     return (
-      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 rounded-2xl flex items-center justify-center p-8">
+      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-primary-950 to-primary-950 rounded-2xl flex items-center justify-center p-8">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}
-            className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+            className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-2xl shadow-primary-500/30">
             <Brain className="w-10 h-10 text-white" />
           </motion.div>
           <h2 className="text-2xl font-bold text-white mb-2">Lesson Test</h2>
@@ -160,7 +160,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
             </div>
           </div>
           <motion.button onClick={startTest} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 flex items-center gap-2 mx-auto">
+            className="px-8 py-3.5 bg-gradient-to-r from-primary-600 to-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30 flex items-center gap-2 mx-auto">
             <Zap className="w-5 h-5" /> Start Test
           </motion.button>
           <button onClick={onClose} className="mt-4 text-sm text-gray-500 hover:text-gray-300">Go back</button>
@@ -172,7 +172,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
   // ── Results ──
   if (phase === "results") {
     return (
-      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 rounded-2xl flex items-center justify-center p-8">
+      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-primary-950 to-primary-950 rounded-2xl flex items-center justify-center p-8">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md">
           {/* Score circle */}
           <div className="relative w-36 h-36 mx-auto mb-6">
@@ -222,7 +222,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
                   Review Answers
                 </button>
                 <motion.button onClick={startTest} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-1">
+                  className="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-1">
                   <RotateCcw className="w-4 h-4" /> Retry
                 </motion.button>
               </div>
@@ -238,9 +238,9 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
   // ── Review ──
   if (phase === "review") {
     return (
-      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 rounded-2xl p-6 overflow-y-auto max-h-[80vh]">
+      <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-primary-950 to-primary-950 rounded-2xl p-6 overflow-y-auto max-h-[80vh]">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><Brain className="w-5 h-5 text-indigo-400" /> Review Answers</h2>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2"><Brain className="w-5 h-5 text-primary-400" /> Review Answers</h2>
           <button onClick={() => setPhase("results")} className="text-sm text-gray-400 hover:text-white flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Back</button>
         </div>
         <div className="space-y-4">
@@ -267,7 +267,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
                     </div>
                   ))}
                 </div>
-                {q.explanation && <p className="ml-8 mt-2 text-xs text-indigo-300 bg-indigo-500/10 rounded-lg px-3 py-2">{q.explanation}</p>}
+                {q.explanation && <p className="ml-8 mt-2 text-xs text-primary-300 bg-primary-500/10 rounded-lg px-3 py-2">{q.explanation}</p>}
               </motion.div>
             );
           })}
@@ -282,11 +282,11 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
   const isCorrect = selectedOption === q.correct;
 
   return (
-    <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 rounded-2xl flex flex-col overflow-hidden">
+    <div className="min-h-[500px] bg-gradient-to-br from-gray-900 via-primary-950 to-primary-950 rounded-2xl flex flex-col overflow-hidden">
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 py-3 bg-black/30">
         <div className="flex items-center gap-3">
-          <Brain className="w-4 h-4 text-indigo-400" />
+          <Brain className="w-4 h-4 text-primary-400" />
           <span className="text-xs text-gray-400 font-medium">Lesson Test</span>
         </div>
         <div className="flex items-center gap-4">
@@ -299,7 +299,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
 
       {/* Progress bar */}
       <div className="h-1 bg-white/5">
-        <motion.div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+        <motion.div className="h-full bg-gradient-to-r from-primary-500 to-primary-500"
           animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
       </div>
 
@@ -311,7 +311,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
 
             {/* Question number badge */}
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm mb-5 mx-auto shadow-lg shadow-indigo-500/30">
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-sm mb-5 mx-auto shadow-lg shadow-primary-500/30">
               {currentQ + 1}
             </motion.div>
 
@@ -321,7 +321,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
             {/* Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {q.options.map((opt, idx) => {
-                let optClass = "bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-indigo-500/50";
+                let optClass = "bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-primary-500/50";
                 if (showFeedback) {
                   if (idx === q.correct) optClass = "bg-emerald-500/20 border-emerald-500 text-emerald-300 scale-[1.02]";
                   else if (idx === selectedOption) optClass = "bg-red-500/20 border-red-500 text-red-300";
@@ -373,7 +373,7 @@ export default function LessonTestPlayer({ courseId, lessonId, lessonTitle, topi
       <div className="flex items-center justify-center gap-1.5 pb-4">
         {questions.map((_, i) => (
           <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${
-            i === currentQ ? "bg-indigo-400 w-5" :
+            i === currentQ ? "bg-primary-400 w-5" :
             i < currentQ ? (answers[i] === questions[i].correct ? "bg-emerald-500" : "bg-red-500") :
             "bg-white/20"
           }`} />

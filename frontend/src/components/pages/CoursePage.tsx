@@ -31,16 +31,15 @@ import {
 import { courses } from '@/services/api';
 import AdaptiveLesson from '@/components/course/AdaptiveLesson';
 import AnimationPlayer from '@/components/animation/AnimationPlayer';
-import SignLanguagePlayer from '@/components/course/SignLanguagePlayer';
 import CourseBadges from '@/components/course/CourseBadges';
 import LessonTestPlayer from '@/components/course/LessonTestPlayer';
 
 // --------------- playlist thumbnail colors ---------------
 
 const COLORS = [
-  'from-indigo-600 to-purple-700', 'from-blue-600 to-cyan-600',
-  'from-purple-600 to-pink-600', 'from-teal-600 to-emerald-600',
-  'from-orange-500 to-red-500', 'from-violet-600 to-indigo-600',
+  'from-primary-600 to-primary-700', 'from-primary-600 to-cyan-600',
+  'from-primary-600 to-pink-600', 'from-teal-600 to-emerald-600',
+  'from-orange-500 to-red-500', 'from-primary-600 to-primary-600',
 ];
 
 // --------------- animation helpers ---------------
@@ -113,22 +112,22 @@ function TopicRow({ topic, courseId, onNavigate }) {
   return (
     <button
       onClick={() => onNavigate(topic._id || topic.id)}
-      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-indigo-50 transition-colors text-left group"
+      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-primary-50 transition-colors text-left group"
     >
       {isCompleted ? (
         <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
       ) : (
-        <Circle className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
+        <Circle className="w-4 h-4 text-gray-300 group-hover:text-primary-400 flex-shrink-0 transition-colors" />
       )}
       <span
         className={`text-sm flex-1 ${
-          isCompleted ? 'text-gray-500 line-through' : 'text-gray-800 group-hover:text-indigo-700'
+          isCompleted ? 'text-gray-500 line-through' : 'text-gray-800 group-hover:text-primary-700'
         }`}
         style={{ color: isCompleted ? '#6b7280' : '#1f2937' }}
       >
         {topic.title || topic.name || `Topic ${topic.order_index ?? ''}`}
       </span>
-      <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+      <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 transition-colors" />
     </button>
   );
 }
@@ -150,7 +149,7 @@ function LessonAccordion({ lesson, courseId, onNavigateTopic, locked, testPassed
         <div className="flex items-center gap-3 min-w-0">
           {locked ? <Lock className="w-4 h-4 text-gray-400 flex-shrink-0" /> :
            testPassed ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" /> :
-           <FileText className="w-4 h-4 text-indigo-400 flex-shrink-0" />}
+           <FileText className="w-4 h-4 text-primary-400 flex-shrink-0" />}
           <span className={`text-sm font-medium truncate ${locked ? 'text-gray-400' : 'text-gray-800'}`}>
             {lesson.title || lesson.name}
           </span>
@@ -198,13 +197,13 @@ function LessonAccordion({ lesson, courseId, onNavigateTopic, locked, testPassed
                 ) : testReady ? (
                   /* Ready to take — all topics done */
                   <button onClick={() => onStartTest?.(lesson)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 hover:from-indigo-100 hover:to-purple-100 transition-colors group">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-50 to-primary-50 border border-primary-200 hover:from-primary-100 hover:to-primary-100 transition-colors group">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                       <Brain className="w-3 h-3 text-white" />
                     </div>
-                    <span className="text-sm font-semibold text-indigo-700 flex-1 text-left">Lesson Test</span>
-                    <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">TAKE NOW</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-sm font-semibold text-primary-700 flex-1 text-left">Lesson Test</span>
+                    <span className="text-[10px] bg-primary-600 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">TAKE NOW</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-primary-400" />
                   </button>
                 ) : (
                   /* Not ready — still have topics to complete */
@@ -245,8 +244,8 @@ function ModuleAccordion({ module, index, courseId, onNavigateTopic, lessonStatu
         className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors text-left"
       >
         <div className="flex items-center gap-4 min-w-0">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
-            <span className="text-sm font-bold text-indigo-600">{index + 1}</span>
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center">
+            <span className="text-sm font-bold text-primary-600">{index + 1}</span>
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-gray-900 truncate">
@@ -271,7 +270,7 @@ function ModuleAccordion({ module, index, courseId, onNavigateTopic, lessonStatu
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                  className="h-full rounded-full bg-primary-500 transition-all duration-500"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -759,16 +758,16 @@ export default function CoursePage() {
           {/* Option 1: Text + Voice */}
           <button
             onClick={() => { setLessonMode('text'); setSelectedTopic(showModeModal); setShowModeModal(null); }}
-            className="group card hover:shadow-xl hover:border-indigo-300 transition-all p-6 text-left border-2 border-transparent hover:border-indigo-200"
+            className="group card hover:shadow-xl hover:border-primary-300 transition-all p-6 text-left border-2 border-transparent hover:border-primary-200"
           >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Volume2 className="w-6 h-6 text-white" />
             </div>
             <h3 className="text-base font-bold text-gray-900 mb-1.5">Text + Voice</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
               AI explains with text slides and voice narration. Includes subtitles.
             </p>
-            <div className="mt-4 flex items-center gap-2 text-indigo-600 text-sm font-medium">
+            <div className="mt-4 flex items-center gap-2 text-primary-600 text-sm font-medium">
               <Play className="w-4 h-4" /> Start Learning
             </div>
           </button>
@@ -793,20 +792,20 @@ export default function CoursePage() {
           {/* Option 3: Sign Language */}
           <button
             onClick={() => { setLessonMode('sign'); setSelectedTopic(showModeModal); setShowModeModal(null); }}
-            className="group card hover:shadow-xl hover:border-purple-300 transition-all p-6 text-left border-2 border-transparent hover:border-purple-200 relative overflow-hidden"
+            className="group card hover:shadow-xl hover:border-primary-300 transition-all p-6 text-left border-2 border-transparent hover:border-primary-200 relative overflow-hidden"
           >
             {/* Accessibility badge */}
-            <div className="absolute top-3 right-3 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <div className="absolute top-3 right-3 bg-primary-100 text-primary-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               Accessible
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Hand className="w-6 h-6 text-white" />
             </div>
             <h3 className="text-base font-bold text-gray-900 mb-1.5">Sign Language</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              AI avatar explains with sign language gestures and large text captions. No audio needed.
+              A 3D avatar signs every step of the visual lesson beside the diagrams, with large captions, and signs the answers to your questions. No audio needed.
             </p>
-            <div className="mt-4 flex items-center gap-2 text-purple-600 text-sm font-medium">
+            <div className="mt-4 flex items-center gap-2 text-primary-600 text-sm font-medium">
               <Play className="w-4 h-4" /> Start Signing
             </div>
           </button>
@@ -826,22 +825,22 @@ export default function CoursePage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl px-4 py-3 flex items-center justify-between mb-4"
+            className="bg-gradient-to-r from-primary-50 to-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-center justify-between mb-4"
           >
             <div className="flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
               <div>
-                <p className="text-sm font-medium text-indigo-700">Generating remaining topics in background...</p>
-                <p className="text-xs text-indigo-500">You can keep learning while we prepare the rest</p>
+                <p className="text-sm font-medium text-primary-700">Generating remaining topics in background...</p>
+                <p className="text-xs text-primary-500">You can keep learning while we prepare the rest</p>
               </div>
             </div>
             {streamTotal > 0 && (
               <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-indigo-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                <div className="w-24 h-2 bg-primary-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary-500 rounded-full transition-all duration-300"
                     style={{ width: `${(streamedCount / streamTotal) * 100}%` }} />
                 </div>
-                <span className="text-xs font-medium text-indigo-600">{streamedCount}/{streamTotal}</span>
+                <span className="text-xs font-medium text-primary-600">{streamedCount}/{streamTotal}</span>
               </div>
             )}
           </motion.div>
@@ -853,17 +852,21 @@ export default function CoursePage() {
           <div className="flex-1 min-w-0">
             {lessonMode === 'visual' ? (
               <AnimationPlayer
+                key="visual"
                 topic={typeof selectedTopic === 'string' ? selectedTopic : selectedTopic?.title || 'Topic'}
                 classLevel="10"
                 language={localStorage.getItem('app_language') || 'en'}
                 onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : undefined}
               />
             ) : lessonMode === 'sign' ? (
-              <SignLanguagePlayer
-                topic={selectedTopic}
+              /* Same animated lesson (diagrams + captions); the 3D avatar signs the narration and answers questions. */
+              <AnimationPlayer
+                key="sign"
+                topic={typeof selectedTopic === 'string' ? selectedTopic : selectedTopic?.title || 'Topic'}
+                classLevel="10"
                 language={localStorage.getItem('app_language') || 'en'}
-                onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : null}
-                onPrev={currentTopicIndex > 0 ? handlePrevTopic : null}
+                onNext={currentTopicIndex < allTopicsList.length - 1 ? handleNextTopic : undefined}
+                signLanguage
               />
             ) : (
               <AdaptiveLesson
@@ -878,7 +881,7 @@ export default function CoursePage() {
             {/* ── Channel-like info under the player ── */}
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
                   <GraduationCap className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -912,7 +915,7 @@ export default function CoursePage() {
                   </div>
                   <button
                     onClick={() => { markCurrentTopicComplete(); setSelectedTopic(null); }}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                    className="text-xs text-primary-600 hover:text-primary-800 font-medium"
                   >
                     View all
                   </button>
@@ -963,14 +966,14 @@ export default function CoursePage() {
                           setSelectedTopic(t);
                         }}
                         className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 ${
-                          isActive ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                          isActive ? 'bg-primary-50 border-l-2 border-l-blue-600' : ''
                         }`}
                       >
                         {/* Index / status */}
                         <div className="flex-shrink-0 w-6 pt-0.5 text-center">
                           {isActive ? (
                             <div className="flex items-center justify-center">
-                              <Play className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                              <Play className="w-3.5 h-3.5 text-primary-600 fill-blue-600" />
                             </div>
                           ) : isCompleted ? (
                             <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
@@ -981,7 +984,7 @@ export default function CoursePage() {
 
                         {/* Thumbnail placeholder */}
                         <div className={`flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden relative ${
-                          isActive ? 'ring-2 ring-blue-500' : ''
+                          isActive ? 'ring-2 ring-primary-500' : ''
                         }`}>
                           <div className={`w-full h-full bg-gradient-to-br ${COLORS[i % COLORS.length]} flex items-center justify-center`}>
                             <Play className="w-5 h-5 text-white/60" />
@@ -1001,7 +1004,7 @@ export default function CoursePage() {
                         {/* Title & meta */}
                         <div className="flex-1 min-w-0 pt-0.5">
                           <p className={`text-sm font-medium line-clamp-2 leading-tight ${
-                            isActive ? 'text-blue-700' : isCompleted ? 'text-gray-500' : 'text-gray-900'
+                            isActive ? 'text-primary-700' : isCompleted ? 'text-gray-500' : 'text-gray-900'
                           }`}>
                             {t.title || t.name || `Topic ${i + 1}`}
                           </p>
@@ -1098,7 +1101,7 @@ export default function CoursePage() {
               </div>
               <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                  className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${progressData.pct}%` }}
                   transition={{ duration: 1, ease: 'easeOut' }}

@@ -81,40 +81,22 @@ def generate_indic_tts(text, language="hi", gender="female"):
     voice_map = indic_voices.get(language, indic_voices["hi"])
     voice = voice_map.get(gender, voice_map["female"])
 
-    # Use SSML for natural prosody (pauses, emphasis, natural rhythm)
-    ssml_text = f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{language}-IN">
-    <voice name="{voice}">
-        <prosody rate="-3%" pitch="+2%">
-            <mstts:express-as xmlns:mstts="http://www.w3.org/2001/mstts" style="chat" styledegree="1.5">
-                {text}
-            </mstts:express-as>
-        </prosody>
-    </voice>
-</speak>"""
-
+    # NOTE: the edge-tts CLI reads the -f file as plain text and escapes it, so
+    # wrapping the text in SSML made the voice read the XML tags aloud (a 15s
+    # Hindi sentence became 57s of audio). Prosody is applied with --rate/--pitch
+    # on plain text instead. Use the "--opt=value" form: argparse rejects a bare
+    # "-3%" value, and edge-tts requires pitch in Hz.
     try:
         tmp_audio = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tmp_audio.close()
 
-        # Write SSML to temp file
-        ssml_path = os.path.join(tempfile.gettempdir(), f"learnify_ssml_{uuid.uuid4().hex}.xml")
-        with open(ssml_path, "w", encoding="utf-8") as f:
-            f.write(ssml_text)
+        txt_path = os.path.join(tempfile.gettempdir(), f"learnify_tts_{uuid.uuid4().hex}.txt")
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(text)
 
-        # Try SSML first
-        cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "-f", ssml_path, "--write-media", tmp_audio.name]
+        cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "--rate=-3%", "--pitch=+2Hz", "-f", txt_path, "--write-media", tmp_audio.name]
         result = subprocess.run(cmd, capture_output=True, timeout=25)
-        os.unlink(ssml_path)
-
-        if result.returncode != 0 or os.path.getsize(tmp_audio.name) < 100:
-            # Fallback: plain text with natural tuning
-            txt_path = os.path.join(tempfile.gettempdir(), f"learnify_tts_{uuid.uuid4().hex}.txt")
-            with open(txt_path, "w", encoding="utf-8") as f:
-                f.write(text)
-
-            cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "--rate", "-3%", "--pitch", "+2%", "-f", txt_path, "--write-media", tmp_audio.name]
-            result = subprocess.run(cmd, capture_output=True, timeout=25)
-            os.unlink(txt_path)
+        os.unlink(txt_path)
 
         if result.returncode == 0 and os.path.exists(tmp_audio.name) and os.path.getsize(tmp_audio.name) > 100:
             with open(tmp_audio.name, "rb") as f:
@@ -217,7 +199,7 @@ def tts():
             f.write(text)
         tmp_text = type("obj", (object,), {"name": txt_path})()
 
-        cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, "--rate", rate, "--pitch", pitch, "-f", tmp_text.name, "--write-media", tmp_audio.name]
+        cmd = [sys.executable, "-m", "edge_tts", "--voice", voice, f"--rate={rate}", f"--pitch={pitch}", "-f", tmp_text.name, "--write-media", tmp_audio.name]
         result = subprocess.run(cmd, capture_output=True, timeout=20)
         os.unlink(tmp_text.name)
 
@@ -282,6 +264,6 @@ if __name__ == "__main__":
     print(f"\nLearnify Voice AI Service")
     print(f"  Server: http://localhost:{port}")
     print(f"  TTS: Edge Neural TTS ({len(DEFAULT_VOICES)} languages)")
-    print(f"  STT: Faster Whisper\n")
-    get_whisper()
+    print(f"  STT: Faster Whisper (lazy-loaded on first /stt call)\n")
+    # Whisper is lazy-loaded inside /stt — no need to block TTS boot on it.
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

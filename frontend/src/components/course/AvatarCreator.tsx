@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: AvatarConfig = {
   skinColor: "#e8b89d",
   hairColor: "#2d1b0e",
   hairStyle: "short",
-  shirtColor: "#284ce3",
+  shirtColor: "#1e40af",
   pantsColor: "#1e293b",
   gender: "female",
 };
@@ -233,7 +233,7 @@ export default function AvatarCreator({ onSave, onCancel, initialConfig }: Props
 
   const skinColors = ["#f5d0b5", "#e8b89d", "#d4956b", "#c27c4e", "#8d5524", "#5c3310"];
   const hairColors = ["#2d1b0e", "#4a2c14", "#8b6914", "#d4a017", "#c0392b", "#e74c3c", "#2c3e50", "#ecf0f1"];
-  const shirtColors = ["#284ce3", "#e74c3c", "#27ae60", "#8e44ad", "#f39c12", "#1abc9c", "#2c3e50", "#e91e63"];
+  const shirtColors = ["#1e40af", "#e74c3c", "#27ae60", "#8e44ad", "#f39c12", "#1abc9c", "#2c3e50", "#e91e63"];
   const pantsColors = ["#1e293b", "#2c3e50", "#1a1a2e", "#3b3b5c", "#4a4a4a", "#1e3a5f"];
 
   return (
@@ -244,14 +244,14 @@ export default function AvatarCreator({ onSave, onCancel, initialConfig }: Props
           <Canvas camera={{ position: [0, 0.3, 3], fov: 28 }} gl={{ antialias: true, alpha: true }}>
             <ambientLight intensity={0.5} />
             <directionalLight position={[3, 5, 5]} intensity={0.9} />
-            <directionalLight position={[-2, 3, 2]} intensity={0.3} color="#a78bfa" />
+            <directionalLight position={[-2, 3, 2]} intensity={0.3} color="#1e40af" />
             <Environment preset="studio" />
             <ContactShadows position={[0, -1.3, 0]} opacity={0.5} scale={4} blur={2} />
             <PreviewAvatar config={config} />
           </Canvas>
 
           {/* Badge */}
-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-purple-600/90 backdrop-blur rounded-full px-3 py-1.5">
+          <div className="absolute top-4 left-4 flex items-center gap-2 bg-primary-600/90 backdrop-blur rounded-full px-3 py-1.5">
             <span className="text-[10px] text-white font-bold uppercase tracking-wider">Avatar Creator</span>
           </div>
         </div>
@@ -269,7 +269,7 @@ export default function AvatarCreator({ onSave, onCancel, initialConfig }: Props
             <div className="flex gap-2">
               {(["female", "male"] as const).map((g) => (
                 <button key={g} onClick={() => update("gender", g)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${config.gender === g ? "bg-purple-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/15"}`}>
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${config.gender === g ? "bg-primary-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/15"}`}>
                   {g === "female" ? "Female" : "Male"}
                 </button>
               ))}
@@ -290,7 +290,7 @@ export default function AvatarCreator({ onSave, onCancel, initialConfig }: Props
             <div className="flex gap-2">
               {(["short", "long", "curly", "bald"] as const).map((h) => (
                 <button key={h} onClick={() => update("hairStyle", h)}
-                  className={`px-3 py-2 rounded-xl text-sm font-semibold capitalize transition-all ${config.hairStyle === h ? "bg-purple-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/15"}`}>
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold capitalize transition-all ${config.hairStyle === h ? "bg-primary-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/15"}`}>
                   {h}
                 </button>
               ))}
@@ -336,7 +336,7 @@ export default function AvatarCreator({ onSave, onCancel, initialConfig }: Props
               </button>
             )}
             <button onClick={() => { localStorage.setItem("avatar_config", JSON.stringify(config)); onSave(config); }}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-500 transition shadow-lg shadow-purple-600/30">
+              className="flex-1 px-4 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-bold hover:bg-primary-500 transition shadow-lg shadow-primary-600/30">
               Save Avatar
             </button>
           </div>

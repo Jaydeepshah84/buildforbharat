@@ -4,24 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  ArrowRight,
-  Mail,
-  Lock,
-  User,
-  GraduationCap,
-  BookOpen,
-  Globe,
-  CheckCircle2,
-  Users,
-  Star,
-  Sparkles,
-} from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/components/AuthProvider";
+
+const inputCls =
+  "w-full h-12 px-4 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/40 focus:bg-white/[0.05] transition-all";
+const selectCls =
+  "w-full h-12 px-3 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-white/40 transition-all appearance-none cursor-pointer [color-scheme:dark]";
+const labelCls = "block text-[11px] font-medium text-white/50 mb-2 uppercase tracking-wider";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -65,7 +56,7 @@ export default function SignupPage() {
         language: form.language,
         parentEmail: form.parentEmail,
       });
-      toast.success("Account created!");
+      toast.success("Account created");
       router.push("/dashboard");
     } catch (err: any) {
       toast.error(err?.message || "Signup failed");
@@ -74,195 +65,104 @@ export default function SignupPage() {
     }
   };
 
-  const inputCls =
-    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all";
-  const selectCls =
-    "w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-[#284ce3] focus:ring-4 focus:ring-[#284ce3]/10 transition-all appearance-none cursor-pointer";
-
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-[#284ce3] via-[#3b5ef5] to-[#284ce3]">
-      {/* LEFT — branding */}
-      <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden flex-col justify-between py-14 pl-14 pr-6">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-[#284ce3]/15 blur-[150px] -translate-x-1/3 -translate-y-1/3" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-purple-400/10 blur-[120px] translate-x-1/4 translate-y-1/4" />
-        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full bg-[#c3f53c]/5 blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+    <div className="min-h-screen bg-black text-white flex font-sans">
+      {/* LEFT — editorial branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-14 border-r border-white/10">
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
           style={{
-            backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
           }}
         />
 
-        {/* Logo */}
-        <motion.div
-          className="relative z-10"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-xl font-bold">L</span>
-            <span className="text-2xl font-extrabold text-white">Learnify</span>
-          </Link>
-        </motion.div>
+        <Link href="/" className="relative z-10 inline-flex items-center gap-2.5">
+          <span className="h-8 w-8 grid place-items-center rounded-md border border-white/20 text-sm font-bold font-display">L</span>
+          <span className="text-lg font-semibold tracking-tight font-display">LearnerAI</span>
+        </Link>
 
-        {/* Center content */}
-        <div className="relative z-10 max-w-lg -mt-10">
-          <motion.div
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 rounded-full px-4 py-1.5 mb-6"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-          >
-            <Sparkles size={14} className="text-[#c3f53c]" />
-            <span className="text-xs font-medium text-white/70">Free forever for students</span>
-          </motion.div>
+        <div className="relative z-10 max-w-md">
+          <p className="text-xs uppercase tracking-[0.22em] text-white/40 mb-6">Free forever for students</p>
+          <h1 className="font-display text-4xl xl:text-5xl font-semibold leading-[1.08] tracking-tight">
+            Start your learning journey today.
+          </h1>
+          <p className="mt-6 text-white/50 leading-relaxed max-w-sm">
+            Join thousands of Indian students learning smarter with 9 AI agents — adaptive courses, voice tutoring, and career guidance.
+          </p>
 
-          <motion.h1
-            className="text-4xl xl:text-[44px] font-extrabold text-white leading-[1.15] mb-5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            Start your learning journey today
-          </motion.h1>
-          <motion.p
-            className="text-white/45 text-base leading-relaxed max-w-sm"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.5 }}
-          >
-            Join thousands of Indian students learning smarter with 9 AI agents — from adaptive courses and voice tutoring to emotion detection and career guidance.
-          </motion.p>
+          <div className="mt-12 h-px w-full bg-white/10" />
 
-          {/* Feature highlights */}
-          <motion.div
-            className="mt-10 space-y-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
+          <div className="mt-8 space-y-4">
             {[
-              "Personal AI tutor that adapts to your pace 24/7",
+              "Personal AI tutor that adapts 24/7",
               "Voice assistant in Hindi, Gujarati & English",
-              "3D visual lab, smart quizzes & emotion detection",
-            ].map((text, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-[#c3f53c]/20 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 size={12} className="text-[#c3f53c]" />
-                </div>
-                <span className="text-sm text-white/50">{text}</span>
+              "Visual lab, smart quizzes & emotion detection",
+            ].map((t) => (
+              <div key={t} className="flex items-center gap-3 text-sm text-white/50">
+                <span className="h-1 w-1 rounded-full bg-white/40" />
+                {t}
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
 
-        {/* Bottom stats */}
-        <motion.div
-          className="relative z-10 flex gap-6"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-        >
+        <div className="relative z-10 flex gap-10">
           {[
-            { value: "20K+", label: "Active Students", icon: Users },
-            { value: "1,200+", label: "Total Courses", icon: BookOpen },
-            { value: "400+", label: "Expert Mentors", icon: Star },
-          ].map((s) => (
-            <div key={s.label} className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] rounded-2xl px-4 py-3 hover:bg-white/[0.10] hover:border-white/[0.12] transition-all duration-300">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <s.icon size={16} className="text-[#c3f53c]" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-white leading-none">{s.value}</p>
-                <p className="text-[10px] text-white/35 mt-0.5">{s.label}</p>
-              </div>
+            ["20K+", "Students"],
+            ["1,200+", "Courses"],
+            ["400+", "Mentors"],
+          ].map(([v, l]) => (
+            <div key={l}>
+              <p className="font-display text-2xl font-semibold">{v}</p>
+              <p className="text-xs text-white/40 mt-1">{l}</p>
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
 
       {/* RIGHT — form */}
-      <div className="flex-1 flex items-center justify-center bg-white lg:rounded-[36px] lg:my-3 lg:mr-3 relative overflow-hidden">
-        <div className="absolute inset-0 lg:rounded-[36px] overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-blue-50/60 rounded-full blur-[80px]" />
-          <div className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-purple-50/40 rounded-full blur-[80px]" />
-        </div>
-
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <motion.div
-          className="w-full max-w-[460px] px-12 py-4 relative z-10"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[430px]"
         >
           {/* Mobile logo */}
-          <div className="text-center mb-8 lg:hidden">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <span className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white text-lg font-bold">L</span>
-              <span className="text-2xl font-extrabold text-gray-900">Learnify</span>
-            </Link>
-          </div>
+          <Link href="/" className="lg:hidden inline-flex items-center gap-2.5 mb-8">
+            <span className="h-8 w-8 grid place-items-center rounded-md border border-white/20 text-sm font-bold font-display">L</span>
+            <span className="text-lg font-semibold tracking-tight font-display">LearnerAI</span>
+          </Link>
 
-          <div className="mb-7">
-            <h1 className="text-[28px] font-bold text-gray-900 mb-2">Create account</h1>
-            <p className="text-[14px] text-gray-400">
-              Already have an account?{" "}
-              <Link href="/login" className="text-[#284ce3] font-semibold hover:underline">Sign in</Link>
-            </p>
-          </div>
+          <h2 className="font-display text-2xl font-semibold tracking-tight">Create account</h2>
+          <p className="mt-2 text-sm text-white/40">
+            Already have an account?{" "}
+            <Link href="/login" className="text-white hover:underline underline-offset-4">Sign in</Link>
+          </p>
 
-          {/* Social login */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
-              <label className="block text-[13px] font-semibold text-gray-700 mb-2">Full Name</label>
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
-                <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={update("name")}
-                  placeholder="John Doe"
-                  className={inputCls}
-                />
-              </div>
+              <label className={labelCls}>Full name</label>
+              <input type="text" required value={form.name} onChange={update("name")} placeholder="John Doe" className={inputCls} />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-gray-700 mb-2">Email address</label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={update("email")}
-                  placeholder="you@example.com"
-                  className={inputCls}
-                />
-              </div>
+              <label className={labelCls}>Email address</label>
+              <input type="email" required value={form.email} onChange={update("email")} placeholder="you@example.com" className={inputCls} />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-gray-700 mb-2">Parent/Guardian Email <span className="text-gray-400 font-normal">(for progress reports)</span></label>
-              <div className="relative group">
-                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
-                <input
-                  type="email"
-                  value={form.parentEmail}
-                  onChange={update("parentEmail")}
-                  placeholder="parent@example.com"
-                  className={inputCls}
-                />
-              </div>
+              <label className={labelCls}>
+                Parent / Guardian email <span className="text-white/25 normal-case tracking-normal">(optional)</span>
+              </label>
+              <input type="email" value={form.parentEmail} onChange={update("parentEmail")} placeholder="parent@example.com" className={inputCls} />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-gray-700 mb-2">Password</label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 group-focus-within:text-[#284ce3] transition-colors" />
+              <label className={labelCls}>Password</label>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -270,55 +170,45 @@ export default function SignupPage() {
                   value={form.password}
                   onChange={update("password")}
                   placeholder="Min 6 characters"
-                  className={inputCls}
-                  style={{ paddingRight: "2.75rem" }}
+                  className={inputCls + " pr-11"}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">Role</label>
-                <div className="relative group">
-                  <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
-                  <select value={form.role} onChange={update("role")} className={selectCls}>
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                  </select>
-                </div>
+                <label className={labelCls}>Role</label>
+                <select value={form.role} onChange={update("role")} className={selectCls}>
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                </select>
               </div>
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">Class</label>
-                <div className="relative group">
-                  <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
-                  <select value={form.classLevel} onChange={update("classLevel")} className={selectCls}>
-                    {["6", "7", "8", "9", "10", "11", "12"].map((v) => (
-                      <option key={v} value={v}>Class {v}</option>
-                    ))}
-                    <option value="undergraduate">UG</option>
-                    <option value="graduate">PG</option>
-                  </select>
-                </div>
+                <label className={labelCls}>Class</label>
+                <select value={form.classLevel} onChange={update("classLevel")} className={selectCls}>
+                  {["6", "7", "8", "9", "10", "11", "12"].map((v) => (
+                    <option key={v} value={v}>Class {v}</option>
+                  ))}
+                  <option value="undergraduate">UG</option>
+                  <option value="graduate">PG</option>
+                </select>
               </div>
               <div>
-                <label className="block text-[13px] font-semibold text-gray-700 mb-2">Language</label>
-                <div className="relative group">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-300 pointer-events-none group-focus-within:text-[#284ce3] transition-colors" />
-                  <select value={form.language} onChange={update("language")} className={selectCls}>
-                    <option value="en">EN</option>
-                    <option value="hi">HI</option>
-                    <option value="gu">GU</option>
-                    <option value="es">ES</option>
-                  </select>
-                </div>
+                <label className={labelCls}>Lang</label>
+                <select value={form.language} onChange={update("language")} className={selectCls}>
+                  <option value="en">EN</option>
+                  <option value="hi">HI</option>
+                  <option value="gu">GU</option>
+                  <option value="es">ES</option>
+                </select>
               </div>
             </div>
 
@@ -327,27 +217,26 @@ export default function SignupPage() {
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="w-[18px] h-[18px] mt-0.5 rounded-md border-gray-300 text-[#284ce3] focus:ring-[#284ce3] cursor-pointer"
+                className="w-4 h-4 mt-0.5 rounded border-white/20 bg-transparent text-white focus:ring-0 focus:ring-offset-0 cursor-pointer accent-white"
               />
-              <span className="text-[12px] text-gray-400 leading-relaxed">
+              <span className="text-xs text-white/40 leading-relaxed">
                 I agree to the{" "}
-                <a href="#" className="text-[#284ce3] hover:underline font-medium">Terms of Service</a>
-                {" "}and{" "}
-                <a href="#" className="text-[#284ce3] hover:underline font-medium">Privacy Policy</a>
+                <a href="#" className="text-white/70 hover:text-white underline underline-offset-2">Terms of Service</a>{" "}
+                and{" "}
+                <a href="#" className="text-white/70 hover:text-white underline underline-offset-2">Privacy Policy</a>
               </span>
             </label>
 
             <motion.button
               type="submit"
               disabled={loading || !agreed}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-sm rounded-2xl disabled:opacity-40 transition-all shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
+              className="w-full h-12 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold rounded-lg hover:bg-white/90 disabled:opacity-40 transition-all"
+              whileTap={{ scale: 0.99 }}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Creating account…</>
               ) : (
-                <>Create Account <ArrowRight size={16} /></>
+                <>Create account <ArrowRight size={16} /></>
               )}
             </motion.button>
           </form>

@@ -26,6 +26,8 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: { origin: true, methods: ["GET", "POST"], credentials: true },
+  // Whiteboard images travel as inline data URLs, above the 1MB default
+  maxHttpBufferSize: 5e6,
 });
 
 // Middleware — allow all origins in development
@@ -60,10 +62,10 @@ app.set("io", io);
 
 // Start
 server.listen(config.port, "0.0.0.0", () => {
-  console.log(`\n🚀 Learnify Backend (TypeScript + LangChain)`);
+  console.log(`\n🚀 LearnerAI Backend (TypeScript + LangChain)`);
   console.log(`   Server: http://0.0.0.0:${config.port}`);
   console.log(`   Agents: ${["course","notes","quiz","homework","career","doubt","visual","classroom","progress"].join(", ")}`);
-  console.log(`   Engine: Azure OpenAI (${config.azure.deployment})\n`);
+  console.log(`   Engine: ${config.azure.endpoint} (${config.azure.deployment})\n`);
 });
 
 export { app, server, io };

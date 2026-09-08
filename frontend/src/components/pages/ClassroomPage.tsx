@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Copy, Link2, LogOut, Send, Mic, MicOff, Video, VideoOff,
   Monitor, MonitorOff, Bot, User, X, Loader2, Sparkles, PenTool,
-  MessageSquare, Brain, CheckCircle2, XCircle, Eraser, StickyNote,
+  MessageSquare, Brain, CheckCircle2, XCircle, StickyNote,
   Play, Pause, FileText, Beaker, Plus, ChevronRight, Hash, Zap, BookOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import { io as ioConnect, Socket } from "socket.io-client";
 import AnimationPlayer from "@/components/animation/AnimationPlayer";
+import StudyWhiteboard from "@/components/classroom/StudyWhiteboard";
 import AdaptiveLesson from "@/components/course/AdaptiveLesson";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -33,86 +34,6 @@ const ICE_SERVERS = [
   { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turn:relay1.expressturn.com:3478", username: "efQKGMJJKFN5ZTADBU", credential: "N8WIBnKgPlFkXnAi" },
 ];
-
-/* ═══════════════════════════════════════════════════════════
-   Shared Whiteboard — synced via Socket.io
-   ═══════════════════════════════════════════════════════════ */
-function SharedWhiteboard({
-  visible, socketRef, roomCode,
-}: { visible: boolean; socketRef: React.MutableRefObject<Socket | null>; roomCode: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawing, setDrawing] = useState(false);
-  const [color, setColor] = useState("#3b82f6");
-  const [tool, setTool] = useState<"pen" | "eraser">("pen");
-  const last = useRef<{ x: number; y: number } | null>(null);
-
-  const getCtx = () => canvasRef.current?.getContext("2d") || null;
-
-  const pos = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const r = canvasRef.current!.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * (canvasRef.current!.width / r.width), y: (e.clientY - r.top) * (canvasRef.current!.height / r.height) };
-  };
-
-  const drawLine = (from: { x: number; y: number }, to: { x: number; y: number }, c: string, w: number) => {
-    const ctx = getCtx(); if (!ctx) return;
-    ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y);
-    ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.stroke();
-  };
-
-  const start = (e: React.MouseEvent<HTMLCanvasElement>) => { setDrawing(true); last.current = pos(e); };
-  const move = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawing || !last.current) return;
-    const p = pos(e);
-    const c = tool === "eraser" ? "#ffffff" : color;
-    const w = tool === "eraser" ? 20 : 3;
-    drawLine(last.current, p, c, w);
-    socketRef.current?.emit("wb:draw", { code: roomCode, data: { from: last.current, to: p, color: c, width: w } });
-    last.current = p;
-  };
-  const stop = () => { setDrawing(false); last.current = null; };
-
-  const clear = () => {
-    const ctx = getCtx(); if (ctx) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 1200, 600); }
-    socketRef.current?.emit("wb:clear", { code: roomCode });
-  };
-
-  // Listen for remote draw events
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-    const onDraw = ({ data }: any) => drawLine(data.from, data.to, data.color, data.width);
-    const onClear = () => { const ctx = getCtx(); if (ctx) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 1200, 600); } };
-    socket.on("wb:draw", onDraw);
-    socket.on("wb:clear", onClear);
-    return () => { socket.off("wb:draw", onDraw); socket.off("wb:clear", onClear); };
-  }, [socketRef.current]);
-
-  // Init canvas
-  useEffect(() => {
-    if (visible) { const ctx = getCtx(); if (ctx) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 1200, 600); } }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50 shrink-0">
-        <button onClick={() => setTool("pen")} className={`p-1.5 rounded-lg ${tool === "pen" ? "bg-blue-100 text-blue-600" : "text-gray-400"}`}><PenTool className="w-4 h-4" /></button>
-        <button onClick={() => setTool("eraser")} className={`p-1.5 rounded-lg ${tool === "eraser" ? "bg-blue-100 text-blue-600" : "text-gray-400"}`}><Eraser className="w-4 h-4" /></button>
-        <div className="w-px h-5 bg-gray-200" />
-        {["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#000"].map(c => (
-          <button key={c} onClick={() => { setColor(c); setTool("pen"); }}
-            className={`w-5 h-5 rounded-full border-2 ${color === c && tool === "pen" ? "border-gray-800 scale-110" : "border-gray-200"}`} style={{ background: c }} />
-        ))}
-        <div className="flex-1" />
-        <span className="text-[10px] text-gray-400">Both students can draw</span>
-        <button onClick={clear} className="text-xs text-red-500 font-medium ml-2">Clear</button>
-      </div>
-      <canvas ref={canvasRef} width={1200} height={600} className="flex-1 cursor-crosshair w-full"
-        onMouseDown={start} onMouseMove={move} onMouseUp={stop} onMouseLeave={stop} />
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    Shared Notes — synced via Socket.io
@@ -169,9 +90,9 @@ function QuizTogether({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-50 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-primary-50 shrink-0">
         <div className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-[#284ce3]" />
+          <Brain className="w-5 h-5 text-[#1e40af]" />
           <span className="font-bold text-gray-900">Quiz Together</span>
         </div>
         <span className="text-xs text-gray-500">{currentQ + 1} / {questions.length}</span>
@@ -192,15 +113,15 @@ function QuizTogether({
                 className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all relative ${
                   isCorrect ? "bg-emerald-50 border-emerald-300 text-emerald-700" :
                   isWrong ? "bg-red-50 border-red-300 text-red-600" :
-                  isMine ? "bg-blue-50 border-blue-300 text-[#284ce3]" :
+                  isMine ? "bg-primary-50 border-primary-300 text-[#1e40af]" :
                   "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}>
                 <span className="font-bold mr-2">{String.fromCharCode(65 + i)}.</span>{o}
                 {isCorrect && <CheckCircle2 className="w-4 h-4 inline ml-2 text-emerald-500" />}
                 {isWrong && (isMine || isPartner) && <XCircle className="w-4 h-4 inline ml-2 text-red-400" />}
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                  {isMine && <span className="text-[10px] bg-blue-100 text-[#284ce3] px-1.5 py-0.5 rounded-full">You</span>}
-                  {isPartner && <span className="text-[10px] bg-blue-100 text-[#284ce3] px-1.5 py-0.5 rounded-full">{partnerName}</span>}
+                  {isMine && <span className="text-[10px] bg-primary-100 text-[#1e40af] px-1.5 py-0.5 rounded-full">You</span>}
+                  {isPartner && <span className="text-[10px] bg-primary-100 text-[#1e40af] px-1.5 py-0.5 rounded-full">{partnerName}</span>}
                 </span>
               </button>
             );
@@ -208,7 +129,7 @@ function QuizTogether({
         </div>
 
         {bothAnswered && q.explanation && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-xl text-sm text-blue-700 border border-blue-100">{q.explanation}</div>
+          <div className="mt-4 p-3 bg-primary-50 rounded-xl text-sm text-primary-700 border border-primary-100">{q.explanation}</div>
         )}
 
         {myAnswer !== undefined && pAnswer === undefined && (
@@ -219,7 +140,7 @@ function QuizTogether({
       {bothAnswered && currentQ < questions.length - 1 && (
         <div className="px-4 py-3 border-t border-gray-100 shrink-0">
           <button onClick={() => setCurrentQ(currentQ + 1)}
-            className="w-full py-2.5 bg-[#284ce3] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-blue-700">
+            className="w-full py-2.5 bg-[#1e40af] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-700">
             Next Question <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -279,7 +200,7 @@ function VideoTile({ name, isSelf, stream, muted }: { name: string; isSelf?: boo
       {!showVideo && (
         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#0f1628] to-[#1a2550]">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-2xl shadow-lg mx-auto mb-2">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-2xl shadow-lg mx-auto mb-2">
               {name?.charAt(0)?.toUpperCase() || "?"}
             </div>
             <p className="text-white/50 text-xs font-medium">{name?.split(" ")[0]}{isSelf ? " (You)" : ""}</p>
@@ -369,7 +290,7 @@ function LearnTogether({
       <div className="h-full flex flex-col bg-white overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1 bg-gray-50/80 shrink-0">
           <button onClick={() => { setSelectedTopicForLearn(null); setLearnMode(null); }}
-            className="text-[11px] text-[#284ce3] hover:text-blue-800 flex items-center gap-0.5 font-medium">
+            className="text-[11px] text-[#1e40af] hover:text-primary-800 flex items-center gap-0.5 font-medium">
             <ChevronRight className="w-3 h-3 rotate-180" /> Courses
           </button>
           <span className="text-[11px] text-gray-400 truncate max-w-[50%]">{topicTitle}</span>
@@ -407,10 +328,10 @@ function LearnTogether({
     <div className="h-full flex flex-col bg-white overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 shrink-0">
         <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-          <BookOpen className="w-4 h-4 text-[#284ce3]" /> {selectedCourse ? selectedCourse.title : "Your Courses"}
+          <BookOpen className="w-4 h-4 text-[#1e40af]" /> {selectedCourse ? selectedCourse.title : "Your Courses"}
         </h3>
         {selectedCourse && (
-          <button onClick={() => setSelectedCourse(null)} className="text-xs text-[#284ce3] hover:text-blue-800 mt-1">
+          <button onClick={() => setSelectedCourse(null)} className="text-xs text-[#1e40af] hover:text-primary-800 mt-1">
             ← Back to all courses
           </button>
         )}
@@ -418,7 +339,7 @@ function LearnTogether({
 
       <div className="flex-1 overflow-y-auto p-3">
         {loadingCourses && (
-          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-400" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary-400" /></div>
         )}
 
         {!loadingCourses && !selectedCourse && (
@@ -432,8 +353,8 @@ function LearnTogether({
             )}
             {enrolledCourses.map((course, i) => (
               <button key={course.id || i} onClick={() => setSelectedCourse(course)}
-                className="text-left p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all bg-white group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-sm mb-3 group-hover:scale-110 transition-transform">
+                className="text-left p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all bg-white group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center text-white font-bold text-sm mb-3 group-hover:scale-110 transition-transform">
                   {(course.title || "C").charAt(0)}
                 </div>
                 <h4 className="font-semibold text-gray-900 text-sm truncate">{course.title}</h4>
@@ -452,15 +373,15 @@ function LearnTogether({
                   <div key={les.id || li}>
                     <div className="px-3 py-1.5 text-xs text-gray-500 font-medium border-t border-gray-50">{les.title}</div>
                     {(les.topics || []).map((topic: any, ti: number) => (
-                      <div key={topic.id || ti} className="flex items-center justify-between px-3 py-2 hover:bg-blue-50 transition-colors border-t border-gray-50">
+                      <div key={topic.id || ti} className="flex items-center justify-between px-3 py-2 hover:bg-primary-50 transition-colors border-t border-gray-50">
                         <span className="text-sm text-gray-800 flex-1 truncate">{topic.title}</span>
                         <div className="flex gap-1.5 shrink-0">
                           <button onClick={() => startTopic(topic, "text")}
-                            className="px-2.5 py-1 bg-blue-50 text-[#284ce3] rounded-lg text-[10px] font-semibold hover:bg-blue-100">
+                            className="px-2.5 py-1 bg-primary-50 text-[#1e40af] rounded-lg text-[10px] font-semibold hover:bg-primary-100">
                             Text + Voice
                           </button>
                           <button onClick={() => startTopic(topic, "visual")}
-                            className="px-2.5 py-1 bg-blue-50 text-[#284ce3] rounded-lg text-[10px] font-semibold hover:bg-blue-100">
+                            className="px-2.5 py-1 bg-primary-50 text-[#1e40af] rounded-lg text-[10px] font-semibold hover:bg-primary-100">
                             Visual
                           </button>
                         </div>
@@ -1009,7 +930,7 @@ export default function ClassroomPage() {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Hero header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#284ce3] to-[#5b7cf7] px-8 py-10 text-center">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e40af] to-[#5b7cf7] px-8 py-10 text-center">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
           <div className="absolute bottom-0 left-10 w-32 h-32 bg-white/5 rounded-full translate-y-1/2" />
           <div className="relative z-10">
@@ -1031,13 +952,13 @@ export default function ClassroomPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-              <Plus className="w-6 h-6 text-[#284ce3]" />
+            <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center mb-4">
+              <Plus className="w-6 h-6 text-[#1e40af]" />
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Create Room</h2>
             <p className="text-sm text-gray-500 mb-5">Start a new study session and invite your partner with a room code.</p>
             <button onClick={createRoom} disabled={!connected || creating}
-              className="w-full py-3 bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              className="w-full py-3 bg-gradient-to-r from-[#1e40af] to-[#4a6cf7] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</> : <><Zap className="w-4 h-4" /> Create Study Room</>}
             </button>
             {!connected && <p className="text-xs text-red-400 mt-2 text-center">Waiting for server connection...</p>}
@@ -1066,7 +987,7 @@ export default function ClassroomPage() {
         </div>
 
         {/* How it works */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-6 border border-blue-100">
+        <div className="bg-gradient-to-br from-primary-50 to-primary-50 rounded-2xl p-6 border border-primary-100">
           <h3 className="font-bold text-gray-900 mb-4 text-center">How it works</h3>
           <div className="grid sm:grid-cols-4 gap-4">
             {[
@@ -1076,7 +997,7 @@ export default function ClassroomPage() {
               { step: "4", title: "Collaborate", desc: "Whiteboard, notes, quiz — all shared" },
             ].map(s => (
               <div key={s.step} className="text-center">
-                <div className="w-8 h-8 rounded-full bg-[#284ce3] text-white font-bold flex items-center justify-center mx-auto mb-2 text-sm">{s.step}</div>
+                <div className="w-8 h-8 rounded-full bg-[#1e40af] text-white font-bold flex items-center justify-center mx-auto mb-2 text-sm">{s.step}</div>
                 <p className="font-semibold text-sm text-gray-800">{s.title}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
               </div>
@@ -1106,7 +1027,7 @@ export default function ClassroomPage() {
           <div className="w-px h-5 bg-gray-200" />
           <div className="flex -space-x-2">
             {members.map((m, i) => (
-              <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">{m.userName.charAt(0).toUpperCase()}</div>
+              <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">{m.userName.charAt(0).toUpperCase()}</div>
             ))}
           </div>
           <span className="text-xs text-gray-500">{members.length}/2 {!partner && <span className="text-amber-500 animate-pulse">Waiting...</span>}</span>
@@ -1119,13 +1040,13 @@ export default function ClassroomPage() {
             {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{unread}</span>}
           </button>
           {/* Media controls in top bar */}
-          <button onClick={toggleMic} className={`p-2.5 rounded-xl transition-all ${micOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "bg-red-50 text-red-500"}`} title={micOn ? "Mute" : "Unmute"}>
+          <button onClick={toggleMic} className={`p-2.5 rounded-xl transition-all ${micOn ? "bg-[#1e40af]/10 text-[#1e40af]" : "bg-red-50 text-red-500"}`} title={micOn ? "Mute" : "Unmute"}>
             {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           </button>
-          <button onClick={toggleCam} className={`p-2.5 rounded-xl transition-all ${camOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "bg-red-50 text-red-500"}`} title={camOn ? "Camera off" : "Camera on"}>
+          <button onClick={toggleCam} className={`p-2.5 rounded-xl transition-all ${camOn ? "bg-[#1e40af]/10 text-[#1e40af]" : "bg-red-50 text-red-500"}`} title={camOn ? "Camera off" : "Camera on"}>
             {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
           </button>
-          <button onClick={toggleScreen} className={`p-2.5 rounded-xl transition-all ${screenOn ? "bg-[#284ce3]/10 text-[#284ce3]" : "text-gray-400 hover:bg-gray-100"}`} title="Screen share">
+          <button onClick={toggleScreen} className={`p-2.5 rounded-xl transition-all ${screenOn ? "bg-[#1e40af]/10 text-[#1e40af]" : "text-gray-400 hover:bg-gray-100"}`} title="Screen share">
             {screenOn ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
           </button>
           <div className="w-px h-6 bg-gray-200" />
@@ -1147,7 +1068,7 @@ export default function ClassroomPage() {
           ].map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors ${
-                tab === key ? "text-[#284ce3] border-b-2 border-[#284ce3] bg-blue-50/50" : "text-gray-400 hover:text-gray-600"
+                tab === key ? "text-[#1e40af] border-b-2 border-[#1e40af] bg-primary-50/50" : "text-gray-400 hover:text-gray-600"
               }`}>
               <Icon className="w-3.5 h-3.5" /> {label}
             </button>
@@ -1160,7 +1081,7 @@ export default function ClassroomPage() {
           <LearnTogether visible={tab === "learn"}
             onLoadTopic={loadLessonTopic}
             socketRef={socketRef} roomCode={roomCode} showAnimation={showAnimation} animTopic={animTopic} />
-          <SharedWhiteboard visible={tab === "whiteboard"} socketRef={socketRef} roomCode={roomCode} />
+          <StudyWhiteboard visible={tab === "whiteboard"} socketRef={socketRef} roomCode={roomCode} userId={userId} />
           <SharedNotes visible={tab === "notes"} notes={notes} setNotes={setNotes} socketRef={socketRef} roomCode={roomCode} />
 
           {tab === "quiz" && quizQuestions.length === 0 && !quizLoading && (
@@ -1169,13 +1090,13 @@ export default function ClassroomPage() {
                 <Sparkles className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                 <h3 className="font-bold text-gray-700 mb-1">Quiz Together</h3>
                 <p className="text-sm text-gray-400 mb-4">Start a quiz and compete with your partner!</p>
-                <button onClick={startQuiz} className="px-6 py-2.5 bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white rounded-xl font-semibold text-sm hover:shadow-lg">Generate Quiz</button>
+                <button onClick={startQuiz} className="px-6 py-2.5 bg-gradient-to-r from-[#1e40af] to-[#4a6cf7] text-white rounded-xl font-semibold text-sm hover:shadow-lg">Generate Quiz</button>
               </div>
             </div>
           )}
           {tab === "quiz" && quizLoading && (
             <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
             </div>
           )}
           <QuizTogether visible={tab === "quiz" && quizQuestions.length > 0} questions={quizQuestions}
@@ -1217,7 +1138,7 @@ export default function ClassroomPage() {
             className="absolute top-12 right-4 bottom-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-30 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#284ce3]" />
+                <MessageSquare className="w-4 h-4 text-[#1e40af]" />
                 <span className="font-bold text-sm text-gray-900">Chat</span>
               </div>
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"><X className="w-4 h-4" /></button>
@@ -1237,24 +1158,24 @@ export default function ClassroomPage() {
                 if (isSys) return <div key={i} className="text-center text-[10px] text-gray-400 py-1">{m.message}</div>;
                 return (
                   <div key={i} className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-                    <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold ${isAI ? "bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] text-white" : isMe ? "bg-[#284ce3] text-white" : "bg-emerald-500 text-white"}`}>
+                    <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold ${isAI ? "bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] text-white" : isMe ? "bg-[#1e40af] text-white" : "bg-emerald-500 text-white"}`}>
                       {isAI ? <Bot className="w-3 h-3" /> : m.userName?.charAt(0)?.toUpperCase()}
                     </div>
-                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe ? "bg-[#284ce3] text-white rounded-tr-sm" : isAI ? "bg-blue-50 text-gray-800 rounded-tl-sm" : "bg-gray-100 text-gray-800 rounded-tl-sm"}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe ? "bg-[#1e40af] text-white rounded-tr-sm" : isAI ? "bg-primary-50 text-gray-800 rounded-tl-sm" : "bg-gray-100 text-gray-800 rounded-tl-sm"}`}>
                       {!isMe && <p className="text-[10px] font-semibold mb-0.5 opacity-60">{m.userName}</p>}
                       {isAI ? <ReactMarkdown components={{ p: ({ children }: any) => <p className="mb-1 last:mb-0 text-[13px]">{children}</p> }}>{m.message}</ReactMarkdown> : <span className="text-[13px]">{m.message}</span>}
                     </div>
                   </div>
                 );
               })}
-              {aiLoading && <div className="flex gap-2"><div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center"><Bot className="w-3 h-3 text-white" /></div><div className="bg-blue-50 rounded-2xl px-3 py-2 rounded-tl-sm"><Loader2 className="w-4 h-4 animate-spin text-blue-400" /></div></div>}
+              {aiLoading && <div className="flex gap-2"><div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center"><Bot className="w-3 h-3 text-white" /></div><div className="bg-primary-50 rounded-2xl px-3 py-2 rounded-tl-sm"><Loader2 className="w-4 h-4 animate-spin text-primary-400" /></div></div>}
               <div ref={chatEndRef} />
             </div>
 
             <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="flex gap-2 p-3 border-t border-gray-100 shrink-0">
               <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Type a message..."
-                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3]" />
-              <button type="submit" disabled={!chatInput.trim()} className="px-3 py-2 bg-[#284ce3] text-white rounded-xl disabled:opacity-50"><Send className="w-4 h-4" /></button>
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1e40af]" />
+              <button type="submit" disabled={!chatInput.trim()} className="px-3 py-2 bg-[#1e40af] text-white rounded-xl disabled:opacity-50"><Send className="w-4 h-4" /></button>
             </form>
           </motion.div>
         )}

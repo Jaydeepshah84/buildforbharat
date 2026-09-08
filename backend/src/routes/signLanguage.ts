@@ -2,169 +2,146 @@ import { Router, Response } from "express";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { openai } from "../config/llm";
 import { config } from "../config/env";
+import { glossToSiGML, KNOWN_WORDS, countSigns, estimateSignMs, fallbackGloss, analyseGloss } from "../services/sigml";
 
 const router = Router();
 
 /**
- * Generate sign language animation keyframes for a phrase.
- * AI returns exact arm, hand, finger positions as keyframe sequences.
+ * Sign-language routes.
+ *
+ * In sign mode the 3D CWASA avatar is the lesson's only "voice": every narration sentence of
+ * the animated lesson, and every answer to a student's question, comes through here:
+ *
+ *     text → short ISL gloss (LLM, cached) → SiGML (dictionary signs + digits + fingerspelling)
+ *
+ * The frontend feeds the SiGML to CWASA.playSiGMLText() and advances the animation when the
+ * avatar finishes signing. The old step-by-step "sign breakdown" and the CSS-avatar HTML
+ * generator were removed: the 3D avatar is the single signing surface.
  */
-router.post("/animate", authMiddleware, async (req: AuthRequest, res: Response) => {
-  try {
-    const { phrase } = req.body;
-    if (!phrase) return res.status(400).json({ error: "phrase required" });
 
-    const resp = await openai.chat.completions.create({
-      model: config.azure.deployment,
-      messages: [
-        {
-          role: "system",
-          content: `You are an Indian Sign Language (ISL) animation expert. Given a phrase, generate keyframe animation data for a sign language avatar.
-
-For each word in the phrase, return a sequence of keyframes that represent the ISL sign for that word. Each keyframe is a snapshot of the avatar's pose.
-
-Return JSON:
-{
-  "signs": [
-    {
-      "word": "the word",
-      "keyframes": [
-        {
-          "duration": 0.4,
-          "leftArm": { "shoulder": -45, "elbow": -30, "wrist": 10 },
-          "rightArm": { "shoulder": -50, "elbow": -40, "wrist": -5 },
-          "leftHand": { "shape": "open|fist|point|peace|thumbsUp|claw|flat|cup", "fingers": [0,0,0,0,0] },
-          "rightHand": { "shape": "open|fist|point|peace|thumbsUp|claw|flat|cup", "fingers": [0,0,0,0,0] },
-          "head": { "tilt": 0, "nod": 0 },
-          "body": { "lean": 0 },
-          "expression": "neutral|smile|surprise|thinking|serious"
-        }
-      ]
-    }
-  ]
+// Narration sentences repeat across replays and regenerations, so glosses are cached in memory.
+const MAX_CACHE = 3000;
+const glossCache = new Map<string, string>();
+function remember(key: string, gloss: string) {
+  if (glossCache.size >= MAX_CACHE) glossCache.delete(glossCache.keys().next().value as string);
+  glossCache.set(key, gloss);
 }
 
-Rules:
-- shoulder: -90 to 90 (negative = raise arm up, positive = lower)
-- elbow: -90 to 0 (negative = bend more)
-- wrist: -30 to 30 (rotation)
-- fingers: array of 5 values [thumb,index,middle,ring,pinky], each 0 (straight) to 1 (curled)
-- Each word should have 2-4 keyframes showing the motion of the sign
-- Signs should flow naturally from one to the next
-- Use realistic ISL gestures — not random movements
-- Common signs: namaste (palms together at chest), hello (wave), yes (head nod + fist), no (head shake + finger wag)
-- duration is in seconds (0.3-0.8 per keyframe)`,
-        },
-        { role: "user", content: `Generate ISL sign animation keyframes for: "${phrase}"` },
-      ],
-      temperature: 0.5,
-      max_completion_tokens: 2000,
-      response_format: { type: "json_object" },
-    });
+function glossPrompt(maxWords: number): string {
+  return [
+    "You convert one sentence of a teacher's narration into a short Indian Sign Language (ISL) GLOSS for a 3D signing avatar.",
+    `Reply with ONLY 2-${maxWords} UPPERCASE English words separated by single spaces. No punctuation, no explanation.`,
+    "Keep only the words that carry the meaning: things, actions, numbers, key qualities. Drop articles, auxiliaries, filler and teacher chatter (\"let's\", \"now watch\", \"see how\", \"great\").",
+    "Use base forms (RUN not RUNNING, CHILD not CHILDREN). Keep numbers as digits and use + - = × ÷ for operations.",
+    "Order: topic first, then comment (e.g. PLANT SUNLIGHT USE FOOD MAKE).",
+    "The sentence may be in Hindi, Gujarati or Spanish: still answer with English gloss words.",
+    "Prefer these words whenever the meaning fits, because the avatar has real signs for them (everything else is fingerspelled, which is slow): " +
+      KNOWN_WORDS.join(", ") + ".",
+  ].join("\n");
+}
 
-    let data: any;
-    try { data = JSON.parse(resp.choices[0].message.content || "{}"); } catch { data = { signs: [] }; }
+function cleanGloss(raw: string, maxWords: number): string {
+  return (raw || "")
+    .replace(/[^A-Za-z0-9+=×÷%\-\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, maxWords)
+    .join(" ")
+    .toUpperCase();
+}
 
-    res.json(data);
+type GlossSource = "cache" | "llm" | "fallback";
+
+async function textToGloss(text: string, maxWords: number): Promise<{ gloss: string; source: GlossSource }> {
+  const key = `${maxWords}|${text}`;
+  const hit = glossCache.get(key);
+  if (hit) return { gloss: hit, source: "cache" };
+
+  try {
+    const resp = await Promise.race([
+      openai.chat.completions.create({
+        model: config.azure.deployment,
+        messages: [
+          { role: "system", content: glossPrompt(maxWords) },
+          { role: "user", content: text },
+        ],
+        temperature: 0.2,
+        max_completion_tokens: 80,
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("gloss timeout")), 20000)),
+    ]);
+    const gloss = cleanGloss(resp.choices?.[0]?.message?.content || "", maxWords);
+    if (gloss) {
+      remember(key, gloss);
+      return { gloss, source: "llm" };
+    }
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.warn("[sign] gloss LLM failed, using keyword fallback:", err?.message || err);
   }
-});
+  // Fallback results are deliberately NOT cached so a transient LLM failure doesn't stick.
+  const gloss = fallbackGloss(text, maxWords) || cleanGloss(text, maxWords);
+  return { gloss, source: "fallback" };
+}
+
+function signPayload(text: string, gloss: string) {
+  const sigml = glossToSiGML(gloss);
+  const signCount = countSigns(sigml);
+  const { known, spelled } = analyseGloss(gloss);
+  return { text, gloss, sigml, signCount, estimatedMs: estimateSignMs(signCount), known, spelled };
+}
+
+function clampWords(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.max(2, Math.min(14, Math.round(n))) : 8;
+}
 
 /**
- * Generate sign language animation HTML (full visual).
+ * POST /api/sign-language/sigml   { text, maxWords?, raw? }
+ * One sentence → { gloss, sigml, signCount, estimatedMs, known, spelled, source }.
+ * raw=true skips the LLM and signs the given words literally (useful for testing signs).
  */
-router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post("/sigml", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { text, topic, language = "ISL" } = req.body;
-    const content = text || topic;
+    const { text, topic, maxWords, raw } = req.body || {};
+    const content = String(text || topic || "").trim();
     if (!content) return res.status(400).json({ error: "text or topic required" });
 
-    const resp = await openai.chat.completions.create({
-      model: config.azure.deployment,
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert in Indian Sign Language (ISL) and CSS/JS animation. Generate a COMPLETE self-contained HTML page showing a realistic animated human avatar performing the ISL sign.
+    const { gloss, source } = raw
+      ? { gloss: cleanGloss(content, 60), source: "fallback" as GlossSource }
+      : await textToGloss(content, clampWords(maxWords));
 
-REQUIREMENTS:
-1. Draw a realistic upper-body human using CSS (not SVG) — head, face, neck, shoulders, chest, arms, hands with 5 fingers each
-2. Use skin-colored divs with border-radius for body parts
-3. The avatar must perform the ACTUAL ISL sign for the given word/phrase:
-   - Show the correct hand shape (open palm, fist, point, etc.)
-   - Show the correct arm position and movement
-   - Show the correct hand location relative to the body
-   - Animate through the sign's movement smoothly
-4. Use CSS @keyframes animations with multiple steps for fluid motion
-5. Each finger should be individually visible and positioned correctly
-6. Dark background: #0f1628
-7. Avatar should be centered and large (fill 80% of the viewport)
-8. Show the word being signed at the bottom in a caption
-9. Animation should loop seamlessly
-10. Use transform: rotate() for joint movements, translate() for positioning
-11. The hand/arm movement must look like ACTUAL sign language, not just waving
-12. Add subtle breathing animation to the chest
-13. Eyes should blink occasionally
-14. Head should move naturally with the signing
-
-STYLE: Modern, clean, the avatar should look like a 3D character rendered in CSS (use box-shadow for depth, gradients for volume). Shirt color: #284ce3.
-
-Return ONLY the complete HTML. No markdown. No explanation.`,
-        },
-        { role: "user", content: `Create a realistic ISL sign language animation for the word/phrase: "${content}". The avatar must perform the EXACT Indian Sign Language sign for this word with correct hand shapes, positions, and movements.` },
-      ],
-      temperature: 0.7,
-      max_completion_tokens: 4000,
-    });
-
-    let html = resp.choices[0].message.content || "";
-    const match = html.match(/```(?:html)?\s*([\s\S]*?)```/);
-    if (match) html = match[1];
-
-    res.json({ html, topic: content });
+    res.json({ ...signPayload(content, gloss), source });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
 /**
- * Stream sign breakdown (SSE).
+ * POST /api/sign-language/sigml/batch   { texts: string[], maxWords? }
+ * Up to 20 sentences at once (used to pre-sign a whole answer).
  */
-router.post("/explain-stream", authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { text, topic } = req.body;
-  const content = text || topic;
-  if (!content) return res.status(400).json({ error: "text or topic required" });
-
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  const send = (data: any) => res.write(`data: ${JSON.stringify(data)}\n\n`);
-
+router.post("/sigml/batch", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    send({ phase: "analyzing", message: `Breaking down "${content}" into signs...` });
-
-    const resp = await openai.chat.completions.create({
-      model: config.azure.deployment,
-      messages: [
-        { role: "system", content: `Break down text into ISL signs. Return JSON: { "signs": [{ "word": "", "gesture": "", "handShape": "", "movement": "", "position": "", "emoji": "" }], "fullSentence": "" }` },
-        { role: "user", content: `ISL signs for: "${content}"` },
-      ],
-      temperature: 0.7, max_completion_tokens: 1500, response_format: { type: "json_object" },
-    });
-
-    let parsed: any;
-    try { parsed = JSON.parse(resp.choices[0].message.content || "{}"); } catch { parsed = { signs: [] }; }
-
-    send({ phase: "ready", totalSigns: parsed.signs?.length || 0, fullSentence: parsed.fullSentence });
-    for (const [i, sign] of (parsed.signs || []).entries()) {
-      send({ phase: "sign", index: i, total: parsed.signs.length, ...sign });
-    }
-    send({ phase: "complete" });
+    const texts: string[] = Array.isArray(req.body?.texts)
+      ? req.body.texts.map((t: unknown) => String(t ?? "").trim()).filter(Boolean).slice(0, 20)
+      : [];
+    if (!texts.length) return res.status(400).json({ error: "texts[] required" });
+    const max = clampWords(req.body?.maxWords);
+    const items = await Promise.all(
+      texts.map(async (t) => {
+        const { gloss, source } = await textToGloss(t, max);
+        return { ...signPayload(t, gloss), source };
+      }),
+    );
+    res.json({ items });
   } catch (err: any) {
-    send({ phase: "error", message: err.message });
+    res.status(500).json({ error: err.message });
   }
-  res.end();
+});
+
+/** GET /api/sign-language/dictionary — words the avatar signs from the dictionary (rest are fingerspelled). */
+router.get("/dictionary", authMiddleware, (_req: AuthRequest, res: Response) => {
+  res.json({ words: KNOWN_WORDS, count: KNOWN_WORDS.length });
 });
 
 export default router;

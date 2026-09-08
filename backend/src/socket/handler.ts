@@ -15,8 +15,22 @@ interface StudyRoom {
   isPlaying: boolean;
   notes: string;
   chatHistory: { userName: string; message: string; timestamp: number; isAI?: boolean }[];
-  whiteboardHistory: any[];
+  whiteboardHistory: any[];       // legacy: raw line segments (kept for older clients)
+  whiteboardOps: WhiteboardOp[];  // committed whiteboard operations, replayed for late joiners
+  whiteboardTitle: string;
 }
+
+/* One committed whiteboard action: stroke, shape, text, sticker, image or fill.
+   Stored so a partner joining later can replay the board exactly. */
+interface WhiteboardOp {
+  id: string;
+  by: string;
+  kind: string;
+  [key: string]: any;
+}
+
+// Images are inlined as data URLs, so cap what a single room can hold in memory
+const MAX_WB_OPS = 800;
 
 /* ── In-memory room store ──────────────────────────────── */
 const rooms = new Map<string, StudyRoom>();
@@ -61,6 +75,8 @@ export function setupSocket(io: Server) {
         notes: "",
         chatHistory: [],
         whiteboardHistory: [],
+        whiteboardOps: [],
+        whiteboardTitle: "",
       };
       rooms.set(code, room);
       socket.join(code);
@@ -97,6 +113,8 @@ export function setupSocket(io: Server) {
         notes: room.notes,
         chatHistory: room.chatHistory,
         whiteboardHistory: room.whiteboardHistory,
+        whiteboardOps: room.whiteboardOps,
+        whiteboardTitle: room.whiteboardTitle,
       });
 
       // Broadcast updated members to everyone
@@ -150,14 +168,47 @@ export function setupSocket(io: Server) {
     });
 
     /* ── Whiteboard Sync ─────────────────────────────────── */
+
+    // In-progress stroke points — relayed live, never stored (the finished
+    // stroke arrives as a committed op on pointer-up).
     socket.on("wb:draw", ({ code, data }) => {
-      const room = rooms.get(code);
-      if (room) room.whiteboardHistory.push(data);
       socket.to(code).emit("wb:draw", { data });
     });
+
+    // A committed action: stroke, shape, text, sticker, image or fill.
+    socket.on("wb:op", ({ code, op }) => {
+      if (!op || typeof op.id !== "string") return;
+      const room = rooms.get(code);
+      if (room) {
+        if (room.whiteboardOps.some(o => o.id === op.id)) return; // redo of an op already present
+        room.whiteboardOps.push(op);
+        if (room.whiteboardOps.length > MAX_WB_OPS) room.whiteboardOps.splice(0, room.whiteboardOps.length - MAX_WB_OPS);
+      }
+      socket.to(code).emit("wb:op", { op });
+    });
+
+    // Undo removes exactly one op by id.
+    socket.on("wb:undo", ({ code, id }) => {
+      const room = rooms.get(code);
+      if (room) room.whiteboardOps = room.whiteboardOps.filter(o => o.id !== id);
+      socket.to(code).emit("wb:undo", { id });
+    });
+
+    socket.on("wb:title", ({ code, title }) => {
+      const room = rooms.get(code);
+      if (room) room.whiteboardTitle = typeof title === "string" ? title.slice(0, 120) : "";
+      socket.to(code).emit("wb:title", { title: room ? room.whiteboardTitle : "" });
+    });
+
+    // Full board state for a client that just opened the whiteboard.
+    socket.on("wb:sync", ({ code }, cb) => {
+      const room = rooms.get(code);
+      cb?.({ ops: room ? room.whiteboardOps : [], title: room ? room.whiteboardTitle : "" });
+    });
+
     socket.on("wb:clear", ({ code }) => {
       const room = rooms.get(code);
-      if (room) room.whiteboardHistory = [];
+      if (room) { room.whiteboardHistory = []; room.whiteboardOps = []; }
       socket.to(code).emit("wb:clear", {});
     });
 

@@ -16,9 +16,9 @@ const API = typeof window !== 'undefined' && window.location.hostname !== 'local
   : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api');
 
 const COLORS = [
-  'from-indigo-600 to-purple-700', 'from-blue-600 to-cyan-600',
-  'from-purple-600 to-pink-600', 'from-teal-600 to-emerald-600',
-  'from-orange-500 to-red-500', 'from-violet-600 to-indigo-600',
+  'from-primary-600 to-primary-700', 'from-primary-600 to-cyan-600',
+  'from-primary-600 to-pink-600', 'from-teal-600 to-emerald-600',
+  'from-orange-500 to-red-500', 'from-primary-600 to-primary-600',
 ];
 
 function splitIntoSlides(text: string) {
@@ -502,14 +502,14 @@ export default function AdaptiveLesson({ topic, language = 'en', onNext, onPrev,
           <div className="flex items-center gap-1">
             <button
               onClick={() => setLiked(!liked)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${liked ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${liked ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
             >
               <ThumbsUp className={`w-4 h-4 ${liked ? 'fill-blue-700' : ''}`} />
               Like
             </button>
             <button
               onClick={() => setSaved(!saved)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${saved ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${saved ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
             >
               <Bookmark className={`w-4 h-4 ${saved ? 'fill-blue-700' : ''}`} />
               Save

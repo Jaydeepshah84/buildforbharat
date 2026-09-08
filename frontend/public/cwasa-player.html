@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signing Avatar</title>
+  <!--
+    CWASA 3D signing avatar (University of East Anglia Virtual Humans / JASigning).
+    This page runs inside an iframe (components/CWASAAvatar.tsx) so CWASA's globals never collide
+    with Next.js. The parent posts  { type:"play", id, sigml }  and  { type:"stop" }  and receives
+    { source:"cwasa", type: "ready" | "playstart" | "playing" | "done" | "error" }.
+
+    Query params:  ?speed=2  (CWASA log-steps; 5 steps = 2x)     ?avatar=anna|marc|francoise|luna
+    Manual test:   /cwasa-player.html#play=<urlencoded SiGML>   plays once the avatar is ready;
+                   the hidden <pre id="log"> records every hook event.
+    The UEA assets are served over https so the page also works when the app is on https.
+  -->
+  <link rel="stylesheet" href="https://vhg.cmp.uea.ac.uk/tech/jas/vhg2021/cwa/cwasa.css" />
+  <script type="text/javascript" src="https://vhg.cmp.uea.ac.uk/tech/jas/vhg2021/cwa/allcsa.js" onerror="window.__cwasaScriptError = true"></script>
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b1024; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+    #stage { position: absolute; inset: 0; }
+    /* Only the avatar is shown: CWASA's built-in control panel and table layout are hidden. */
+    .CWASAPanel .divCtrlPanel { display: none !important; }
+    .CWASAPanel table.avTable td:not(:last-child) { display: none !important; }
+    .CWASAPanel, .CWASAPanel table.avTable { width: 100% !important; height: 100% !important; border-collapse: collapse; }
+    .CWASAPanel table.avTable td { padding: 0 !important; border: 0 !important; }
+    .divAv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .canvasAv { display: block; width: 100% !important; height: 100% !important; object-fit: contain; }
+    #status { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: #8a93a6; pointer-events: none; }
+    #status.err { color: #ff8a8a; }
+    #log { display: none; }
+  </style>
+</head>
+<body>
+  <div id="stage"><div class="CWASAPanel av0"></div></div>
+  <div id="status">Loading avatar…</div>
+  <pre id="log"></pre>
+
+  <script type="text/javascript">
+  (function () {
+    var statusEl = document.getElementById("status");
+    var logEl = document.getElementById("log");
+    var ready = false;
+    var currentId = null;       // id of the play request in progress
+    var awaitingActive = false; // true between playSiGMLText() and its first "animactive"
+    var stopping = false;       // the parent asked us to stop the current play
+    var pending = null;         // play request received before the avatar was ready
+    var log = [];
+    window.__cwasaLog = log;
+
+    function trace(s) { log.push(s); if (log.length > 300) log.shift(); logEl.textContent = log.join("\n"); }
+    function setStatus(msg, isErr) { statusEl.textContent = msg; statusEl.className = isErr ? "err" : ""; trace((isErr ? "ERR " : "") + msg); }
+    function post(type, extra) {
+      var m = { source: "cwasa", type: type };
+      if (extra) for (var k in extra) m[k] = extra[k];
+      try { parent.postMessage(m, "*"); } catch (e) {}
+      trace("-> " + type + (extra && extra.id != null ? " #" + extra.id : "") + (extra && extra.message ? ": " + extra.message : ""));
+    }
+    function hookMsg(evt) { return evt && typeof evt === "object" && "msg" in evt ? evt.msg : evt; }
+
+    function finish(completed) {
+      if (currentId == null) return;
+      var id = currentId, wasStopping = stopping;
+      currentId = null; awaitingActive = false; stopping = false;
+      setStatus("Ready");
+      post("done", { id: id, completed: !!completed && !wasStopping });
+    }
+
+    function stop() {
+      if (currentId == null) return;
+      stopping = true;
+      try { CWASA.stopSiGML(0); } catch (e) {}
+      finish(false); // report at once; the avatar's own late "animidle" is ignored (currentId is null)
+    }
+
+    function play(id, sigml) {
+      if (!sigml) return;
+      if (currentId != null) stop();
+      currentId = id; awaitingActive = true; stopping = false;
+      try {
+        CWASA.playSiGMLText(sigml, 0);
+        setStatus("Signing…");
+        post("playstart", { id: id });
+      } catch (e) {
+        setStatus("Play error: " + e, true);
+        post("error", { id: id, message: String(e) });
+        finish(false);
+      }
+    }
+
+    function registerHooks() {
+      // avatarloaded: msg is the avatar name on success and null when the character failed to load.
+      CWASA.addHook("avatarloaded", function (evt) {
+        var msg = hookMsg(evt);
+        if (msg == null) { setStatus("Avatar failed to load", true); post("error", { message: "avatar failed to load" }); return; }
+        ready = true;
+        setStatus("Ready");
+        post("ready", { avatar: String(msg) });
+        if (pending) { var p = pending; pending = null; play(p.id, p.sigml); }
+      }, 0);
+      CWASA.addHook("animactive", function () {
+        if (currentId == null) return;
+        awaitingActive = false;
+        setStatus("Signing…");
+        post("playing", { id: currentId });
+      }, 0);
+      CWASA.addHook("animidle", function () {
+        // Ignore idle events from a previous (stopped) play that arrive before the new one starts.
+        if (currentId == null || awaitingActive) return;
+        finish(true);
+      }, 0);
+      CWASA.addHook("avatarsign", function (evt) {
+        var msg = hookMsg(evt);
+        try { trace("sign: " + (msg == null ? "null" : JSON.stringify(msg))); } catch (e) { trace("sign: " + msg); }
+      }, 0);
+      CWASA.addHook("sigmlloaded", function (evt) {
+        var msg = hookMsg(evt);
+        try { trace("sigmlloaded: " + (msg == null ? "null" : JSON.stringify(msg))); } catch (e) { trace("sigmlloaded: " + msg); }
+      }, 0);
+      CWASA.addHook("status", function (evt) {
+        var raw = hookMsg(evt);
+        var m = raw == null ? "" : String(raw);
+        trace("status: " + m);
+        if (currentId == null) return;
+        // Nothing playable came back (bad SiGML, Animgen failure): no "animidle" will follow.
+        if (/no signs|abandon/i.test(m)) {
+          post("error", { id: currentId, message: m });
+          finish(false);
+        } else if (/error|fail|invalid|reject/i.test(m)) {
+          // Some signs were dropped but the rest play; "animidle" still fires at the end.
+          post("warning", { id: currentId, message: m });
+        }
+      }, 0);
+    }
+
+    function boot() {
+      if (window.__cwasaScriptError || typeof CWASA === "undefined" || !CWASA.init) {
+        setStatus("Avatar script failed to load (network or mixed-content)", true);
+        post("error", { message: "CWASA not loaded" });
+        return;
+      }
+      var params = new URLSearchParams(location.search);
+      var speed = Number(params.get("speed")); if (!isFinite(speed)) speed = 2;
+      var avatar = params.get("avatar") || "anna";
+      var W = Math.max(160, Math.round(window.innerWidth || 384));
+      var H = Math.max(160, Math.round(window.innerHeight || 320));
+      try {
+        registerHooks();
+        CWASA.init({ avSettings: [{ width: W, height: H, initAv: avatar, initSpeed: speed, ambIdle: true, allowFrameSteps: false }] });
+        setStatus("Loading avatar…");
+      } catch (e) {
+        setStatus("Init error: " + e, true);
+        post("error", { message: String(e) });
+      }
+    }
+
+    window.addEventListener("message", function (ev) {
+      var d = ev.data || {};
+      if (d.type === "play") { if (ready) play(d.id, d.sigml); else pending = { id: d.id, sigml: d.sigml }; }
+      else if (d.type === "stop") { pending = null; stop(); }
+    });
+
+    // Manual test hook: /cwasa-player.html#play=<urlencoded SiGML>
+    if ((location.hash || "").indexOf("#play=") === 0) {
+      try { pending = { id: "hash", sigml: decodeURIComponent(location.hash.slice(6)) }; } catch (e) {}
+    }
+
+    if (document.readyState === "complete") boot(); else window.addEventListener("load", boot);
+  })();
+  </script>
+</body>
+</html>

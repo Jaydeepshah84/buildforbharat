@@ -132,7 +132,7 @@ export default function TapDetector() {
           transition={{ duration: 0.3 }}
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl bg-gray-900/90 backdrop-blur-xl text-white text-sm font-semibold shadow-2xl flex items-center gap-3"
         >
-          <span className="w-2 h-2 rounded-full bg-[#284ce3] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#1e40af] animate-pulse" />
           {feedback}
         </motion.div>
       )}

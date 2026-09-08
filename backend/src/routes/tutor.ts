@@ -24,7 +24,7 @@ function mapClassLevel(level: string): ClassLevel {
  * Returns SSE stream with phase1 and phase2 events
  */
 router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { question, classLevel = "10", language = "en", style = "detailed" } = req.body;
+  const { question, classLevel = "10", language = "en", style = "detailed", regenerate = false } = req.body;
 
   if (!question) return res.status(400).json({ error: "Question is required" });
 
@@ -41,17 +41,37 @@ router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response)
     style: (style as ExplanationStyle) || "detailed",
   };
 
+  // Emit the title the instant it's parsed (before any steps finish).
+  (request as any)._onTitle = (title: string) => {
+    send("meta", { type: "meta", title });
+  };
+
+  // Emit each step as soon as it's parsed from the Azure stream so the frontend
+  // can start showing/playing step 0 while later steps are still generating.
+  (request as any)._onStep = (stepIndex: number, step: any) => {
+    send("step", { type: "step", stepIndex, step });
+  };
+
   try {
-    // Phase 1: Quick text + loading animation (fast, ~3s)
     send("status", { phase: 1, message: "Generating quick explanation..." });
-    const phase1 = await generatePhase1(request);
-    send("phase1", phase1);
 
-    // Phase 2: Full HTML animation (slower, ~15-30s)
-    send("status", { phase: 2, message: "Creating full animation..." });
-    const phase2 = await runTutorPipeline(request);
-    send("phase2", phase2);
+    // Phase 1 and Phase 2 are independent — kick both off immediately and
+    // emit each as it lands so the user sees Phase 1 within ~3s instead of
+    // waiting for the (much slower) Phase 2 call to start.
+    const phase1Promise = generatePhase1(request)
+      .then((phase1) => {
+        send("phase1", phase1);
+        send("status", { phase: 2, message: "Creating full animation..." });
+        return phase1;
+      });
 
+    const phase2Promise = runTutorPipeline(request, { bypassCache: !!regenerate })
+      .then((phase2) => {
+        send("phase2", phase2);
+        return phase2;
+      });
+
+    const [, phase2] = await Promise.all([phase1Promise, phase2Promise]);
     send("complete", { title: phase2.title });
   } catch (err: any) {
     send("error", { message: err.message });

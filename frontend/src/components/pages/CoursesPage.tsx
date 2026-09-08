@@ -113,9 +113,9 @@ function getCourseImage(title: string, subject?: string): string {
 function CourseCard({ course, onClick, onDelete }) {
   const progress = course.progress ?? 0;
   const gradients = [
-    "from-[#284ce3] to-[#6366f1]",
+    "from-[#1e40af] to-[#1e40af]",
     "from-[#0891b2] to-[#3b82f6]",
-    "from-[#7c3aed] to-[#a78bfa]",
+    "from-[#7c3aed] to-[#1e40af]",
     "from-[#059669] to-[#10b981]",
     "from-[#d97706] to-[#f59e0b]",
     "from-[#e11d48] to-[#f43f5e]",
@@ -135,7 +135,7 @@ function CourseCard({ course, onClick, onDelete }) {
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileHover={{ y: -6, transition: { type: "spring", stiffness: 280, damping: 18 } }}
       onClick={onClick}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden cursor-pointer group hover:shadow-lg transition-all"
     >
@@ -225,7 +225,7 @@ function CourseCard({ course, onClick, onDelete }) {
         </div>
 
         {/* CTA */}
-        <button className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gray-50 text-sm font-medium text-gray-600 group-hover:bg-[#284ce3] group-hover:text-white transition-all">
+        <button className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gray-50 text-sm font-medium text-gray-600 group-hover:bg-[#1e40af] group-hover:text-white transition-all">
           <PlayCircle className="w-3.5 h-3.5" />
           {progress > 0 ? "Continue" : "Start Learning"}
         </button>
@@ -239,13 +239,13 @@ function CoursesGridSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
-          <div className="h-28 bg-gray-100" />
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="h-28 skeleton rounded-none" />
           <div className="p-4 space-y-3">
-            <div className="h-3 bg-gray-100 rounded w-2/3" />
-            <div className="h-2 bg-gray-50 rounded w-1/3" />
-            <div className="h-2 bg-gray-100 rounded-full" />
-            <div className="h-9 bg-gray-50 rounded-xl" />
+            <div className="h-3 skeleton rounded w-2/3" />
+            <div className="h-2 skeleton rounded w-1/3" />
+            <div className="h-2 skeleton rounded-full" />
+            <div className="h-9 skeleton rounded-xl" />
           </div>
         </div>
       ))}
@@ -260,9 +260,9 @@ function GenerationLoader({ status, topicsReady, totalTopics }) {
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm text-center py-16 px-6">
       <div className="relative mx-auto w-20 h-20 mb-6">
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#284ce3] to-[#6366f1] animate-spin opacity-20" />
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#1e40af] to-[#1e40af] animate-spin opacity-20" />
         <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-          <Wand2 className="w-8 h-8 text-[#284ce3] animate-pulse" />
+          <Wand2 className="w-8 h-8 text-[#1e40af] animate-pulse" />
         </div>
       </div>
       <h3 className="text-lg font-bold text-gray-900 mb-2">AI is creating your course...</h3>
@@ -274,7 +274,7 @@ function GenerationLoader({ status, topicsReady, totalTopics }) {
             <span>{topicsReady} / {totalTopics}</span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div className="h-full rounded-full bg-gradient-to-r from-[#284ce3] to-[#6366f1]" animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
+            <motion.div className="h-full rounded-full bg-gradient-to-r from-[#1e40af] to-[#1e40af]" animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
           </div>
         </div>
       )}
@@ -444,7 +444,7 @@ export default function CoursesPage() {
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all ${
               tab === 'generate'
                 ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                : 'bg-[#284ce3] text-white hover:bg-blue-700'
+                : 'bg-[#1e40af] text-white hover:bg-primary-700'
             }`}
           >
             {tab === 'generate' ? (
@@ -464,8 +464,8 @@ export default function CoursesPage() {
               ) : enrollments.length === 0 ? (
                 /* Empty state */
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm text-center py-20 px-6">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-50 flex items-center justify-center">
-                    <Trophy className="w-10 h-10 text-[#284ce3]" />
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary-50 flex items-center justify-center">
+                    <Trophy className="w-10 h-10 text-[#1e40af]" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">No courses yet</h3>
                   <p className="text-sm text-gray-400 mb-8 max-w-md mx-auto">
@@ -473,7 +473,7 @@ export default function CoursesPage() {
                   </p>
                   <button
                     onClick={() => setTab('generate')}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#284ce3] text-white font-semibold hover:bg-blue-700 shadow-md shadow-blue-200/40 hover:shadow-lg transition-all"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1e40af] text-white font-semibold hover:bg-primary-700 shadow-md shadow-primary-200/40 hover:shadow-lg transition-all"
                   >
                     <Wand2 className="w-5 h-5" /> Generate Your First Course
                   </button>
@@ -501,7 +501,7 @@ export default function CoursesPage() {
               ) : (
                 <div className="max-w-3xl mx-auto">
                   {/* Hero header */}
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#284ce3] to-[#5b7cf7] p-8 mb-6">
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e40af] to-[#5b7cf7] p-8 mb-6">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
                     <div className="absolute bottom-0 right-16 w-24 h-24 bg-white/5 rounded-full translate-y-1/2" />
                     <div className="relative z-10">
@@ -519,7 +519,7 @@ export default function CoursesPage() {
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">What do you want to learn?</label>
                         <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)}
                           placeholder="e.g., Photosynthesis, Machine Learning, Indian History..."
-                          className="w-full px-0 py-2 text-xl font-semibold text-gray-900 placeholder:text-gray-300 border-0 border-b-2 border-gray-100 focus:border-[#284ce3] focus:outline-none transition bg-transparent" />
+                          className="w-full px-0 py-2 text-xl font-semibold text-gray-900 placeholder:text-gray-300 border-0 border-b-2 border-gray-100 focus:border-[#1e40af] focus:outline-none transition bg-transparent" />
                       </div>
 
                       {/* Options row */}
@@ -540,10 +540,10 @@ export default function CoursesPage() {
                         </div>
                         <div className="p-5">
                           <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Duration — <span className="text-[#284ce3]">{duration}d</span>
+                            Duration — <span className="text-[#1e40af]">{duration}d</span>
                           </label>
                           <input type="range" min={3} max={90} step={1} value={duration} onChange={(e) => setDuration(Number(e.target.value))}
-                            className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#284ce3] mt-2" />
+                            className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#1e40af] mt-2" />
                           <div className="flex justify-between text-[10px] text-gray-300 mt-1">
                             <span>3d</span><span>90d</span>
                           </div>
@@ -553,18 +553,18 @@ export default function CoursesPage() {
                       {/* Accessibility: Sign Language */}
                       <div className="px-6 py-4 border-t border-gray-50">
                         <label className="flex items-center gap-3 cursor-pointer group">
-                          <div className={`relative w-11 h-6 rounded-full transition-colors ${signLanguage ? 'bg-purple-600' : 'bg-gray-200'}`}
+                          <div className={`relative w-11 h-6 rounded-full transition-colors ${signLanguage ? 'bg-primary-600' : 'bg-gray-200'}`}
                             onClick={() => setSignLanguage(!signLanguage)}>
                             <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${signLanguage ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <Hand className="w-4 h-4 text-purple-600" />
+                              <Hand className="w-4 h-4 text-primary-600" />
                               <span className="text-sm font-semibold text-gray-800">Sign Language Mode</span>
-                              <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Accessible</span>
+                              <span className="text-[10px] bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Accessible</span>
                             </div>
                             <p className="text-xs text-gray-400 mt-0.5">
-                              AI avatar will explain topics using sign language gestures with large text captions. No audio required.
+                              A 3D signing avatar narrates every visual lesson in Indian Sign Language, beside the diagrams, with large captions. No audio required.
                             </p>
                           </div>
                         </label>
@@ -573,7 +573,7 @@ export default function CoursesPage() {
                       {/* Submit */}
                       <div className="p-6 pt-4">
                         <button type="submit" disabled={generating}
-                          className="w-full py-4 rounded-xl bg-[#284ce3] text-white font-bold text-base hover:bg-blue-700 shadow-lg shadow-blue-200/30 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                          className="w-full py-4 rounded-xl bg-[#1e40af] text-white font-bold text-base hover:bg-primary-700 shadow-lg shadow-primary-200/30 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                           {generating ? (
                             <span className="flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Generating...</span>
                           ) : (

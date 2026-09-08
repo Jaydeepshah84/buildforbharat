@@ -144,7 +144,7 @@ export default function ShareCourseModal({ isOpen, onClose, courseId, courseTitl
   };
 
   const handleShareTwitter = () => {
-    const text = encodeURIComponent(`I'm learning "${courseTitle}" on Learnify! Check it out:`);
+    const text = encodeURIComponent(`I'm learning "${courseTitle}" on LearnerAI! Check it out:`);
     const url = encodeURIComponent(shareUrl);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
   };
@@ -208,7 +208,7 @@ export default function ShareCourseModal({ isOpen, onClose, courseId, courseTitl
                       className={`flex-shrink-0 p-2.5 rounded-lg transition-colors ${
                         copied
                           ? 'bg-green-100 text-green-600'
-                          : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                          : 'bg-primary-50 text-primary-600 hover:bg-primary-100'
                       }`}
                     >
                       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}

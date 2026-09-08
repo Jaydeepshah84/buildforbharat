@@ -24,8 +24,8 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 
 ```
                                    ┌──────────────────────────┐
-                                   │       Azure OpenAI       │
-                                   │   GPT-5.4  (LangChain)   │
+                                   │   Z.ai  (OpenAI-compat)  │
+                                   │     GLM-5  (LangChain)   │
                                    └────────────┬─────────────┘
                                                 │
                                      9 Agent Pipelines
@@ -33,7 +33,7 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 ┌──────────────────┐  HTTP/SSE   ┌──────────────▼────────────┐  SQL   ┌──────────────┐
 │   Web Frontend   │◄───────────►│        Backend API         │◄──────►│   Supabase   │
 │   Next.js 15     │             │    Express + Socket.io     │        │  PostgreSQL  │
-│   (port 3000)    │             │       (port 5000)          │        │   18 tables  │
+│   (port 3000)    │             │       (port 5050)          │        │   18 tables  │
 └────────┬─────────┘             └───┬────────────────┬───────┘        └──────────────┘
          │                           │                │
          │   Socket.io (real-time)   │                │  HTTP
@@ -57,7 +57,7 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 | Service | Runtime | Port | Purpose |
 |---|---|---|---|
 | `frontend/` | Next.js 15 (Node) | 3000 | Web SPA — learner + teacher surfaces |
-| `backend/` | Express + Socket.io (Node) | 5000 | REST API, SSE streams, real-time sockets, AI orchestration |
+| `backend/` | Express + Socket.io (Node) | 5050 | REST API, SSE streams, real-time sockets, AI orchestration |
 | `tts-service/` | Flask (Python) | 5001 | Edge Neural TTS, Faster-Whisper STT |
 | `LearnifyApp/` | Expo / React Native | — | Mobile app with offline SQLite cache |
 | `tap-launcher/` | Python CLI | — | Ambient desk-tap + voice launcher for the web app |
@@ -72,10 +72,11 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 | Mobile | Expo 54, React Native 0.81, Expo Router, expo-sqlite, expo-av/expo-video |
 | Backend | Node.js, Express, TypeScript, Socket.io, LangChain, Zod |
 | Database | Supabase (PostgreSQL) — 18 tables |
-| AI Engine | Azure OpenAI GPT-5.4 via 9 LangChain agents |
-| TTS | Edge Neural TTS (10 languages, SSML prosody) |
+| AI Engine | GLM-5 via Z.ai (any OpenAI-compatible provider) — 9 LangChain agents |
+| TTS | Edge Neural TTS (10 languages, per-language rate/pitch tuning) |
 | STT | Faster-Whisper (local, CPU/GPU) |
 | Real-time | Socket.io (state sync), WebRTC (video/voice, STUN+TURN) |
+| Sign Language | CWASA / JASigning 3D avatar (UEA) driven by SiGML + HamNoSys |
 | Emotion AI | face-api.js (TinyFaceDetector + FaceExpressions) |
 | Charts | Chart.js + react-chartjs-2 |
 | OCR | Tesseract.js (client-side image-to-text) |
@@ -89,7 +90,7 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 ```
 buildforbharat/
 ├── frontend/              → Next.js 15 web app            (port 3000)
-├── backend/               → Express + Socket.io API       (port 5000)
+├── backend/               → Express + Socket.io API       (port 5050)
 ├── tts-service/           → Python Flask TTS/STT          (port 5001)
 ├── LearnifyApp/           → Expo React Native mobile app
 ├── tap-launcher/          → Desk-tap + voice launcher (Python)
@@ -131,8 +132,8 @@ Every AI capability is encapsulated in a specialized agent inheriting from `Base
 | `progressAgent` | Multi-dimensional performance analysis |
 
 **Design decisions:**
-- Agents use `HumanMessage` / `SystemMessage` directly (**not** prompt templates) — avoids brittle curly-brace escaping that GPT-5.4 trips on when generating JSON/JSX.
-- Uses `max_completion_tokens` (GPT-5.4 name) instead of `max_tokens`.
+- Agents use `HumanMessage` / `SystemMessage` directly (**not** prompt templates) — avoids brittle curly-brace escaping that models trip on when generating JSON/JSX.
+- **Provider-agnostic**: [backend/src/config/llm.ts](backend/src/config/llm.ts) targets any OpenAI-compatible endpoint (Z.ai, Groq, OpenAI, Bedrock) via the `LLM_*` env vars. It normalizes the differences: GLM's `thinking` mode is disabled by default (it added ~5 min per lesson), and `max_completion_tokens` is mirrored into `max_tokens` for providers that only honour the older name.
 - Every agent returns **validated JSON** via Zod schemas before hitting the DB.
 - Long generations (full courses) are **streamed** over SSE so the UI paints Lesson 1 while Lessons 2–N are still being produced.
 
@@ -141,15 +142,23 @@ Every AI capability is encapsulated in a specialized agent inheriting from `Base
 The standout teaching experience is the AI-generated visual animation. Naively asking GPT to "return an animation" is slow (15–30s) and blocks the learner. We use a **two-phase SSE pipeline** ([backend/src/pipelines/aiGenerator.ts](backend/src/pipelines/aiGenerator.ts)):
 
 1. **Phase 1 — Fast text explanation (~3s)**: `doubtAgent` emits a short plain-text explanation. The UI renders this immediately.
-2. **Phase 2 — Full animation (~15–30s)**: `visualAgent` streams a complete self-contained HTML/CSS/JS file with step-by-step JS animation and a per-sentence narration script.
+2. **Phase 2 — Structured animation spec (~20–40s)**: the model streams an `AnimationSpec` — JSON describing 4–5 steps, each with one narration sentence and a `scene` array of positioned objects (`text`, `emoji`, `shape`, `arrow`) in normalized 0..1 coordinates.
 
-**Rendering pipeline (frontend):**
-- HTML injected into a **sandboxed iframe** (no access to parent window, cookies, or localStorage).
-- Parent ↔ iframe communication via `window.postMessage`.
-- Every generated animation has `pauseAnimation()` / `resumeAnimation()` functions injected so the parent can freeze the scene while audio pre-loads.
-- Voice script is split sentence-by-sentence. All TTS audio is **pre-fetched in parallel** from the TTS service **before** playback; only then does both animation and audio start, guaranteeing sync.
-- Subtitles overlay (Netflix-style captions) are driven by the same sentence timeline.
-- Play/Pause pauses **both** animation and narration via postMessage.
+**Why a spec instead of generated HTML.** Letting the model write raw HTML/JS produced unpredictable layout and unsandboxable code. A declarative spec is validated, repairable, and rendered deterministically by [AnimationCanvas.tsx](frontend/src/components/animation/AnimationCanvas.tsx). The legacy HTML-in-an-iframe path is still supported as a fallback when no valid spec is produced.
+
+**Robustness — the spec is parsed from a partial stream:**
+- Steps are extracted with **brace-balanced, string-aware scanning** as soon as each `{...}` closes, so step 0 renders while later steps are still generating.
+- `repairJson()` tolerates the mistakes models actually make: unescaped quotes inside narration, raw newlines in strings, comments copied from the prompt template, trailing commas. Without it, one bad quote silently truncated the lesson halfway.
+- Streamed step indices are kept **contiguous** — a gap would stall the player's narration loop.
+- `normalizeScene()` keeps diagrams readable: it snaps node values into their boxes, widens a box whose keys were placed beside it, adds a missing box behind a dark unboxed value, and fixes label contrast.
+- The stream is **aborted once the closing tag arrives** (or at 60 KB / 180 s), so a looping model cannot hold a lesson open.
+- Any response that still fails to parse is written to `$TMPDIR/learnify-failed-specs/` for diagnosis.
+
+**Rendering & narration sync (frontend):**
+- Each step's scene is a **complete visible state**; objects sharing an `id` across steps tween smoothly between positions.
+- Narration is per-step and 1:1 with scenes. TTS audio is pre-fetched per step; playback starts on the user's first Play click (browsers block autoplay).
+- If a TTS request fails, the slot is marked failed so the player falls back to browser `SpeechSynthesis` **immediately** instead of waiting out its grace period.
+- Play/Pause controls animation and narration together.
 
 ### 5.3 Deterministic vs. Generative Scoring
 
@@ -206,7 +215,7 @@ All vectors persist to `emotion_logs` so analytics can visualize emotional patte
 The Python TTS service ([tts-service/server.py](tts-service/server.py)) runs independently so it can be GPU-pinned or scaled separately.
 
 - **TTS**: `edge-tts` (Microsoft Edge Neural voices) over a dedicated asyncio event loop. Defaults: `hi-IN-SwaraNeural`, `en-US-AriaNeural`, `gu-IN-DhwaniNeural`, `es-ES-ElviraNeural`, plus Tamil/Telugu/Bengali/Marathi/French/German.
-- **SSML prosody tuning** for natural pacing in Indic languages.
+- **Per-language rate/pitch tuning** for natural pacing in Indic languages. Note: the `edge-tts` CLI reads its `-f` input as plain text, so SSML markup is spoken aloud as tags — prosody is applied with `--rate=`/`--pitch=` flags on plain text instead (pitch in Hz, and the `--opt=value` form, since argparse rejects a bare negative value).
 - **STT**: Faster-Whisper (local). Permission check before mic access with user-facing error messages (not silent failure).
 - Frontend uses **dynamic TTS URL** via `window.location.hostname` so the same build works on `localhost`, LAN IPs, and tunnels.
 - Browser `SpeechSynthesis` is a **graceful fallback** when the TTS service is unavailable.
@@ -266,6 +275,27 @@ Design notes:
 - `courses → modules → lessons → topics` is a strict 4-level hierarchy; all reads go through `/api/courses/:id` which returns the sorted tree in a single query.
 - `enrollments.progress` is denormalized (percentage) for dashboard performance — recomputed on each topic-complete write.
 - `student_performance.subject` stores CSV of completed topic IDs (chosen over a junction table for read simplicity; works fine at current scale).
+
+---
+
+### 5.13 Sign Language (ISL)
+
+Sign-language mode is offered per topic, and whole courses can be generated in it. Four
+paths back it, only one of which is a real signing engine:
+
+| Path | Driven by | What renders |
+|---|---|---|
+| **3D avatar** | Backend gloss → SiGML → CWASA | [CWASA / JASigning](https://vhg.cmp.uea.ac.uk) 3D avatar (University of East Anglia), loaded in an isolated iframe ([cwasa-player.html](frontend/public/cwasa-player.html)) and driven via `postMessage` |
+| Step breakdown | LLM per-word gesture description | 2D SVG avatar that moves between fixed signing zones |
+| Generated animation | LLM-authored CSS/HTML | A standalone signing page in an iframe |
+| Course captions | Lesson text split into phrases | Large adjustable captions + fingerspelling hand shapes |
+
+**Honest scope.** Translating arbitrary English into linguistically correct ISL is an unsolved
+research problem; no library does it reliably. [backend/src/services/sigml.ts](backend/src/services/sigml.ts)
+therefore produces *structurally valid* SiGML two ways: a small hand-authored dictionary of
+whole-word signs, and **fingerspelling** (one HamNoSys handshape per letter) for everything
+else, which gives universal coverage. The pipeline is the deliverable — sign accuracy grows by
+extending the dictionary. The avatar itself is WebGL and must be viewed in a real browser.
 
 ---
 
@@ -352,7 +382,9 @@ Organized by learner surface. Every feature below is implemented and reachable f
 | POST | `/api/tts` | Text → audio |
 | POST | `/api/tts/stt` | Audio → text |
 | GET | `/api/tts/voices` | Available voices |
-| POST | `/api/sign-language/*` | Sign-language video routes |
+| POST | `/api/sign-language/sigml` | Text → ISL gloss → SiGML for the CWASA 3D avatar |
+| POST | `/api/sign-language/explain-stream` | SSE per-word sign breakdown |
+| POST | `/api/sign-language/generate` | Standalone CSS/HTML signing animation |
 
 ### Student
 | Method | Route | Purpose |
@@ -369,7 +401,7 @@ Organized by learner surface. Every feature below is implemented and reachable f
 - Node.js 18+
 - Python 3.10+
 - Supabase account (free tier)
-- Azure OpenAI key (GPT-5.4 deployment)
+- An API key for any **OpenAI-compatible** LLM endpoint (the project is configured for [Z.ai](https://z.ai) GLM-5; Groq, OpenAI and Bedrock also work by changing `LLM_*` only)
 
 ### 8.1 Database
 Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
@@ -380,7 +412,7 @@ cd backend
 npm install
 cp .env.example .env    # fill keys below
 npx tsx src/server.ts   # or: npm run dev
-# → http://localhost:5000
+# → http://localhost:5050
 ```
 
 ### 8.3 Web Frontend
@@ -417,27 +449,52 @@ python tap_launcher.py
 # or say: "open courses" / "open quiz"
 ```
 
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Backend won't bind port 5000 | macOS AirPlay Receiver owns it | Use `PORT=5050` (the default here), or disable AirPlay Receiver |
+| Every AI call returns `401 invalid_api_key` | `LLM_API_KEY` expired or revoked | Issue a new key; verify with a direct `POST $LLM_BASE_URL/chat/completions` |
+| Lesson generation takes ~5 minutes | GLM "thinking" mode is on | Handled automatically in [llm.ts](backend/src/config/llm.ts); a call can opt back in with `thinking` |
+| Lesson stops halfway through | Model emitted unparseable JSON | Handled by `repairJson()`; check the backend log for `Salvaged N steps` and the dump in `$TMPDIR/learnify-failed-specs/` |
+| Narration silent, `/tts` returns 500 instantly | TTS server started before the project folder was renamed, so its recorded interpreter path is stale | Restart it: `cd tts-service && ./venv/bin/python server.py` |
+| Node values sit *beside* their boxes | Model placed labels outside the shape | Handled by `normalizeScene()` in [aiGenerator.ts](backend/src/pipelines/aiGenerator.ts) |
+
 ### Environment Variables
 
 **backend/.env**
 ```env
-PORT=5000
+PORT=5050
+
+# AI provider — any OpenAI-compatible endpoint.
+# Do NOT use AZURE_OPENAI_* names: LangChain forces Azure mode on those.
+LLM_API_KEY=
+LLM_BASE_URL=https://api.z.ai/api/paas/v4
+LLM_MODEL=glm-5
+LLM_PROJECT=                 # only Bedrock needs this (sent as the OpenAI-Project header)
+
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-AZURE_OPENAI_API_KEY=
-AZURE_OPENAI_ENDPOINT=
-AZURE_OPENAI_DEPLOYMENT=gpt-5.4
-AZURE_OPENAI_API_VERSION=2024-08-01-preview
 FRONTEND_URL=http://localhost:3000
+
+# Optional — parent progress emails (Gmail App Password, not your login password)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=
+EMAIL_PASS=
+EMAIL_FROM=
 ```
+
+> **Why port 5050?** macOS Monterey and later bind port 5000 to the AirPlay Receiver, so the
+> default silently collides. Disable AirPlay Receiver in System Settings if you prefer 5000.
 
 **frontend/.env.local**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5050/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5050
 NEXT_PUBLIC_TTS_URL=http://localhost:5001
 ```
 

@@ -20,10 +20,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="relative mx-auto w-16 h-16 mb-5">
-            <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#284ce3] animate-spin" />
+            <div className="absolute inset-0 rounded-full border-4 border-primary-100" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#1e40af] animate-spin" />
           </div>
-          <h2 className="text-lg font-bold text-gray-800 mb-1">Learnify</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-1">LearnerAI</h2>
           <p className="text-gray-400 text-sm">Loading...</p>
         </div>
       </div>

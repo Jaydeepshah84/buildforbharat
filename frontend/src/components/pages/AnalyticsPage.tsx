@@ -38,6 +38,7 @@ import {
   Title,
 } from 'chart.js';
 import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
+import LazyRender from '@/components/common/LazyRender';
 import { student, courses } from '@/services/api';
 import { useAuth } from '@/components/AuthProvider';
 import PageHero from "@/components/common/PageHero";
@@ -78,9 +79,9 @@ const COLORS = {
   blue: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgb(59, 130, 246)', solid: '#3B82F6' },
   purple: { bg: 'rgba(139, 92, 246, 0.15)', border: 'rgb(139, 92, 246)', solid: '#8B5CF6' },
   green: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgb(16, 185, 129)', solid: '#10B981' },
-  indigo: { bg: 'rgba(99, 102, 241, 0.15)', border: 'rgb(99, 102, 241)', solid: '#6366F1' },
+  indigo: { bg: 'rgba(99, 102, 241, 0.15)', border: 'rgb(99, 102, 241)', solid: '#1e40af' },
   teal: { bg: 'rgba(20, 184, 166, 0.15)', border: 'rgb(20, 184, 166)', solid: '#14B8A6' },
-  violet: { bg: 'rgba(167, 139, 250, 0.15)', border: 'rgb(167, 139, 250)', solid: '#A78BFA' },
+  violet: { bg: 'rgba(167, 139, 250, 0.15)', border: 'rgb(167, 139, 250)', solid: '#1e40af' },
 };
 
 const EMOTION_COLORS: Record<string, { bg: string; border: string }> = {
@@ -90,7 +91,7 @@ const EMOTION_COLORS: Record<string, { bg: string; border: string }> = {
   confused:   { bg: 'rgba(245, 158, 11, 0.7)',   border: '#F59E0B' },
   sad:        { bg: 'rgba(245, 158, 11, 0.7)',   border: '#F59E0B' },
   bored:      { bg: 'rgba(139, 92, 246, 0.7)',   border: '#8B5CF6' },
-  disgusted:  { bg: 'rgba(139, 92, 246, 0.5)',   border: '#A78BFA' },
+  disgusted:  { bg: 'rgba(139, 92, 246, 0.5)',   border: '#1e40af' },
   frustrated: { bg: 'rgba(239, 68, 68, 0.7)',    border: '#EF4444' },
   angry:      { bg: 'rgba(239, 68, 68, 0.7)',    border: '#EF4444' },
   surprised:  { bg: 'rgba(168, 85, 247, 0.7)',   border: '#A855F7' },
@@ -199,13 +200,17 @@ function ChartCard({ title, icon: Icon, children, className = '' }) {
     >
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50 bg-gray-50/50">
         {Icon && (
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center">
             <Icon className="w-4 h-4 text-white" />
           </div>
         )}
         <h3 className="text-sm font-bold text-gray-800">{title}</h3>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-5">
+        <LazyRender rootMargin="350px" minHeight={220} placeholder={<div className="skeleton w-full h-[220px] rounded-xl" />}>
+          {children}
+        </LazyRender>
+      </div>
     </motion.div>
   );
 }
@@ -236,10 +241,10 @@ function AnimatedNumber({ value, suffix = '' }: { value: number | string; suffix
 
 function MetricCard({ label, value, sub, icon: Icon, color = 'blue', trend = 0 }) {
   const colorMap = {
-    blue:   { gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-200' },
-    purple: { gradient: 'from-purple-500 to-purple-600', bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-200' },
+    blue:   { gradient: 'from-primary-500 to-primary-600', bg: 'bg-primary-50', text: 'text-primary-600', ring: 'ring-primary-200' },
+    purple: { gradient: 'from-primary-500 to-primary-600', bg: 'bg-primary-50', text: 'text-primary-600', ring: 'ring-primary-200' },
     green:  { gradient: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-200' },
-    indigo: { gradient: 'from-indigo-500 to-indigo-600', bg: 'bg-indigo-50', text: 'text-indigo-600', ring: 'ring-indigo-200' },
+    indigo: { gradient: 'from-primary-500 to-primary-600', bg: 'bg-primary-50', text: 'text-primary-600', ring: 'ring-primary-200' },
   };
   const c = colorMap[color] || colorMap.blue;
 
@@ -278,21 +283,21 @@ function MetricCard({ label, value, sub, icon: Icon, color = 'blue', trend = 0 }
 
 function AnalyticsSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3 mb-2" />
-      <div className="h-4 bg-gray-100 rounded w-1/2 mb-6" />
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div className="h-8 skeleton rounded-lg w-1/3 mb-2" />
+      <div className="h-4 skeleton rounded w-1/2 mb-6" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="w-10 h-10 bg-gray-200 rounded-xl mb-3" />
-            <div className="h-7 bg-gray-200 rounded w-1/2 mb-1" />
-            <div className="h-4 bg-gray-100 rounded w-2/3" />
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="w-10 h-10 skeleton rounded-xl mb-3" />
+            <div className="h-7 skeleton rounded w-1/2 mb-1.5" />
+            <div className="h-4 skeleton rounded w-2/3" />
           </div>
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-200 h-80" />
+          <div key={i} className="h-80 skeleton rounded-2xl" />
         ))}
       </div>
     </div>

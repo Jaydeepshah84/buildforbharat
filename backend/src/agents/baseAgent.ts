@@ -1,6 +1,6 @@
-import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 import { DynamicTool } from "@langchain/core/tools";
-import { createLLM } from "../config/llm";
+import { openai } from "../config/llm";
+import { config } from "../config/env";
 
 // Simple in-memory conversation history per session
 const histories = new Map<string, Array<{ role: string; content: string }>>();
@@ -32,21 +32,26 @@ export abstract class BaseAgent {
 
   async run(input: string, sessionId = "default"): Promise<AgentResult> {
     try {
-      const llm = createLLM(this.temperature);
       const history = getHistory(`${this.name}:${sessionId}`);
 
-      // Build messages
+      // Build messages in OpenAI chat format. We call the raw OpenAI-compatible
+      // client directly (Google Gemini via its OpenAI-compat endpoint) rather than
+      // LangChain's ChatOpenAI, which sends parameters Gemini rejects.
       const messages = [
-        new SystemMessage(this.systemPrompt + "\n\nReturn ONLY valid JSON. No markdown code blocks, no extra text."),
-        ...history.slice(-8).map(h =>
-          h.role === "user" ? new HumanMessage(h.content) : new AIMessage(h.content)
-        ),
-        new HumanMessage(input),
+        { role: "system", content: this.systemPrompt + "\n\nReturn ONLY valid JSON. No markdown code blocks, no extra text." },
+        ...history.slice(-8).map(h => ({ role: h.role === "user" ? "user" : "assistant", content: h.content })),
+        { role: "user", content: input },
       ];
 
-      // Call LLM directly
-      const result = await llm.invoke(messages);
-      const output = result.content as string;
+      const completion = await openai.chat.completions.create({
+        model: config.azure.deployment,
+        messages: messages as any,
+        temperature: this.temperature,
+        // Cap kept under Groq free-tier TPM (8000) once the prompt is added.
+        max_completion_tokens: 6000,
+      });
+
+      const output = completion.choices[0]?.message?.content || "";
 
       // Save to memory
       history.push({ role: "user", content: input });

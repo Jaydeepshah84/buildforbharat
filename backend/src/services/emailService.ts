@@ -27,7 +27,7 @@ function baseTemplate(title: string, body: string, studentName: string): string 
     <!-- Header -->
     <tr>
       <td style="background:linear-gradient(135deg,#284ce3,#5b7cf7);padding:32px 40px;">
-        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;">Learnify</h1>
+        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;">LearnerAI</h1>
         <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px;">Parent Progress Report</p>
       </td>
     </tr>
@@ -48,7 +48,7 @@ function baseTemplate(title: string, body: string, studentName: string): string 
     <!-- Footer -->
     <tr>
       <td style="padding:24px 40px;border-top:1px solid #f0f0f0;">
-        <p style="margin:0;color:#999;font-size:12px;">This email was sent by Learnify — AI-Powered Education Platform.</p>
+        <p style="margin:0;color:#999;font-size:12px;">This email was sent by LearnerAI — AI-Powered Education Platform.</p>
         <p style="margin:4px 0 0;color:#bbb;font-size:11px;">You received this because you're registered as a parent/guardian.</p>
       </td>
     </tr>
@@ -72,7 +72,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   try {
     // Gmail requires From to match the authenticated user or be omitted
     const from = config.email.user
-      ? `Learnify <${config.email.user}>`
+      ? `LearnerAI <${config.email.user}>`
       : config.email.from;
 
     await transporter.sendMail({ from, to, subject, html });
@@ -101,12 +101,12 @@ export async function sendWelcomeEmail(
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Email:</strong></td><td style="color:#333;font-size:14px;">${studentEmail}</td></tr>
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Class:</strong></td><td style="color:#333;font-size:14px;">${classLevel}</td></tr>
     </table>
-    <p style="color:#666;font-size:13px;margin:16px 0 0;">Your child has registered on Learnify. You'll receive progress updates as they learn.</p>
+    <p style="color:#666;font-size:13px;margin:16px 0 0;">Your child has registered on LearnerAI. You'll receive progress updates as they learn.</p>
   `;
 
   return sendEmail(
     parentEmail,
-    `Welcome to Learnify — ${studentName} has joined!`,
+    `Welcome to LearnerAI — ${studentName} has joined!`,
     baseTemplate("New Account Created", body, studentName)
   );
 }
@@ -265,7 +265,7 @@ export async function sendQuizResultEmail(
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Score:</strong></td><td style="color:${scoreColor};font-size:14px;font-weight:700;">${score} / ${total} correct</td></tr>
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Time Taken:</strong></td><td style="color:#333;font-size:14px;">${timeStr}</td></tr>
     </table>
-    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a quiz on Learnify. ${
+    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a quiz on LearnerAI. ${
       percentage >= 70 ? 'Great performance!' : 'Encourage them to review the topic and try again.'
     }</p>
   `;
@@ -315,7 +315,7 @@ export async function sendExamResultEmail(
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Questions:</strong></td><td style="color:#333;font-size:14px;">${totalQuestions} MCQs</td></tr>
       <tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Time Taken:</strong></td><td style="color:#333;font-size:14px;">${timeStr}</td></tr>
     </table>
-    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a timed exam on Learnify. ${
+    <p style="color:#666;font-size:13px;margin:16px 0 0;">${studentName} completed a timed exam on LearnerAI. ${
       percentage >= 70 ? 'Excellent performance! They have a strong grasp of the material.'
       : percentage >= 40 ? 'Good attempt. Some topics may need review.'
       : 'They may need additional practice on these topics. Consider reviewing together.'

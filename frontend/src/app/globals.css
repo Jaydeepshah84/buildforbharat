@@ -4,41 +4,49 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
-    font-feature-settings: "cv11", "ss01";
+    @apply text-gray-900 font-sans antialiased;
+    background: #f6f4fb; /* soft lavender-tinted surface */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
+  h1, h2, h3, h4 {
+    font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .font-display { font-family: "Space Grotesk", Inter, system-ui, sans-serif; }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold
-      hover:bg-blue-700 transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20
+    @apply bg-primary-500 text-white px-6 py-2.5 rounded-2xl font-semibold
+      hover:bg-primary-600 transition-all duration-200
+      focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/25
       active:scale-[0.98];
   }
   .btn-secondary {
-    @apply bg-white text-gray-700 px-6 py-2.5 rounded-xl font-medium border border-gray-200
+    @apply bg-white text-gray-700 px-6 py-2.5 rounded-2xl font-medium border border-gray-200
       hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-[0.98];
   }
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6
-      hover:shadow-md transition-shadow duration-300;
+    @apply bg-white rounded-2xl border border-gray-100 p-6
+      shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all duration-300
+      hover:-translate-y-0.5 hover:border-primary-200/50
+      hover:shadow-[0_18px_40px_-18px_rgba(30,64,175,0.24)];
   }
   .input-field {
-    @apply w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white
-      focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+    @apply w-full px-4 py-2.5 rounded-2xl border border-gray-200 bg-white
+      focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400
       placeholder-gray-400 transition-all text-sm;
   }
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500
-      hover:bg-blue-50/60 hover:text-blue-600 transition-all duration-200;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-2xl text-gray-500
+      hover:bg-primary-50 hover:text-primary-600 transition-all duration-200;
   }
   .sidebar-link.active {
-    @apply bg-blue-50 text-blue-600 font-semibold
-      shadow-sm shadow-blue-100/50 border border-blue-100/50;
+    @apply bg-primary-50 text-primary-600 font-semibold
+      shadow-sm shadow-primary-100/50 border border-primary-100/50;
   }
 
   /* Glass effect utilities */
@@ -50,6 +58,10 @@
   }
 }
 
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -57,7 +69,7 @@
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
 /* Selection */
-::selection { background: rgba(40, 76, 227, 0.15); color: inherit; }
+::selection { background: rgba(124, 92, 255, 0.18); color: inherit; }
 
 /* Smooth transitions for all interactive elements */
 @layer utilities {
@@ -116,3 +128,130 @@
 .prose-chat table { @apply w-full text-xs border-collapse my-2; }
 .prose-chat th { @apply bg-gray-50 font-semibold text-left p-2 border border-gray-200; }
 .prose-chat td { @apply p-2 border border-gray-200; }
+
+/* ── AnimationCanvas keyframes ── */
+@keyframes obj-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes obj-scale { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+@keyframes obj-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) } 70% { transform: translate(-50%, -50%) scale(1.12) } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+@keyframes obj-slide-up { from { opacity: 0; transform: translate(-50%, calc(-50% + 30px)) } to { opacity: 1; transform: translate(-50%, -50%) } }
+@keyframes obj-slide-down { from { opacity: 0; transform: translate(-50%, calc(-50% - 30px)) } to { opacity: 1; transform: translate(-50%, -50%) } }
+@keyframes obj-slide-left { from { opacity: 0; transform: translate(calc(-50% + 30px), -50%) } to { opacity: 1; transform: translate(-50%, -50%) } }
+@keyframes obj-slide-right { from { opacity: 0; transform: translate(calc(-50% - 30px), -50%) } to { opacity: 1; transform: translate(-50%, -50%) } }
+@keyframes highlight-pulse-kf {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(99,102,241,0.5)) }
+  50% { filter: drop-shadow(0 0 26px rgba(129,140,248,1)) }
+}
+.highlight-pulse { animation: highlight-pulse-kf 1.6s ease-in-out infinite; }
+
+/* ── Richer ambient / idle motion for the animation canvas ── */
+/* Subtle continuous bob so objects feel alive after they enter */
+@keyframes obj-float-kf {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0) }
+  50%      { transform: translate(-50%, -50%) translateY(-6px) }
+}
+.obj-float { animation: obj-float-kf 4s ease-in-out infinite; }
+
+/* Slowly drifting background gradient for depth */
+@keyframes bg-pan-kf {
+  0%   { background-position: 0% 50% }
+  50%  { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+.anim-bg-pan { animation: bg-pan-kf 18s ease-in-out infinite; }
+
+/* Floating ambient particles */
+@keyframes particle-drift-kf {
+  0%   { transform: translateY(0) translateX(0); opacity: 0 }
+  10%  { opacity: 0.6 }
+  90%  { opacity: 0.5 }
+  100% { transform: translateY(-40px) translateX(12px); opacity: 0 }
+}
+.anim-particle { animation: particle-drift-kf linear infinite; }
+
+/* Nicer, springier entrance for popped objects */
+@keyframes obj-pop2 {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-8deg) }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg) }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0) }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Premium micro-interactions & visual effects
+   ───────────────────────────────────────────────────────── */
+
+/* Smooth hover-lift with layered depth shadow */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -16px rgba(16, 24, 40, 0.22),
+              0 4px 12px -6px rgba(16, 24, 40, 0.10);
+}
+
+/* Tactile press feedback */
+.press { transition: transform 0.12s ease; }
+.press:active { transform: scale(0.97); }
+
+/* Premium card surface — soft layered shadow, crisp border, lift on hover */
+.card-premium {
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.06);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.25s ease;
+}
+.card-premium:hover {
+  transform: translateY(-3px);
+  border-color: rgba(30, 64, 175, 0.18);
+  box-shadow: 0 20px 44px -20px rgba(30, 64, 175, 0.28),
+              0 6px 16px -10px rgba(16, 24, 40, 0.12);
+}
+
+/* Shimmer skeleton for progressive loading */
+@keyframes shimmer-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(100deg, #eef1f6 30%, #f7f8fb 50%, #eef1f6 70%);
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.4s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+/* Subtle sheen sweep for hero/CTA surfaces on hover */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.sheen:hover::after { transform: translateX(120%); }
+
+/* Gradient text (brand accent) */
+.text-gradient {
+  background: linear-gradient(135deg, #1e40af, #4f6fc8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Blur-up for lazy images */
+.img-blur-up { filter: blur(12px); transition: filter 0.5s ease, opacity 0.5s ease; opacity: 0.6; }
+.img-blur-up.loaded { filter: blur(0); opacity: 1; }
+
+/* Reduced-motion: neutralize the heavier effects */
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift, .card-premium, .press { transition: none; }
+  .hover-lift:hover, .card-premium:hover { transform: none; }
+  .skeleton { animation: none; }
+  .sheen::after { display: none; }
+}

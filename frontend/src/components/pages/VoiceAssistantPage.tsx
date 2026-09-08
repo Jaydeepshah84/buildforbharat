@@ -14,11 +14,11 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 /* ── Voice Orb — animated indicator ── */
 function VoiceOrb({ state, level = 0 }: { state: string; level: number }) {
   const colors = {
-    idle:      { core: '#4f46e5', glow: '#6366f1', ring: 'rgba(99,102,241,0.12)' },
+    idle:      { core: '#4f46e5', glow: '#1e40af', ring: 'rgba(99,102,241,0.12)' },
     listening: { core: '#ef4444', glow: '#f97316', ring: 'rgba(249,115,22,0.15)' },
-    thinking:  { core: '#7c3aed', glow: '#a78bfa', ring: 'rgba(167,139,250,0.12)' },
+    thinking:  { core: '#7c3aed', glow: '#1e40af', ring: 'rgba(167,139,250,0.12)' },
     speaking:  { core: '#0ea5e9', glow: '#38bdf8', ring: 'rgba(56,189,248,0.12)' },
-  }[state] || { core: '#4f46e5', glow: '#6366f1', ring: 'rgba(99,102,241,0.12)' };
+  }[state] || { core: '#4f46e5', glow: '#1e40af', ring: 'rgba(99,102,241,0.12)' };
 
   const scale = 1 + (state === 'listening' ? level * 0.25 : 0);
 
@@ -82,7 +82,7 @@ function StateLabel({ state, active }: { state: string; active: boolean }) {
   if (!active) return <span className="text-gray-400">Ready to start</span>;
   const map = {
     listening: { text: 'Listening...', color: 'text-orange-500', dot: 'bg-orange-500' },
-    thinking:  { text: 'Processing...', color: 'text-purple-500', dot: 'bg-purple-500' },
+    thinking:  { text: 'Processing...', color: 'text-primary-500', dot: 'bg-primary-500' },
     speaking:  { text: 'Speaking...', color: 'text-sky-500', dot: 'bg-sky-500' },
     idle:      { text: 'Connected', color: 'text-green-500', dot: 'bg-green-500' },
   };
@@ -406,7 +406,7 @@ export default function VoiceAssistantPage() {
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-5 py-3 bg-black/30 z-20 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center shadow-lg shadow-primary-500/20">
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -421,7 +421,7 @@ export default function VoiceAssistantPage() {
             {[{ k: 'en', l: 'EN' }, { k: 'hi', l: 'HI' }].map(({ k, l }) => (
               <button key={k} onClick={() => setSelectedLang(k)}
                 className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
-                  selectedLang === k ? 'bg-[#284ce3] text-white shadow' : 'text-gray-400 hover:text-white'
+                  selectedLang === k ? 'bg-[#1e40af] text-white shadow' : 'text-gray-400 hover:text-white'
                 }`}>
                 {l}
               </button>
@@ -443,10 +443,10 @@ export default function VoiceAssistantPage() {
 
           {/* Chat toggle */}
           <button onClick={() => setShowChat(!showChat)}
-            className={`p-2 rounded-lg transition relative ${showChat ? 'bg-[#284ce3]/20 text-blue-400' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
+            className={`p-2 rounded-lg transition relative ${showChat ? 'bg-[#1e40af]/20 text-primary-400' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
             <MessageSquare className="w-4 h-4" />
             {messages.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#284ce3] rounded-full text-[9px] text-white font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1e40af] rounded-full text-[9px] text-white font-bold flex items-center justify-center">
                 {messages.length}
               </span>
             )}
@@ -473,7 +473,7 @@ export default function VoiceAssistantPage() {
                   className={`max-w-lg text-center text-sm px-6 leading-relaxed ${
                     state === 'listening' ? 'text-orange-300/80' :
                     state === 'speaking' ? 'text-cyan-300/80' :
-                    state === 'thinking' ? 'text-purple-300/80' : 'text-blue-300/80'
+                    state === 'thinking' ? 'text-primary-300/80' : 'text-primary-300/80'
                   }`}>
                   {caption}
                 </motion.p>
@@ -548,13 +548,13 @@ export default function VoiceAssistantPage() {
                   <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                     className={`flex gap-2.5 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center ${
-                      m.role === 'user' ? 'bg-[#284ce3]' : 'bg-gradient-to-br from-cyan-500 to-blue-600'
+                      m.role === 'user' ? 'bg-[#1e40af]' : 'bg-gradient-to-br from-cyan-500 to-primary-600'
                     }`}>
                       {m.role === 'user' ? <User className="w-3.5 h-3.5 text-white" /> : <Bot className="w-3.5 h-3.5 text-white" />}
                     </div>
                     <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       m.role === 'user'
-                        ? 'bg-[#284ce3] text-white rounded-tr-sm'
+                        ? 'bg-[#1e40af] text-white rounded-tr-sm'
                         : 'bg-white/8 text-gray-200 rounded-tl-sm border border-white/5'
                     }`}>
                       <ReactMarkdown components={{
@@ -576,9 +576,9 @@ export default function VoiceAssistantPage() {
                 }} className="p-3 border-t border-white/10">
                   <div className="flex gap-2">
                     <input name="m" placeholder="Type a message..."
-                      className="flex-1 px-4 py-2.5 text-sm bg-white/5 border border-white/10 rounded-xl outline-none text-gray-200 placeholder-gray-500 focus:border-[#284ce3] transition" />
+                      className="flex-1 px-4 py-2.5 text-sm bg-white/5 border border-white/10 rounded-xl outline-none text-gray-200 placeholder-gray-500 focus:border-[#1e40af] transition" />
                     <button type="submit"
-                      className="px-4 py-2.5 bg-[#284ce3] hover:bg-blue-600 rounded-xl text-white text-sm font-medium transition-colors flex items-center gap-1.5">
+                      className="px-4 py-2.5 bg-[#1e40af] hover:bg-primary-600 rounded-xl text-white text-sm font-medium transition-colors flex items-center gap-1.5">
                       <Send className="w-3.5 h-3.5" />
                     </button>
                   </div>

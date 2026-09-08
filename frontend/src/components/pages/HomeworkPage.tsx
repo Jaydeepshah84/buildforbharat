@@ -110,7 +110,7 @@ function GenerateForm({ onGenerate, loading }) {
   return (
     <motion.form variants={fadeIn} onSubmit={handleSubmit} className="card space-y-6">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#284ce3] to-[#5b7cf7] flex items-center justify-center text-white">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e40af] to-[#5b7cf7] flex items-center justify-center text-white">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
@@ -133,7 +133,7 @@ function GenerateForm({ onGenerate, loading }) {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           placeholder={t('homework.topicPlaceholder', 'e.g. Photosynthesis, Quadratic Equations')}
-          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
           disabled={loading}
         />
       </div>
@@ -150,7 +150,7 @@ function GenerateForm({ onGenerate, loading }) {
               onClick={() => setCount(n)}
               className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
                 count === n
-                  ? 'border-[#284ce3] bg-blue-50 text-[#284ce3]'
+                  ? 'border-[#1e40af] bg-primary-50 text-[#1e40af]'
                   : 'border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
@@ -186,7 +186,7 @@ function GenerateForm({ onGenerate, loading }) {
       <button
         type="submit"
         disabled={loading || !topic.trim()}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1e40af] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-primary-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
@@ -259,7 +259,7 @@ function HomeworkAnswerSheet({ homework, onSubmit, onBack, submitting }) {
       <motion.div variants={fadeIn} className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#284ce3] transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#1e40af] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {t('common.goBack', 'Go Back')}
@@ -272,7 +272,7 @@ function HomeworkAnswerSheet({ homework, onSubmit, onBack, submitting }) {
 
       <motion.div variants={fadeIn} className="card">
         <div className="flex items-center gap-3 mb-1">
-          <ClipboardList className="w-5 h-5 text-[#284ce3]" />
+          <ClipboardList className="w-5 h-5 text-[#1e40af]" />
           <h2 className="text-lg font-bold text-gray-900">
             {homework.topic || t('homework.title', 'Homework')}
           </h2>
@@ -296,15 +296,15 @@ function HomeworkAnswerSheet({ homework, onSubmit, onBack, submitting }) {
             className="card"
           >
             <div className="flex items-start gap-3 mb-3">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-[#284ce3] text-xs font-bold flex-shrink-0 mt-0.5">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 text-[#1e40af] text-xs font-bold flex-shrink-0 mt-0.5">
                 {i + 1}
               </span>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     isLong
-                      ? 'bg-blue-100 text-[#284ce3]'
-                      : 'bg-blue-100 text-blue-700'
+                      ? 'bg-primary-100 text-[#1e40af]'
+                      : 'bg-primary-100 text-primary-700'
                   }`}>
                     {isLong
                       ? t('homework.longAnswer', 'Long Answer')
@@ -331,7 +331,7 @@ function HomeworkAnswerSheet({ homework, onSubmit, onBack, submitting }) {
                   : t('homework.shortPlaceholder', 'Write your answer here...')
               }
               rows={isLong ? 6 : 3}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#284ce3] focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
             />
 
             {answers[i].trim() && (
@@ -422,7 +422,7 @@ function HomeworkFeedback({ feedback, homework, onNewHomework }) {
       {feedbackText && (
         <motion.div variants={fadeIn} className="card">
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#284ce3]" />
+            <BookOpen className="w-4 h-4 text-[#1e40af]" />
             {t('homework.aiFeedback', 'AI Feedback')}
           </h3>
           <div className="prose prose-sm max-w-none text-gray-700">
@@ -490,7 +490,7 @@ function HomeworkFeedback({ feedback, homework, onNewHomework }) {
       <motion.div variants={fadeIn} className="flex justify-center">
         <button
           onClick={onNewHomework}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#284ce3] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-blue-200 transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#1e40af] to-[#4a6cf7] text-white font-semibold text-sm hover:shadow-lg hover:shadow-primary-200 transition-all"
         >
           <Sparkles className="w-5 h-5" />
           {t('homework.generateAnother', 'Generate New Homework')}
@@ -599,11 +599,11 @@ function PastHomeworkList({ homeworkList }) {
                 >
                   <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
                     {hw.feedback && (
-                      <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                        <p className="text-xs font-semibold text-[#284ce3] mb-1">
+                      <div className="p-3 rounded-lg bg-primary-50 border border-primary-100">
+                        <p className="text-xs font-semibold text-[#1e40af] mb-1">
                           {t('homework.aiFeedback', 'AI Feedback')}
                         </p>
-                        <div className="prose prose-sm max-w-none text-sm text-blue-800">
+                        <div className="prose prose-sm max-w-none text-sm text-primary-800">
                           <ReactMarkdown>
                             {typeof hw.feedback === 'string' ? hw.feedback : hw.feedback.text || hw.feedback.overallFeedback || ''}
                           </ReactMarkdown>
@@ -761,13 +761,13 @@ export default function HomeworkPage() {
             {/* My Homework section */}
             <motion.div variants={fadeIn} className="mt-8">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-[#284ce3]" />
+                <ClipboardList className="w-5 h-5 text-[#1e40af]" />
                 {t('homework.myHomework', 'My Homework')}
               </h2>
 
               {loadingPast ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#284ce3]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#1e40af]" />
                 </div>
               ) : (
                 <PastHomeworkList homeworkList={pastHomework} />

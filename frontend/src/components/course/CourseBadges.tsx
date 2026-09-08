@@ -98,7 +98,7 @@ function ProgressRing({ percentage, size = 100, strokeWidth = 8 }) {
         />
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="0%" stopColor="#1e40af" />
             <stop offset="100%" stopColor="#a855f7" />
           </linearGradient>
         </defs>
@@ -139,7 +139,7 @@ function BadgeItem({ badge, earned, index }) {
       <div
         className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl ${
           earned
-            ? 'bg-gradient-to-br from-indigo-50 to-purple-50'
+            ? 'bg-gradient-to-br from-primary-50 to-primary-50'
             : 'bg-gray-100'
         }`}
       >
@@ -195,7 +195,7 @@ function openCertificate(courseTitle, studentName) {
       width: 800px;
       min-height: 560px;
       background: white;
-      border: 3px solid #6366f1;
+      border: 3px solid #1e40af;
       border-radius: 12px;
       padding: 50px 60px;
       text-align: center;
@@ -212,7 +212,7 @@ function openCertificate(courseTitle, studentName) {
     }
     .brand {
       font-size: 14px;
-      color: #6366f1;
+      color: #1e40af;
       letter-spacing: 4px;
       text-transform: uppercase;
       font-weight: 700;
@@ -265,7 +265,7 @@ function openCertificate(courseTitle, studentName) {
 </head>
 <body>
   <div class="cert">
-    <div class="brand">Learnify</div>
+    <div class="brand">LearnerAI</div>
     <div class="trophy">🏆</div>
     <div class="title">Certificate of Completion</div>
     <div class="subtitle">This is to certify that</div>
@@ -274,7 +274,7 @@ function openCertificate(courseTitle, studentName) {
     <div class="label">Has successfully completed</div>
     <div class="course-name">${courseTitle}</div>
     <div class="date">Awarded on ${today}</div>
-    <div class="footer">Powered by Learnify &mdash; AI-Powered Learning Platform</div>
+    <div class="footer">Powered by LearnerAI &mdash; AI-Powered Learning Platform</div>
   </div>
   <script>
     window.onload = function() { setTimeout(function(){ window.print(); }, 400); };
@@ -334,7 +334,7 @@ export default function CourseBadges({ course, completedTopics = 0, totalTopics 
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-indigo-500" />
+                <Award className="w-4 h-4 text-primary-500" />
                 Badges Earned
                 <span className="text-xs text-gray-400 font-normal ml-1">
                   {earnedCount}/{BADGES.length}
@@ -355,7 +355,7 @@ export default function CourseBadges({ course, completedTopics = 0, totalTopics 
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={handleShare}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium hover:bg-indigo-100 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-50 text-primary-600 text-sm font-medium hover:bg-primary-100 transition-colors"
           >
             <Share2 className="w-4 h-4" />
             Share Course
@@ -370,7 +370,7 @@ export default function CourseBadges({ course, completedTopics = 0, totalTopics 
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleDownloadCertificate}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white text-sm font-medium hover:from-primary-600 hover:to-primary-600 transition-all shadow-sm"
               >
                 <Download className="w-4 h-4" />
                 Download Certificate
