@@ -88,7 +88,7 @@ Indian classrooms are under-served by most edtech: content is English-first, one
 ## 4. Repository Layout
 
 ```
-buildforbharat/
+Learnify/
 ├── frontend/              → Next.js 15 web app            (port 3000)
 ├── backend/               → Express + Socket.io API       (port 5050)
 ├── tts-service/           → Python Flask TTS/STT          (port 5001)
@@ -280,22 +280,44 @@ Design notes:
 
 ### 5.13 Sign Language (ISL)
 
-Sign-language mode is offered per topic, and whole courses can be generated in it. Four
-paths back it, only one of which is a real signing engine:
+Sign mode is **the same visual lesson everyone else gets** — the same animated diagrams, the
+same 4–5 steps — with the 3D signing avatar replacing the voice track. There is one signing
+surface and no separate player: [AnimationPlayer](frontend/src/components/animation/AnimationPlayer.tsx)
+takes a `signLanguage` prop, and with it the avatar sits beside the canvas and narrates.
 
-| Path | Driven by | What renders |
-|---|---|---|
-| **3D avatar** | Backend gloss → SiGML → CWASA | [CWASA / JASigning](https://vhg.cmp.uea.ac.uk) 3D avatar (University of East Anglia), loaded in an isolated iframe ([cwasa-player.html](frontend/public/cwasa-player.html)) and driven via `postMessage` |
-| Step breakdown | LLM per-word gesture description | 2D SVG avatar that moves between fixed signing zones |
-| Generated animation | LLM-authored CSS/HTML | A standalone signing page in an iframe |
-| Course captions | Lesson text split into phrases | Large adjustable captions + fingerspelling hand shapes |
+**Flow per narration step**
+
+```
+narration sentence  →  POST /api/sign-language/sigml   (LLM gloss, cached)
+                    →  SiGML  (dictionary sign | digit | fingerspelling, + mouth picture)
+                    →  CWASA.playSiGMLText()  in the avatar iframe
+                    →  "done" postMessage  →  player advances to the next step
+```
+
+The animation advances when the **avatar finishes signing**, exactly as it advances when the
+voice finishes speaking. Nothing is timed by guesswork, so signs are never cut off. Captions
+render larger in sign mode, and each step also shows the gloss the avatar is signing.
+
+**Asking questions.** The student types a question in the player. The lesson pauses, the tutor
+answers (`/api/voice/stream`), and the avatar signs the answer sentence by sentence with the
+current sentence highlighted in the text. Then the lesson resumes where it stopped.
 
 **Honest scope.** Translating arbitrary English into linguistically correct ISL is an unsolved
 research problem; no library does it reliably. [backend/src/services/sigml.ts](backend/src/services/sigml.ts)
-therefore produces *structurally valid* SiGML two ways: a small hand-authored dictionary of
-whole-word signs, and **fingerspelling** (one HamNoSys handshape per letter) for everything
-else, which gives universal coverage. The pipeline is the deliverable — sign accuracy grows by
-extending the dictionary. The avatar itself is WebGL and must be viewed in a real browser.
+therefore produces *structurally valid* SiGML from three sources: a hand-authored dictionary of
+~260 whole-word signs (each with a **mouth picture**, so the avatar mouths the word as it signs
+— a real comprehension aid), digits and math operators, and **fingerspelling** for everything
+else, which gives universal coverage. The gloss prompt steers the model toward dictionary words
+so fingerspelling stays rare. Sign accuracy grows by extending the dictionary; the pipeline is
+the deliverable.
+
+**Degrading gracefully.** If the UEA avatar or the sign service is unreachable, the lesson does
+not stall: the player falls back to timed large captions and says so on screen.
+
+**Testing signs.** Open `/cwasa-player.html#play=<url-encoded SiGML>` to play any SiGML directly;
+the page records every avatar event in a hidden `<pre id="log">` and `window.__cwasaLog`. The
+avatar is WebGL, so it needs a real browser — a headless check with `--virtual-time-budget`
+loads it but never runs the animation frames.
 
 ---
 
@@ -382,9 +404,9 @@ Organized by learner surface. Every feature below is implemented and reachable f
 | POST | `/api/tts` | Text → audio |
 | POST | `/api/tts/stt` | Audio → text |
 | GET | `/api/tts/voices` | Available voices |
-| POST | `/api/sign-language/sigml` | Text → ISL gloss → SiGML for the CWASA 3D avatar |
-| POST | `/api/sign-language/explain-stream` | SSE per-word sign breakdown |
-| POST | `/api/sign-language/generate` | Standalone CSS/HTML signing animation |
+| POST | `/api/sign-language/sigml` | One sentence → ISL gloss → SiGML for the 3D avatar (LLM gloss cached; `raw:true` signs the words as given) |
+| POST | `/api/sign-language/sigml/batch` | Up to 20 sentences at once |
+| GET | `/api/sign-language/dictionary` | Words the avatar signs from the dictionary (everything else is fingerspelled) |
 
 ### Student
 | Method | Route | Purpose |
@@ -509,7 +531,7 @@ NEXT_PUBLIC_TTS_URL=http://localhost:5001
 - **Sandboxed iframe animations** — safe, but rules out importing external libs. Everything is vanilla JS/CSS.
 
 **Next**
-- Sign-language avatar for hearing-impaired learners (routes scaffolded in `signLanguage.ts`)
+- Widen the ISL sign dictionary (each new word replaces slow fingerspelling) and validate it against a deaf-education reviewer
 - Teacher dashboard (cohort analytics)
 - Offline course generation via a smaller local model
 - Push notifications for study-plan reminders
